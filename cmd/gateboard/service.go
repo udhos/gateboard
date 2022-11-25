@@ -8,14 +8,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/udhos/gateboard/gateboard"
 	yaml "gopkg.in/yaml.v3"
 )
-
-type bodyGetReply struct {
-	GatewayName string `json:"gateway_name"`
-	GatewayID   string `json:"gateway_id"`
-	Error       string `json:"error,omitempty"`
-}
 
 func gatewayGet(c *gin.Context, app *application) {
 	const me = "gatewayGet"
@@ -30,7 +25,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	log.Printf("%s: traceID=%s gateway_name=%s", me, span.SpanContext().TraceID(), gatewayName)
 
-	var out bodyGetReply
+	var out gateboard.BodyGetReply
 	out.GatewayName = gatewayName
 
 	//
