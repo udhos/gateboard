@@ -33,6 +33,7 @@ type application struct {
 	me            string
 	tracer        trace.Tracer
 	repo          repository
+	sqsClient     clientConfig
 }
 
 func getVersion(me string) string {
@@ -42,9 +43,17 @@ func getVersion(me string) string {
 
 func main() {
 
+	me := filepath.Base(os.Args[0])
+
 	app := &application{
-		me:   filepath.Base(os.Args[0]),
+		me:   me,
 		repo: NewRepoMem(),
+		sqsClient: initClient("main",
+			env.String("QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/123456789012/myqueue"),
+			env.String("QUEUE_REGION", "us-east-1"),
+			env.String("ROLE_ARN", ""),
+			me,
+		),
 	}
 
 	var showVersion bool
@@ -156,6 +165,8 @@ func main() {
 		err := app.serverMetrics.server.ListenAndServe()
 		log.Printf("metrics server: exited: %v", err)
 	}()
+
+	go sqsListener(app)
 
 	//
 	// handle graceful shutdown
