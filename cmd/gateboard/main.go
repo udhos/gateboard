@@ -50,7 +50,6 @@ func main() {
 		repo: NewRepoMem(),
 		sqsClient: initClient("main",
 			env.String("QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/123456789012/myqueue"),
-			env.String("QUEUE_REGION", "us-east-1"),
 			env.String("ROLE_ARN", ""),
 			me,
 		),

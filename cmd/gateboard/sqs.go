@@ -22,13 +22,15 @@ type clientConfig struct {
 	queueURL string
 }
 
-func initClient(caller, queueURL, queueRegion, roleArn, roleSessionName string) clientConfig {
+func initClient(caller, queueURL, roleArn, roleSessionName string) clientConfig {
 
 	var c clientConfig
 
 	region, errRegion := getRegion(queueURL)
 	if errRegion != nil {
-		region = queueRegion
+		log.Fatalf("%s initClient: error: %v", caller, errRegion)
+		os.Exit(1)
+		return c
 	}
 
 	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
