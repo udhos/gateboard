@@ -18,9 +18,8 @@ import (
 )
 
 type clientConfig struct {
-	sqs         *sqs.Client
-	queueURL    string
-	queueRegion string
+	sqs      *sqs.Client
+	queueURL string
 }
 
 func initClient(caller, queueURL, queueRegion, roleArn, roleSessionName string) clientConfig {
