@@ -43,30 +43,36 @@ func getVersion(me string) string {
 
 func main() {
 
-	me := filepath.Base(os.Args[0])
-
-	app := &application{
-		me:   me,
-		repo: NewRepoMem(),
-		sqsClient: initClient("main",
-			env.String("QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/123456789012/myqueue"),
-			env.String("ROLE_ARN", ""),
-			me,
-		),
-	}
-
 	var showVersion bool
 	flag.BoolVar(&showVersion, "version", showVersion, "show version")
 	flag.Parse()
 
+	me := filepath.Base(os.Args[0])
+
 	{
-		v := getVersion(app.me)
+		v := getVersion(me)
 		if showVersion {
 			fmt.Print(v)
 			fmt.Println()
 			return
 		}
 		log.Print(v)
+	}
+
+	queueURL := env.String("QUEUE_URL", "")
+
+	app := &application{
+		me:   me,
+		repo: NewRepoMem(),
+	}
+
+	//
+	// sqs listener
+	//
+
+	if queueURL != "" {
+		app.sqsClient = initClient("main", queueURL, env.String("ROLE_ARN", ""), me)
+		go sqsListener(app)
 	}
 
 	applicationAddr := env.String("LISTEN_ADDR", ":8080")
@@ -164,8 +170,6 @@ func main() {
 		err := app.serverMetrics.server.ListenAndServe()
 		log.Printf("metrics server: exited: %v", err)
 	}()
-
-	go sqsListener(app)
 
 	//
 	// handle graceful shutdown
