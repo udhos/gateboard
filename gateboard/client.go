@@ -1,6 +1,7 @@
 package gateboard
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -26,7 +27,8 @@ type gatewayEntry struct {
 }
 
 type ClientOptions struct {
-	ServerURL string
+	ServerURL   string // main centralized server
+	FallbackURL string // local fallback server (data cached from main server)
 }
 
 func NewClient(options ClientOptions) *Client {
@@ -74,31 +76,43 @@ func (c *Client) GatewayID(gatewayName string) (string, error) {
 	// 2: server
 
 	{
-		gatewayID := c.queryServer(gatewayName)
+		gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
-			c.saveRepo(gatewayName, gatewayID)
+			c.saveFallback(gatewayName, gatewayID)
 			log.Printf("%s: name=%s id=%s from server", me, gatewayName, gatewayID)
 			return gatewayID, nil
 		}
 	}
 
-	// 3: repository
+	// 3: fallback repository, if any
 
-	gatewayID := c.queryRepo(gatewayName)
-	if gatewayID != "" {
-		c.cachePut(gatewayName, gatewayID)
-		log.Printf("%s: name=%s id=%s from repo", me, gatewayName, gatewayID)
-		return gatewayID, nil
+	if c.options.FallbackURL != "" {
+		gatewayID := c.queryServer(c.options.FallbackURL, gatewayName)
+		if gatewayID != "" {
+			c.cachePut(gatewayName, gatewayID)
+			log.Printf("%s: name=%s id=%s from repo", me, gatewayName, gatewayID)
+			return gatewayID, nil
+		}
 	}
 
 	return "", fmt.Errorf("%s: gatewayName=%s not found", me, gatewayName)
 }
 
-func (c *Client) queryServer(gatewayName string) string {
+/*
+func (c *Client) queryServerMain(gatewayName string) string {
+	return c.queryServer(c.options.ServerURL, gatewayName)
+}
+
+func (c *Client) queryServerFallback(gatewayName string) string {
+	return c.queryServer(c.options.FallbackURL, gatewayName)
+}
+*/
+
+func (c *Client) queryServer(URL, gatewayName string) string {
 	const me = "gateboard.Client.queryServer"
 
-	path, errPath := url.JoinPath(c.options.ServerURL, gatewayName)
+	path, errPath := url.JoinPath(URL, gatewayName)
 	if errPath != nil {
 		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
 		return ""
@@ -134,11 +148,59 @@ func toJSON(v interface{}) string {
 	return string(b)
 }
 
-func (c *Client) queryRepo(gatewayName string) string {
-	log.Printf("queryRepo FIXME")
-	return "FIXME"
+type BodyPutRequest struct {
+	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
 }
 
-func (c *Client) saveRepo(gatewayName, gatewayID string) {
-	log.Printf("saveRepo FIXME")
+type BodyPutReply struct {
+	GatewayName string `json:"gateway_name"`
+	GatewayID   string `json:"gateway_id"`
+	Error       string `json:"error,omitempty"`
+}
+
+func (c *Client) saveFallback(gatewayName, gatewayID string) {
+	const me = "gateboard.Client.saveFallback"
+
+	path, errPath := url.JoinPath(c.options.FallbackURL, gatewayName)
+	if errPath != nil {
+		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
+		return
+	}
+
+	log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s", me, path, gatewayName, gatewayID)
+
+	requestBody := BodyPutRequest{GatewayID: gatewayID}
+	requestBytes, errJSON := json.Marshal(&requestBody)
+	if errJSON != nil {
+		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
+		return
+	}
+
+	log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s json:%v", me, path, gatewayName, gatewayID, string(requestBytes))
+
+	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
+	if errReq != nil {
+		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
+		return
+	}
+
+	client := http.DefaultClient
+	resp, errDo := client.Do(req)
+	if errDo != nil {
+		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	var reply BodyPutReply
+
+	dec := yaml.NewDecoder(resp.Body)
+	errYaml := dec.Decode(&reply)
+	if errYaml != nil {
+		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
+		return
+	}
+
+	log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
 }

@@ -36,7 +36,10 @@ func main() {
 		log.Print(v)
 	}
 
-	client := gateboard.NewClient(gateboard.ClientOptions{ServerURL: "http://localhost:8080/gateway"})
+	client := gateboard.NewClient(gateboard.ClientOptions{
+		ServerURL:   "http://localhost:8080/gateway",
+		FallbackURL: "http://localhost:8181/gateway",
+	})
 
 	for _, name := range flag.Args() {
 		id, err := client.GatewayID(name)

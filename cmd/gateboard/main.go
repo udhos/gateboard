@@ -62,8 +62,35 @@ func main() {
 	queueURL := env.String("QUEUE_URL", "")
 
 	app := &application{
-		me:   me,
-		repo: NewRepoMem(),
+		me: me,
+	}
+
+	//
+	// pick repo type
+	//
+
+	const debug = true
+
+	{
+		repoType := env.String("REPO", "mongo")
+		switch repoType {
+		case "mongo":
+			var errMongo error
+			app.repo, errMongo = newRepoMongo(repoMongoOptions{
+				debug:      debug,
+				URI:        env.String("MONGO_URL", "mongodb://localhost:27017"),
+				database:   "gateboard",
+				collection: env.String("MONGO_COLLECTION", "gateboard"),
+				timeout:    time.Second * 10,
+			})
+			if errMongo != nil {
+				log.Fatalf("repo mongo: %v", errMongo)
+			}
+		case "mem":
+			app.repo = newRepoMem()
+		default:
+			log.Fatalf("unsuppported repo type: %s (supported types: mongo, mem)", repoType)
+		}
 	}
 
 	//

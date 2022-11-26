@@ -52,16 +52,6 @@ func gatewayGet(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, out)
 }
 
-type bodyPutRequest struct {
-	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
-}
-
-type bodyPutReply struct {
-	GatewayName string `json:"gateway_name"`
-	GatewayID   string `json:"gateway_id"`
-	Error       string `json:"error,omitempty"`
-}
-
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
@@ -75,7 +65,7 @@ func gatewayPut(c *gin.Context, app *application) {
 
 	log.Printf("%s: traceID=%s gateway_name=%s", me, span.SpanContext().TraceID(), gatewayName)
 
-	var out bodyPutReply
+	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
 
 	//
@@ -83,7 +73,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	//
 
 	dec := yaml.NewDecoder(c.Request.Body)
-	var in bodyPutRequest
+	var in gateboard.BodyPutRequest
 	errYaml := dec.Decode(&in)
 	if errYaml != nil {
 		out.Error = fmt.Sprintf("%s: body yaml: %v", me, errYaml)
