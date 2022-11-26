@@ -1,5 +1,15 @@
 # gateboard
 
+## TODO
+
+- [ ] Client with async update
+- [ ] SQS listener
+- [ ] Tests
+- [ ] Zap logging
+- [ ] Metrics
+- [ ] Tracing
+- [ ] Benchmark
+
 ## Running both servers on same host
 
 Main:
