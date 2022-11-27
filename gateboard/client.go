@@ -3,11 +3,11 @@ package gateboard
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	yaml "gopkg.in/yaml.v3"
@@ -16,10 +16,11 @@ import (
 type Client struct {
 	options ClientOptions
 	cache   map[string]gatewayEntry
-	lock    sync.Mutex
+	//cache map[string]string
+	lock sync.Mutex
 }
 
-const cacheTTL = 60 * time.Second
+const DefaultCacheTTL = 60 * time.Second
 
 type gatewayEntry struct {
 	gatewayID string
@@ -29,10 +30,18 @@ type gatewayEntry struct {
 type ClientOptions struct {
 	ServerURL   string // main centralized server
 	FallbackURL string // local fallback server (data cached from main server)
+	TTL         time.Duration
 }
 
 func NewClient(options ClientOptions) *Client {
-	return &Client{options: options, cache: map[string]gatewayEntry{}}
+	if options.TTL == 0 {
+		options.TTL = DefaultCacheTTL
+	}
+	return &Client{
+		options: options,
+		cache:   map[string]gatewayEntry{},
+		//cache: map[string]string{},
+	}
 }
 
 type BodyGetReply struct {
@@ -55,6 +64,7 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 	c.lock.Unlock()
 }
 
+/*
 func (c *Client) GatewayID(gatewayName string) (string, error) {
 	const me = "gateboard.Client.GatewayID"
 
@@ -99,15 +109,130 @@ func (c *Client) GatewayID(gatewayName string) (string, error) {
 	return "", fmt.Errorf("%s: gatewayName=%s not found", me, gatewayName)
 }
 
-/*
-func (c *Client) queryServerMain(gatewayName string) string {
-	return c.queryServer(c.options.ServerURL, gatewayName)
-}
-
-func (c *Client) queryServerFallback(gatewayName string) string {
-	return c.queryServer(c.options.FallbackURL, gatewayName)
+func (c *Client) Refresh(gatewayName, gatewayID string) {
 }
 */
+
+/*
+func (c *Client) cacheGet(gatewayName string) (string, bool) {
+	c.lock.Lock()
+	entry, found := c.cache[gatewayName]
+	c.lock.Unlock()
+	return entry, found
+}
+
+func (c *Client) cachePut(gatewayName, gatewayID string) {
+	c.lock.Lock()
+	c.cache[gatewayName] = gatewayID
+	c.lock.Unlock()
+}
+*/
+
+func (c *Client) GatewayID(gatewayName string) string {
+	const me = "gateboard.Client.GatewayID"
+
+	// 1: local cache with TTL
+
+	{
+		entry, found := c.cacheGet(gatewayName)
+		if found {
+			elap := time.Since(entry.creation)
+			if elap < c.options.TTL {
+				log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, c.options.TTL-elap)
+				return entry.gatewayID
+			}
+		}
+	}
+
+	return ""
+
+	/*
+		// 2: server
+
+		{
+			gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
+			if gatewayID != "" {
+				c.cachePut(gatewayName, gatewayID)
+				c.saveFallback(gatewayName, gatewayID)
+				log.Printf("%s: name=%s id=%s from server", me, gatewayName, gatewayID)
+				return gatewayID, nil
+			}
+		}
+
+		// 3: fallback repository, if any
+
+		if c.options.FallbackURL != "" {
+			gatewayID := c.queryServer(c.options.FallbackURL, gatewayName)
+			if gatewayID != "" {
+				c.cachePut(gatewayName, gatewayID)
+				log.Printf("%s: name=%s id=%s from repo", me, gatewayName, gatewayID)
+				return gatewayID, nil
+			}
+		}
+
+		return "", fmt.Errorf("%s: gatewayName=%s not found", me, gatewayName)
+	*/
+}
+
+/*
+// https://stackoverflow.com/questions/52793601/how-to-run-single-instance-of-goroutine
+
+var jobIsRunning uint32
+
+	func maybeStartJob() {
+	    if atomic.CompareAndSwapUint32(&jobIsRunning, 0, 1) {
+	        go func() {
+	            theJob()
+	            atomic.StoreUint32(&jobIsRunning, 0)
+	        }()
+	    }
+	}
+*/
+
+var refreshing uint32
+
+// Refresh runs only one refreshJob() goroutine at a time.
+func (c *Client) Refresh(gatewayName, gatewayID string) {
+	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
+		go func() {
+			c.refreshJob(gatewayName, gatewayID)
+			atomic.StoreUint32(&refreshing, 0)
+		}()
+	}
+}
+
+func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
+	const me = "refreshJob"
+
+	log.Printf("%s: gateway_name=%s old_gateway_id=%s", me, gatewayName, oldGatewayID)
+
+	// 1: query main server
+
+	{
+		gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
+		if gatewayID != "" {
+			c.cachePut(gatewayName, gatewayID)
+			c.saveFallback(gatewayName, gatewayID)
+			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from server",
+				me, gatewayName, oldGatewayID, gatewayID)
+			return
+		}
+	}
+
+	// 2: query local fallback repository, if any
+
+	if c.options.FallbackURL != "" {
+		gatewayID := c.queryServer(c.options.FallbackURL, gatewayName)
+		if gatewayID != "" {
+			c.cachePut(gatewayName, gatewayID)
+			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from repo",
+				me, gatewayName, oldGatewayID, gatewayID)
+			return
+		}
+	}
+
+	log.Printf("%s: gateway_name=%s old_gateway_id=%s: failed to refresh", me, gatewayName, oldGatewayID)
+}
 
 func (c *Client) queryServer(URL, gatewayName string) string {
 	const me = "gateboard.Client.queryServer"
@@ -167,7 +292,7 @@ func (c *Client) saveFallback(gatewayName, gatewayID string) {
 		return
 	}
 
-	log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s", me, path, gatewayName, gatewayID)
+	//log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s", me, path, gatewayName, gatewayID)
 
 	requestBody := BodyPutRequest{GatewayID: gatewayID}
 	requestBytes, errJSON := json.Marshal(&requestBody)
@@ -176,7 +301,7 @@ func (c *Client) saveFallback(gatewayName, gatewayID string) {
 		return
 	}
 
-	log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s json:%v", me, path, gatewayName, gatewayID, string(requestBytes))
+	//log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s json:%v", me, path, gatewayName, gatewayID, string(requestBytes))
 
 	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {

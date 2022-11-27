@@ -1,0 +1,9 @@
+id1:
+  code: 200
+  body: "200 ok"
+id2:
+  code: 500
+  body: "500 ugh"
+id3:
+  code: 403
+  body: "403 mock failure"

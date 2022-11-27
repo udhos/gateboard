@@ -3,7 +3,7 @@
 ## TODO
 
 - [X] SQS listener
-- [ ] Client with async update
+- [X] Client with async update
 - [ ] Tests
 - [ ] Zap logging
 - [ ] Metrics
