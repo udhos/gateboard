@@ -4,6 +4,7 @@
 
 - [X] SQS listener
 - [X] Client with async update
+- [ ] Create mongodb index on startup
 - [ ] Tests
 - [ ] Zap logging
 - [ ] Metrics
