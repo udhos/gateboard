@@ -74,6 +74,10 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 
 	r := &repoMongo{options: opt}
 
+	//
+	// connect
+	//
+
 	{
 		ctx, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 		defer cancel()
@@ -83,6 +87,27 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 			log.Printf("%s: mongo connect: %v", me, errConnect)
 			return nil, errConnect
 		}
+	}
+
+	//
+	// create index
+	//
+
+	{
+		const field = "gateway_name"
+		collection := r.client.Database(r.options.database).Collection(r.options.collection)
+
+		model := mongo.IndexModel{
+			Keys: bson.M{
+				field: 1, // index in ascending order
+			}, Options: options.Index().SetUnique(true), // create UniqueIndex option
+		}
+
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
+		defer cancel()
+		indexName, errCreate := collection.Indexes().CreateOne(ctxTimeout, model)
+		log.Printf("%s: create index for field=%s: index=%s: error: %v",
+			me, field, indexName, errCreate)
 	}
 
 	return r, nil
