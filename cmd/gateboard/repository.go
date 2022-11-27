@@ -124,6 +124,12 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	return r, nil
 }
 
+func (r *repoMongo) dropDatabase() error {
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
+	defer cancel()
+	return r.client.Database(r.options.database).Drop(ctxTimeout)
+}
+
 func (r *repoMongo) get(gatewayName string) (string, error) {
 
 	const me = "repoMongo.get"

@@ -26,6 +26,9 @@ func TestRepository(t *testing.T) {
 		if err != nil {
 			t.Errorf("error initialize mongodb: %v", err)
 		}
+		if errDrop := r.dropDatabase(); errDrop != nil {
+			t.Errorf("dropping database: %v", errDrop)
+		}
 		testRepo(t, r)
 	}
 }
