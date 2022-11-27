@@ -2,8 +2,8 @@
 
 ## TODO
 
+- [X] SQS listener
 - [ ] Client with async update
-- [ ] SQS listener
 - [ ] Tests
 - [ ] Zap logging
 - [ ] Metrics
@@ -16,7 +16,7 @@ Main:
 
 ```bash
 docker run --rm --name mongo-main -p 27017:27017 -d mongo
-#export QUEUE_URL=...
+export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/140330866198/gateboard
 gateboard
 ```
 

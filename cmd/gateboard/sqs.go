@@ -127,7 +127,7 @@ func sqsListener(app *application) {
 		count := len(resp.Messages)
 
 		for i, msg := range resp.Messages {
-			log.Printf("%s: %d/%d MessageId: %s", me, i+1, count, *msg.MessageId)
+			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, *msg.MessageId, *msg.Body)
 
 			var put sqsPut
 
@@ -165,8 +165,8 @@ func sqsListener(app *application) {
 }
 
 type sqsPut struct {
-	GatewayName string `json:"gateway_name"`
-	GatewayID   string `json:"gateway_id"`
+	GatewayName string `json:"gateway_name" yaml:"gateway_name"`
+	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
 }
 
 func sqsDeleteMessage(app *application, m types.Message) {
