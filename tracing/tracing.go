@@ -1,3 +1,6 @@
+/*
+Package tracing provides utilities for working with open telemetry tracing.
+*/
 package tracing
 
 import (
@@ -27,6 +30,7 @@ Open Telemetry tracing with Gin:
    resp, errGet := client.Do(req)
 */
 
+// TracerProvider creates a trace provider.
 func TracerProvider(service, url string) (*tracesdk.TracerProvider, error) {
 	log.Printf("tracerProvider: service=%s collector=%s", service, url)
 
@@ -49,6 +53,7 @@ func TracerProvider(service, url string) (*tracesdk.TracerProvider, error) {
 	return tp, nil
 }
 
+// TracePropagation enables trace propagation.
 func TracePropagation() {
 	// In order to propagate trace context over the wire, a propagator must be registered with the OpenTelemetry API.
 	// https://opentelemetry.io/docs/instrumentation/go/manual/

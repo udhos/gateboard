@@ -1,3 +1,6 @@
+/*
+Package env provides utilities for reading environment variables.
+*/
 package env
 
 import (

@@ -5,6 +5,7 @@
 - [X] SQS listener
 - [X] Client with async update
 - [X] Create mongodb index on startup
+- [ ] Define TTL on server record (60s), restrict acceptable TTL range on client (60s..600s)
 - [ ] Tests
 - [ ] Zap logging
 - [ ] Metrics

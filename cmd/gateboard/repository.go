@@ -13,8 +13,8 @@ import (
 )
 
 type repository interface {
-	get(gateway_name string) (string, error)
-	put(gateway_name, gateway_id string) error
+	get(gatewayName string) (string, error)
+	put(gatewayName, gatewayID string) error
 }
 
 var (
@@ -35,19 +35,19 @@ func newRepoMem() *repoMem {
 	return &repoMem{tab: map[string]string{}}
 }
 
-func (r *repoMem) get(gateway_name string) (string, error) {
+func (r *repoMem) get(gatewayName string) (string, error) {
 	r.lock.Lock()
-	gateway_id, found := r.tab[gateway_name]
+	gatewayID, found := r.tab[gatewayName]
 	r.lock.Unlock()
 	if found {
-		return gateway_id, nil
+		return gatewayID, nil
 	}
 	return "", errRepositoryGatewayNotFound
 }
 
-func (r *repoMem) put(gateway_name, gateway_id string) error {
+func (r *repoMem) put(gatewayName, gatewayID string) error {
 	r.lock.Lock()
-	r.tab[gateway_name] = gateway_id
+	r.tab[gatewayName] = gatewayID
 	r.lock.Unlock()
 	return nil
 }

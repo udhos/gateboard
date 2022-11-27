@@ -1,3 +1,6 @@
+/*
+This is the main package for gateboard service.
+*/
 package main
 
 import (
@@ -146,7 +149,7 @@ func main() {
 	//
 
 	app.serverMain = newServerGin(applicationAddr)
-	app.serverMain.router.Use(metrics.MetricsMiddleware())
+	app.serverMain.router.Use(metrics.Middleware())
 	app.serverMain.router.Use(gin.Logger())
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
 

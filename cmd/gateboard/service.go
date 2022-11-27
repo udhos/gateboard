@@ -32,7 +32,7 @@ func gatewayGet(c *gin.Context, app *application) {
 	// retrieve gateway_id
 	//
 
-	gateway_id, errID := app.repo.get(gatewayName)
+	gatewayID, errID := app.repo.get(gatewayName)
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:
@@ -47,7 +47,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		return
 	}
 
-	out.GatewayID = gateway_id
+	out.GatewayID = gatewayID
 
 	c.JSON(http.StatusOK, out)
 }

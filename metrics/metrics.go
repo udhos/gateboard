@@ -1,3 +1,6 @@
+/*
+Package metrics provides utilities for exposing prometheus metrics.
+*/
 package metrics
 
 import (
@@ -23,7 +26,8 @@ var (
 	}, dimensionsSpring)
 )
 
-func MetricsMiddleware() gin.HandlerFunc {
+// Middleware provides a gin middleware for exposing prometheus metrics.
+func Middleware() gin.HandlerFunc {
 	return handlerMetrics
 }
 

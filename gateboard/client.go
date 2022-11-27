@@ -1,3 +1,6 @@
+/*
+Package gateboard provides library for clients.
+*/
 package gateboard
 
 import (
@@ -13,6 +16,7 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// Client holds context for a gateboard client.
 type Client struct {
 	options ClientOptions
 	cache   map[string]gatewayEntry
@@ -20,6 +24,7 @@ type Client struct {
 	lock sync.Mutex
 }
 
+// DefaultCacheTTL is the default cache TTL.
 const DefaultCacheTTL = 60 * time.Second
 
 type gatewayEntry struct {
@@ -27,12 +32,14 @@ type gatewayEntry struct {
 	creation  time.Time
 }
 
+// ClientOptions defines options for the client.
 type ClientOptions struct {
 	ServerURL   string // main centralized server
 	FallbackURL string // local fallback server (data cached from main server)
 	TTL         time.Duration
 }
 
+// NewClient creates a new gateboard client.
 func NewClient(options ClientOptions) *Client {
 	if options.TTL == 0 {
 		options.TTL = DefaultCacheTTL
@@ -44,6 +51,7 @@ func NewClient(options ClientOptions) *Client {
 	}
 }
 
+// BodyGetReply defines the payload format for a GET request.
 type BodyGetReply struct {
 	GatewayName string `json:"gateway_name"    yaml:"gateway_name"`
 	GatewayID   string `json:"gateway_id"      yaml:"gateway_id"`
@@ -128,6 +136,8 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 }
 */
 
+// GatewayID retrieves the gateway ID for a `gatewayName` from local fast cache.
+// If the result is an empty string, the method `Refresh()` should be called to asynchronously update the cache.
 func (c *Client) GatewayID(gatewayName string) string {
 	const me = "gateboard.Client.GatewayID"
 
@@ -273,10 +283,12 @@ func toJSON(v interface{}) string {
 	return string(b)
 }
 
+// BodyPutRequest defines the payload format for a PUT request.
 type BodyPutRequest struct {
 	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
 }
 
+// BodyPutReply defines the payload format for a PUT response.
 type BodyPutReply struct {
 	GatewayName string `json:"gateway_name"`
 	GatewayID   string `json:"gateway_id"`

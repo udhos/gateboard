@@ -1,3 +1,6 @@
+/*
+This is the main package for the example client.
+*/
 package main
 
 import (
@@ -94,7 +97,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 	log.Printf("%s: mockAwsApiGatewayCall: gateway_name=%s gateway_id=%s",
 		me, gatewayName, gatewayID)
 
-	status, body := mockAwsApiGatewayCall(gatewayID)
+	status, body := mockAwsAPIGatewayCall(gatewayID)
 	if status == 403 {
 		log.Printf("%s: mockAwsApiGatewayCall: gateway_name=%s gateway_id=%s status=%d starting Refresh() async update",
 			me, gatewayName, gatewayID, status)
@@ -105,8 +108,8 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 	return status, body
 }
 
-func mockAwsApiGatewayCall(gatewayID string) (int, string) {
-	const me = "mockAwsApiGatewayCall"
+func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
+	const me = "mockAwsAPIGatewayCall"
 	filename := "samples/http_mock.yaml"
 	data, errFile := os.ReadFile(filename)
 	if errFile != nil {
