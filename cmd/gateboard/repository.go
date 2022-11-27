@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,6 +38,9 @@ func newRepoMem() *repoMem {
 }
 
 func (r *repoMem) get(gatewayName string) (string, error) {
+	if strings.TrimSpace(gatewayName) == "" {
+		return "", fmt.Errorf("repoMem.put: bad gateway name: '%s'", gatewayName)
+	}
 	r.lock.Lock()
 	gatewayID, found := r.tab[gatewayName]
 	r.lock.Unlock()
@@ -46,6 +51,12 @@ func (r *repoMem) get(gatewayName string) (string, error) {
 }
 
 func (r *repoMem) put(gatewayName, gatewayID string) error {
+	if strings.TrimSpace(gatewayName) == "" {
+		return fmt.Errorf("repoMem.put: bad gateway name: '%s'", gatewayName)
+	}
+	if strings.TrimSpace(gatewayID) == "" {
+		return fmt.Errorf("repoMem.put: bad gateway id: '%s'", gatewayID)
+	}
 	r.lock.Lock()
 	r.tab[gatewayName] = gatewayID
 	r.lock.Unlock()
@@ -117,6 +128,10 @@ func (r *repoMongo) get(gatewayName string) (string, error) {
 
 	const me = "repoMongo.get"
 
+	if strings.TrimSpace(gatewayName) == "" {
+		return "", fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	}
+
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
 	var result map[string]interface{}
@@ -148,6 +163,13 @@ func (r *repoMongo) get(gatewayName string) (string, error) {
 func (r *repoMongo) put(gatewayName, gatewayID string) error {
 
 	const me = "repoMongo.get"
+
+	if strings.TrimSpace(gatewayName) == "" {
+		return fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	}
+	if strings.TrimSpace(gatewayID) == "" {
+		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
+	}
 
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 

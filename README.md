@@ -12,6 +12,33 @@
 - [ ] Tracing
 - [ ] Benchmark
 
+## Testing repository mongo
+
+Start mongodb:
+
+```bash
+docker run --rm --name mongo-main -p 27017:27017 -d mongo
+gateboard
+```
+
+Drop existing test database, if any:
+
+```bash
+mongo
+> use gateboard_test
+switched to db gateboard_test
+> db.dropDatabase()
+```
+
+Run repository tests:
+
+```bash
+export TEST_REPO_MONGO=true ;# enable mongodb tests
+go test -count=1 -run TestRepository ./cmd/gateboard
+```
+
+If you want to rerun the mongodb tests, do not forget to drop the test database beforehand.
+
 ## Running both servers on same host
 
 Main:
