@@ -41,12 +41,13 @@ func testRepo(t *testing.T, r repository) {
 	queryExpectError(t, r, "XXX")      // should not find non-existing key
 	save(t, r, "", "XXX", expectError) // should not insert empty key
 	save(t, r, "gw1", "", expectError) // should not insert empty value
+	save(t, r, "", "", expectError)    // should not insert all empty
 
 	queryExpectError(t, r, "gw1")      // gw1 does not exist yet
 	save(t, r, "gw1", "id1", expectOk) // insert key
 	queryExpectID(t, r, "gw1", "id1")  // should find inserted key
 
-	save(t, r, "gw1", "id2", expectOk) // udpate key
+	save(t, r, "gw1", "id2", expectOk) // update key
 	queryExpectID(t, r, "gw1", "id2")  // should find updated key
 }
 
