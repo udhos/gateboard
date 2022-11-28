@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,21 +10,44 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/gateboard"
+	"go.opentelemetry.io/otel/trace"
 	yaml "gopkg.in/yaml.v3"
 )
+
+func getTrace(caller string, c *gin.Context, app *application) (context.Context, trace.Span) {
+	ctx := c.Request.Context()
+	if app.tracer == nil {
+		return ctx, nil
+	}
+	newCtx, span := app.tracer.Start(ctx, caller)
+	return newCtx, span
+}
+
+func getTraceID(span trace.Span) string {
+	if span == nil {
+		return "tracing-disabled"
+	}
+	return span.SpanContext().TraceID().String()
+}
 
 func gatewayGet(c *gin.Context, app *application) {
 	const me = "gatewayGet"
 
-	ctx := c.Request.Context()
-	_, span := app.tracer.Start(ctx, me)
-	defer span.End()
+	/*
+		ctx := c.Request.Context()
+		_, span := app.tracer.Start(ctx, me)
+		defer span.End()
+	*/
+	_, span := getTrace(me, c, app)
+	if span != nil {
+		defer span.End()
+	}
 
-	log.Printf("traceID=%s", span.SpanContext().TraceID())
+	log.Printf("traceID=%s", getTraceID(span))
 
 	gatewayName := c.Param("gateway_name")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, span.SpanContext().TraceID(), gatewayName)
+	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
 
 	var out gateboard.BodyGetReply
 	out.GatewayName = gatewayName
@@ -55,15 +79,21 @@ func gatewayGet(c *gin.Context, app *application) {
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
-	ctx := c.Request.Context()
-	_, span := app.tracer.Start(ctx, me)
-	defer span.End()
+	/*
+		ctx := c.Request.Context()
+		_, span := app.tracer.Start(ctx, me)
+		defer span.End()
+	*/
+	_, span := getTrace(me, c, app)
+	if span != nil {
+		defer span.End()
+	}
 
-	log.Printf("%s: traceID=%s", me, span.SpanContext().TraceID())
+	log.Printf("%s: traceID=%s", me, getTraceID(span))
 
 	gatewayName := c.Param("gateway_name")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, span.SpanContext().TraceID(), gatewayName)
+	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
 
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
@@ -82,7 +112,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		return
 	}
 
-	log.Printf("%s: traceID=%s gateway_name=%s body:%v", me, span.SpanContext().TraceID(), gatewayName, toJSON(in))
+	log.Printf("%s: traceID=%s gateway_name=%s body:%v", me, getTraceID(span), gatewayName, toJSON(in))
 
 	out.GatewayID = in.GatewayID
 

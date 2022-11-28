@@ -145,18 +145,9 @@ func main() {
 	}
 
 	//
-	// register application routes
+	// init application
 	//
-
-	app.serverMain = newServerGin(applicationAddr)
-	app.serverMain.router.Use(metrics.Middleware())
-	app.serverMain.router.Use(gin.Logger())
-	app.serverMain.router.Use(otelgin.Middleware(app.me))
-
-	const pathGateway = "/gateway/:gateway_name"
-	log.Printf("registering route: %s %s", applicationAddr, pathGateway)
-	app.serverMain.router.GET(pathGateway, func(c *gin.Context) { gatewayGet(c, app) })
-	app.serverMain.router.PUT(pathGateway, func(c *gin.Context) { gatewayPut(c, app) })
+	initApplication(app, applicationAddr)
 
 	//
 	// start application server
@@ -206,6 +197,22 @@ func main() {
 	//
 
 	shutdown(app)
+}
+
+func initApplication(app *application, addr string) {
+	//
+	// register application routes
+	//
+
+	app.serverMain = newServerGin(addr)
+	app.serverMain.router.Use(metrics.Middleware())
+	app.serverMain.router.Use(gin.Logger())
+	app.serverMain.router.Use(otelgin.Middleware(app.me))
+
+	const pathGateway = "/gateway/:gateway_name"
+	log.Printf("registering route: %s %s", addr, pathGateway)
+	app.serverMain.router.GET(pathGateway, func(c *gin.Context) { gatewayGet(c, app) })
+	app.serverMain.router.PUT(pathGateway, func(c *gin.Context) { gatewayPut(c, app) })
 }
 
 func shutdown(app *application) {

@@ -6,7 +6,10 @@
 - [X] Client with async update
 - [X] Create mongodb index on startup
 - [ ] Define TTL on server record (60s), restrict acceptable TTL range on client (60s..600s)
-- [ ] Tests
+- [X] Repository tests
+- [X] HTTP server tests
+- [ ] SQS tests
+- [ ] Client tests
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
