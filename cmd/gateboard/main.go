@@ -36,7 +36,8 @@ type application struct {
 	me            string
 	tracer        trace.Tracer
 	repo          repository
-	sqsClient     clientConfig
+	//sqsClient     clientConfig
+	sqsClient queue
 }
 
 func getVersion(me string) string {

@@ -8,7 +8,7 @@
 - [ ] Define TTL on server record (60s), restrict acceptable TTL range on client (60s..600s)
 - [X] Repository tests
 - [X] HTTP server tests
-- [ ] SQS tests
+- [X] SQS tests
 - [ ] Client tests
 - [ ] Zap logging
 - [ ] Metrics

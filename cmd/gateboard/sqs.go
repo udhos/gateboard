@@ -22,15 +22,47 @@ type clientConfig struct {
 	queueURL string
 }
 
-func initClient(caller, queueURL, roleArn, roleSessionName string) clientConfig {
+func (q *clientConfig) receive() ([]queueMessage, error) {
 
-	var c clientConfig
+	const me = "clientConfig.receive"
+
+	const waitTimeSeconds = 20 // 0..20
+
+	input := &sqs.ReceiveMessageInput{
+		QueueUrl: &q.queueURL,
+		AttributeNames: []types.QueueAttributeName{
+			"SentTimestamp",
+		},
+		MaxNumberOfMessages: 10, // 1..10
+		MessageAttributeNames: []string{
+			"All",
+		},
+		WaitTimeSeconds: waitTimeSeconds,
+	}
+
+	resp, errRecv := q.sqs.ReceiveMessage(context.TODO(), input)
+	if errRecv != nil {
+		log.Printf("%s: ReceiveMessage: error: %v", me, errRecv)
+		return nil, errRecv
+	}
+
+	messages := make([]queueMessage, 0, len(resp.Messages))
+	for _, m := range resp.Messages {
+		messages = append(messages, &sqsMessage{message: m})
+	}
+
+	return messages, nil
+}
+
+func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig {
+
+	//var c clientConfig
 
 	region, errRegion := getRegion(queueURL)
 	if errRegion != nil {
 		log.Fatalf("%s initClient: error: %v", caller, errRegion)
 		os.Exit(1)
-		return c
+		return nil
 	}
 
 	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
@@ -38,7 +70,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) clientConfig 
 	if errConfig != nil {
 		log.Fatalf("%s initClient: error: %v", caller, errConfig)
 		os.Exit(1)
-		return c
+		return nil
 	}
 
 	if roleArn != "" {
@@ -62,7 +94,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) clientConfig 
 		if errConfig2 != nil {
 			log.Fatalf("%s initClient: AssumeRole %s: error: %v", caller, roleArn, errConfig2)
 			os.Exit(1)
-			return c
+			return nil
 
 		}
 		cfg = cfg2
@@ -80,12 +112,12 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) clientConfig 
 		}
 	}
 
-	c = clientConfig{
+	c := clientConfig{
 		sqs:      sqs.NewFromConfig(cfg),
 		queueURL: queueURL,
 	}
 
-	return c
+	return &c
 }
 
 // https://sqs.us-east-1.amazonaws.com/123456789012/myqueue
@@ -101,65 +133,77 @@ func getRegion(queueURL string) (string, error) {
 
 func sqsListener(app *application) {
 	const me = "sqsListener"
-	const waitTimeSeconds = 20 // 0..20
+	//const waitTimeSeconds = 20 // 0..20
 	const errorCooldown = time.Second * 10
 
 	for {
-		input := &sqs.ReceiveMessageInput{
-			QueueUrl: &app.sqsClient.queueURL,
-			AttributeNames: []types.QueueAttributeName{
-				"SentTimestamp",
-			},
-			MaxNumberOfMessages: 10, // 1..10
-			MessageAttributeNames: []string{
-				"All",
-			},
-			WaitTimeSeconds: waitTimeSeconds,
-		}
+		/*
+			input := &sqs.ReceiveMessageInput{
+				QueueUrl: &app.sqsClient.queueURL,
+				AttributeNames: []types.QueueAttributeName{
+					"SentTimestamp",
+				},
+				MaxNumberOfMessages: 10, // 1..10
+				MessageAttributeNames: []string{
+					"All",
+				},
+				WaitTimeSeconds: waitTimeSeconds,
+			}
 
-		resp, errRecv := app.sqsClient.sqs.ReceiveMessage(context.TODO(), input)
+			resp, errRecv := app.sqsClient.sqs.ReceiveMessage(context.TODO(), input)
+			if errRecv != nil {
+				log.Printf("%s: ReceiveMessage: error: %v", me, errRecv)
+				time.Sleep(errorCooldown)
+				continue
+			}
+
+			count := len(resp.Messages)
+		*/
+
+		messages, errRecv := app.sqsClient.receive()
 		if errRecv != nil {
-			log.Printf("%s: ReceiveMessage: error: %v", me, errRecv)
+			log.Printf("%s: receive: error: %v", me, errRecv)
 			time.Sleep(errorCooldown)
 			continue
 		}
+		count := len(messages)
 
-		count := len(resp.Messages)
-
-		for i, msg := range resp.Messages {
-			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, *msg.MessageId, *msg.Body)
+		//for i, msg := range resp.Messages {
+		for i, msg := range messages {
+			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, msg.id(), msg.body())
 
 			var put sqsPut
 
-			errYaml := yaml.Unmarshal([]byte(*msg.Body), &put)
+			errYaml := yaml.Unmarshal([]byte(msg.body()), &put)
 			if errYaml != nil {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s yaml error: %v",
-					me, put.GatewayName, put.GatewayID, *msg.MessageId, errYaml)
+					me, put.GatewayName, put.GatewayID, msg.id(), errYaml)
 				continue
 			}
 
 			put.GatewayName = strings.TrimSpace(put.GatewayName)
 			if put.GatewayName == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name",
-					me, put.GatewayName, *msg.MessageId, put.GatewayID)
+					me, put.GatewayName, msg.id(), put.GatewayID)
 				continue
 			}
 
 			put.GatewayID = strings.TrimSpace(put.GatewayID)
 			if put.GatewayID == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
-					me, put.GatewayName, *msg.MessageId, put.GatewayID)
+					me, put.GatewayName, msg.id(), put.GatewayID)
 				continue
 			}
 
 			errPut := app.repo.put(put.GatewayName, put.GatewayID)
 			if errPut != nil {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
-					me, put.GatewayName, put.GatewayID, *msg.MessageId, errPut)
+					me, put.GatewayName, put.GatewayID, msg.id(), errPut)
 				continue
 			}
 
-			sqsDeleteMessage(app, msg)
+			//sqsDeleteMessage(app, msg)
+			app.sqsClient.deleteMessage(msg)
 		}
 	}
 }
@@ -169,6 +213,7 @@ type sqsPut struct {
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
 }
 
+/*
 func sqsDeleteMessage(app *application, m types.Message) {
 	const me = "sqsDeleteMessage"
 
@@ -181,4 +226,23 @@ func sqsDeleteMessage(app *application, m types.Message) {
 	if errDelete != nil {
 		log.Printf("%s: MessageId: %s - DeleteMessage: error: %v", me, *m.MessageId, errDelete)
 	}
+}
+*/
+
+func (q *clientConfig) deleteMessage(m queueMessage) error {
+	const me = "clientConfig.deleteMessage"
+
+	msg := m.(*sqsMessage)
+
+	inputDelete := &sqs.DeleteMessageInput{
+		QueueUrl:      &q.queueURL,
+		ReceiptHandle: msg.message.ReceiptHandle,
+	}
+
+	_, errDelete := q.sqs.DeleteMessage(context.TODO(), inputDelete)
+	if errDelete != nil {
+		log.Printf("%s: MessageId: %s - DeleteMessage: error: %v", me, m.id(), errDelete)
+	}
+
+	return errDelete
 }
