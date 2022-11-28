@@ -83,7 +83,7 @@ func main() {
 			app.repo, errMongo = newRepoMongo(repoMongoOptions{
 				debug:      debug,
 				URI:        env.String("MONGO_URL", "mongodb://localhost:27017"),
-				database:   "gateboard",
+				database:   env.String("MONGO_DATABASE", "gateboard"),
 				collection: env.String("MONGO_COLLECTION", "gateboard"),
 				timeout:    time.Second * 10,
 			})
