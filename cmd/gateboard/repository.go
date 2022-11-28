@@ -39,7 +39,7 @@ func newRepoMem() *repoMem {
 
 func (r *repoMem) get(gatewayName string) (string, error) {
 	if strings.TrimSpace(gatewayName) == "" {
-		return "", fmt.Errorf("repoMem.put: bad gateway name: '%s'", gatewayName)
+		return "", fmt.Errorf("repoMem.get: bad gateway name: '%s'", gatewayName)
 	}
 	r.lock.Lock()
 	gatewayID, found := r.tab[gatewayName]
@@ -168,7 +168,7 @@ func (r *repoMongo) get(gatewayName string) (string, error) {
 
 func (r *repoMongo) put(gatewayName, gatewayID string) error {
 
-	const me = "repoMongo.get"
+	const me = "repoMongo.put"
 
 	if strings.TrimSpace(gatewayName) == "" {
 		return fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)

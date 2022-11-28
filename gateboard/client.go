@@ -97,7 +97,9 @@ func (c *Client) GatewayID(gatewayName string) (string, error) {
 		gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
-			c.saveFallback(gatewayName, gatewayID)
+                        if c.options.FallbackURL != "" {
+			        c.saveFallback(gatewayName, gatewayID)
+                        }
 			log.Printf("%s: name=%s id=%s from server", me, gatewayName, gatewayID)
 			return gatewayID, nil
 		}
