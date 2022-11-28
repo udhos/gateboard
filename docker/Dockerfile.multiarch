@@ -1,0 +1,37 @@
+# STEP 1 build executable binary
+
+#FROM golang:alpine as builder
+FROM golang:1.19.3-alpine3.16 as builder
+
+RUN apk update
+RUN apk add git
+
+# Create appuser on builder image
+RUN adduser -D -g '' appuser
+
+COPY ./cmd/ /tmp/app/cmd
+COPY ./env/ /tmp/app/env
+COPY ./gateboard/ /tmp/app/gateboard
+COPY ./metrics/ /tmp/app/metrics
+COPY ./tracing/ /tmp/app/tracing
+COPY go.* /tmp/app/
+WORKDIR /tmp/app/
+RUN go mod tidy
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
+#build the binary
+RUN go env -w GOARCH=$(echo $TARGETPLATFORM | cut -f2 -d/)
+RUN CGO_ENABLED=0 GOOS=linux go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gateboard
+
+#
+# STEP 2 build a small image from alpine
+#
+FROM alpine:3.16
+COPY --from=builder /tmp/gateboard /bin/gateboard
+RUN apk add curl
+RUN adduser -D -g '' user
+USER user
+ENTRYPOINT ["/bin/gateboard"]

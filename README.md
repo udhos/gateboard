@@ -15,11 +15,13 @@
 - [X] Repository tests
 - [X] HTTP server tests
 - [X] SQS tests
+- [X] Docker image
 - [ ] Client tests
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
 - [ ] Benchmark
+- [ ] User guide
 
 ## Testing repository mongo
 
@@ -64,7 +66,6 @@ Run interactive client:
 gateboard-client-example
 ```
 
-
 ## Example
 
 ```bash
@@ -82,4 +83,28 @@ curl -X PUT -d '{"gateway_id":"id2"}' localhost:8080/gateway/gate1
 
 curl localhost:8080/gateway/gate1
 {"gateway_name":"gate1","gateway_id":"id2"}
+```
+
+## Docker
+
+Docker hub:
+
+https://hub.docker.com/r/udhos/gateboard
+
+Pull from docker hub:
+
+```
+docker pull udhos/gateboard:0.0.0
+```
+
+Build recipe:
+
+```
+./docker/build.sh
+```
+
+Multiarch build recipe:
+
+```
+./docker/build-multiarch.sh
 ```
