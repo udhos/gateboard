@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -18,6 +19,8 @@ import (
 )
 
 const version = "0.0.0"
+
+const tryAgain = http.StatusServiceUnavailable
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -83,7 +86,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 		gatewayID, err := client.GatewayID(gatewayName)
 		if err != nil {
 			log.Printf("gateway_name=%s error: %v", gatewayName, err)
-			return 500, "could not solve gateway name=>ID"
+			return tryAgain, "could not solve gateway name=>ID"
 		}
 	*/
 	gatewayID := client.GatewayID(gatewayName)
@@ -91,7 +94,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 		log.Printf("%s: GatewayID: gateway_name=%s starting Refresh() async update",
 			me, gatewayName)
 		client.Refresh(gatewayName, gatewayID) // async update
-		return 500, "missing gateway_id"
+		return tryAgain, "missing gateway_id"
 	}
 
 	log.Printf("%s: mockAwsApiGatewayCall: gateway_name=%s gateway_id=%s",
@@ -102,7 +105,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 		log.Printf("%s: mockAwsApiGatewayCall: gateway_name=%s gateway_id=%s status=%d starting Refresh() async update",
 			me, gatewayName, gatewayID, status)
 		client.Refresh(gatewayName, gatewayID) // async update
-		return 500, "refreshing gateway_id"
+		return tryAgain, "refreshing gateway_id"
 	}
 
 	return status, body
@@ -114,7 +117,7 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	data, errFile := os.ReadFile(filename)
 	if errFile != nil {
 		log.Printf("%s: %s: file error: %v", me, filename, errFile)
-		return 500, "bad file"
+		return tryAgain, "bad file"
 	}
 
 	type response struct {
@@ -127,7 +130,7 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	errYaml := yaml.Unmarshal(data, &table)
 	if errYaml != nil {
 		log.Printf("%s: %s: yaml error: %v", me, filename, errYaml)
-		return 500, "bad file yaml"
+		return tryAgain, "bad file yaml"
 	}
 
 	//log.Printf("%s: loaded %s: %s", me, filename, string(data))
@@ -138,5 +141,5 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	}
 
 	log.Printf("%s: %s: id not found: %s", me, filename, gatewayID)
-	return 500, "missing gateway id from file"
+	return tryAgain, "missing gateway id from file"
 }

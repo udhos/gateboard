@@ -58,6 +58,13 @@ export MONGO_URL=mongodb://localhost:27018 ;# main mongodb://localhost:27017
 gateboard
 ```
 
+Run interactive client:
+
+```bash
+gateboard-client-example
+```
+
+
 ## Example
 
 ```bash
