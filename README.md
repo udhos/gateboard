@@ -23,6 +23,14 @@
 - [ ] Benchmark
 - [ ] User guide
 
+## Build
+
+```bash
+git clone https://github.com/udhos/gateboard
+cd gateboard
+CGO_ENABLED=0 go install ./...
+```
+
 ## Testing repository mongo
 
 Start mongodb:
