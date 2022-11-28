@@ -21,6 +21,7 @@ import (
 const version = "0.0.0"
 
 const tryAgain = http.StatusServiceUnavailable
+const internalError = http.StatusInternalServerError
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -117,7 +118,7 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	data, errFile := os.ReadFile(filename)
 	if errFile != nil {
 		log.Printf("%s: %s: file error: %v", me, filename, errFile)
-		return tryAgain, "bad file"
+		return internalError, "bad file"
 	}
 
 	type response struct {
@@ -130,7 +131,7 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	errYaml := yaml.Unmarshal(data, &table)
 	if errYaml != nil {
 		log.Printf("%s: %s: yaml error: %v", me, filename, errYaml)
-		return tryAgain, "bad file yaml"
+		return internalError, "bad file yaml"
 	}
 
 	//log.Printf("%s: loaded %s: %s", me, filename, string(data))
@@ -141,5 +142,5 @@ func mockAwsAPIGatewayCall(gatewayID string) (int, string) {
 	}
 
 	log.Printf("%s: %s: id not found: %s", me, filename, gatewayID)
-	return tryAgain, "missing gateway id from file"
+	return internalError, "missing gateway id from file"
 }
