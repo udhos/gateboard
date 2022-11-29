@@ -114,11 +114,23 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 			}, Options: options.Index().SetUnique(true), // create UniqueIndex option
 		}
 
-		ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
-		defer cancel()
-		indexName, errCreate := collection.Indexes().CreateOne(ctxTimeout, model)
-		log.Printf("%s: create index for field=%s: index=%s: error: %v",
-			me, field, indexName, errCreate)
+		// withstand temporary errors (istio sidecar not ready)
+		const cooldown = 5 * time.Second
+		const retry = 10
+		for i := 1; i <= retry; i++ {
+			ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
+			defer cancel()
+			indexName, errCreate := collection.Indexes().CreateOne(ctxTimeout, model)
+			if errCreate != nil {
+				log.Printf("%s: attempt=%d/%d create index for field=%s: index=%s: error: %v, sleeping %v",
+					me, i, retry, field, indexName, errCreate, cooldown)
+				time.Sleep(cooldown)
+				continue
+			}
+			log.Printf("%s: attempt=%d/%d create index for field=%s: index=%s: success",
+				me, i, retry, field, indexName)
+			break
+		}
 	}
 
 	return r, nil
