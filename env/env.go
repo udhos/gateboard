@@ -56,3 +56,20 @@ func Duration(name string, defaultValue time.Duration) time.Duration {
 	log.Printf("%s=[%s] using %s=%v default=%v", name, str, name, defaultValue, defaultValue)
 	return defaultValue
 }
+
+// Int extracts int value from env var.
+// It returns the provided defaultValue if the env var is empty.
+// The value returned is also recorded in logs.
+func Int(name string, defaultValue int) int {
+	str := os.Getenv(name)
+	if str != "" {
+		value, errConv := strconv.Atoi(str)
+		if errConv == nil {
+			log.Printf("%s=[%s] using %s=%v default=%v", name, str, name, value, defaultValue)
+			return value
+		}
+		log.Printf("bad %s=[%s]: error: %v", name, str, errConv)
+	}
+	log.Printf("%s=[%s] using %s=%v default=%v", name, str, name, defaultValue, defaultValue)
+	return defaultValue
+}

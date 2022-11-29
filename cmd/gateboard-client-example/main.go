@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/udhos/gateboard/env"
 	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v3"
 )
@@ -49,6 +50,7 @@ func main() {
 	client := gateboard.NewClient(gateboard.ClientOptions{
 		ServerURL:   "http://localhost:8080/gateway",
 		FallbackURL: "http://localhost:8181/gateway",
+		Debug:       env.Bool("DEBUG", true),
 	})
 
 	/*

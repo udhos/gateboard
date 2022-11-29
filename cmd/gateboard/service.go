@@ -51,6 +51,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	var out gateboard.BodyGetReply
 	out.GatewayName = gatewayName
+	out.TTL = app.TTL
 
 	//
 	// retrieve gateway_id

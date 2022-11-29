@@ -37,6 +37,7 @@ type application struct {
 	tracer        trace.Tracer
 	repo          repository
 	sqsClient     queue
+	TTL           int
 }
 
 func getVersion(me string) string {
@@ -65,7 +66,8 @@ func main() {
 	queueURL := env.String("QUEUE_URL", "")
 
 	app := &application{
-		me: me,
+		me:  me,
+		TTL: env.Int("TTL", 120),
 	}
 
 	//

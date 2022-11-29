@@ -21,10 +21,16 @@ type Client struct {
 	options ClientOptions
 	cache   map[string]gatewayEntry
 	lock    sync.Mutex
+	TTL     time.Duration
 }
 
 // DefaultCacheTTL is the default cache TTL.
 const DefaultCacheTTL = 60 * time.Second
+const (
+	CacheTTLMin     = 60 * time.Second
+	CacheTTLMax     = 600 * time.Second
+	CacheTTLDefault = 300 * time.Second
+)
 
 type gatewayEntry struct {
 	gatewayID string
@@ -35,19 +41,54 @@ type gatewayEntry struct {
 type ClientOptions struct {
 	ServerURL   string // main centralized server
 	FallbackURL string // local fallback server (data cached from main server)
-	TTL         time.Duration
+	TTLMin      time.Duration
+	TTLMax      time.Duration
+	TTLDefault  time.Duration
+	Debug       bool
 }
 
 // NewClient creates a new gateboard client.
 func NewClient(options ClientOptions) *Client {
-	if options.TTL == 0 {
-		options.TTL = DefaultCacheTTL
+	if options.TTLMin == 0 {
+		options.TTLMin = CacheTTLMin
+	}
+	if options.TTLMax == 0 {
+		options.TTLMax = CacheTTLMax
+	}
+	if options.TTLDefault == 0 {
+		options.TTLDefault = CacheTTLDefault
 	}
 	return &Client{
 		options: options,
 		cache:   map[string]gatewayEntry{},
-		//cache: map[string]string{},
+		TTL:     options.TTLDefault,
 	}
+}
+
+func (c *Client) updateTTL(TTL int) {
+	if TTL < 1 {
+		return
+	}
+	t := time.Second * time.Duration(TTL)
+	switch {
+	case t < c.options.TTLMin:
+		t = c.options.TTLMin
+	case t > c.options.TTLMax:
+		t = c.options.TTLMax
+	}
+	if c.options.Debug {
+		log.Printf("updateTTL: arg TTL=%d, cache TTL=%v", TTL, t)
+	}
+	c.lock.Lock()
+	c.TTL = t
+	c.lock.Unlock()
+}
+
+func (c *Client) getTTL() time.Duration {
+	c.lock.Lock()
+	TTL := c.TTL
+	c.lock.Unlock()
+	return TTL
 }
 
 // BodyGetReply defines the payload format for a GET request.
@@ -55,6 +96,7 @@ type BodyGetReply struct {
 	GatewayName string `json:"gateway_name"    yaml:"gateway_name"`
 	GatewayID   string `json:"gateway_id"      yaml:"gateway_id"`
 	Error       string `json:"error,omitempty" yaml:"error,omitempty"`
+	TTL         int    `json:"TTL,omitempty"   yaml:"TTL,omitempty"`
 }
 
 func (c *Client) cacheGet(gatewayName string) (gatewayEntry, bool) {
@@ -82,8 +124,9 @@ func (c *Client) GatewayID(gatewayName string) string {
 		entry, found := c.cacheGet(gatewayName)
 		if found {
 			elap := time.Since(entry.creation)
-			if elap < c.options.TTL {
-				log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, c.options.TTL-elap)
+			TTL := c.getTTL()
+			if elap < TTL {
+				log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
 				return entry.gatewayID
 			}
 		}
@@ -127,7 +170,8 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 	// 1: query main server
 
 	{
-		gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
+		gatewayID, TTL := c.queryServer(c.options.ServerURL, gatewayName)
+		c.updateTTL(TTL)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
 			if c.options.FallbackURL != "" {
@@ -142,7 +186,7 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 	// 2: query local fallback repository, if any
 
 	if c.options.FallbackURL != "" {
-		gatewayID := c.queryServer(c.options.FallbackURL, gatewayName)
+		gatewayID, _ := c.queryServer(c.options.FallbackURL, gatewayName)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
 			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from repo",
@@ -154,19 +198,19 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 	log.Printf("%s: gateway_name=%s old_gateway_id=%s: failed to refresh", me, gatewayName, oldGatewayID)
 }
 
-func (c *Client) queryServer(URL, gatewayName string) string {
+func (c *Client) queryServer(URL, gatewayName string) (string, int) {
 	const me = "gateboard.Client.queryServer"
 
 	path, errPath := url.JoinPath(URL, gatewayName)
 	if errPath != nil {
 		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
-		return ""
+		return "", 0
 	}
 
 	resp, errGet := http.Get(path)
 	if errGet != nil {
 		log.Printf("%s: URL=%s server error: %v", me, path, errGet)
-		return ""
+		return "", 0
 	}
 
 	defer resp.Body.Close()
@@ -177,12 +221,12 @@ func (c *Client) queryServer(URL, gatewayName string) string {
 	errYaml := dec.Decode(&reply)
 	if errYaml != nil {
 		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
-		return ""
+		return "", 0
 	}
 
 	log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
 
-	return reply.GatewayID
+	return reply.GatewayID, reply.TTL
 }
 
 func toJSON(v interface{}) string {
