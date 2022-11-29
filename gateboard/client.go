@@ -226,7 +226,9 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 		gatewayID := c.queryServer(c.options.ServerURL, gatewayName)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
-			c.saveFallback(gatewayName, gatewayID)
+                        if c.options.FallbackURL != "" {
+			        c.saveFallback(gatewayName, gatewayID)
+                        }
 			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from server",
 				me, gatewayName, oldGatewayID, gatewayID)
 			return
