@@ -45,23 +45,21 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	log.Printf("traceID=%s", getTraceID(span))
 
-	gatewayName := c.Param("gateway_name")
-
-	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
-
-	var out gateboard.BodyGetReply
-	out.GatewayName = gatewayName
-	out.TTL = app.TTL
-
 	//
-	// retrieve gateway_id
+	// dump gateways
 	//
 
-	gatewayID, errID := app.repo.get(gatewayName)
+	type output struct {
+		Error string
+	}
+
+	var out output
+
+	dump, errID := app.repo.dump()
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:
-		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
+		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		log.Print(out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
@@ -72,9 +70,7 @@ func gatewayDump(c *gin.Context, app *application) {
 		return
 	}
 
-	out.GatewayID = gatewayID
-
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, dump)
 }
 
 func gatewayGet(c *gin.Context, app *application) {

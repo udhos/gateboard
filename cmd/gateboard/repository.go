@@ -17,6 +17,7 @@ import (
 type repository interface {
 	get(gatewayName string) (string, error)
 	put(gatewayName, gatewayID string) error
+	dump() ([]GatewayDump, error)
 }
 
 var (
@@ -35,6 +36,27 @@ type repoMem struct {
 
 func newRepoMem() *repoMem {
 	return &repoMem{tab: map[string]string{}}
+}
+
+type GatewayDump struct {
+	GatewayName string `json:"gateway_name" yaml:"gateway_name" bson:"gateway_name"`
+	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"   bson:"gateway_id"`
+}
+
+func (r *repoMem) dump() ([]GatewayDump, error) {
+	list := []GatewayDump{}
+	r.lock.Lock()
+
+	for name, id := range r.tab {
+		item := GatewayDump{
+			GatewayName: name,
+			GatewayID:   id,
+		}
+		list = append(list, item)
+	}
+
+	r.lock.Unlock()
+	return list, nil
 }
 
 func (r *repoMem) get(gatewayName string) (string, error) {
@@ -140,6 +162,39 @@ func (r *repoMongo) dropDatabase() error {
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 	defer cancel()
 	return r.client.Database(r.options.database).Drop(ctxTimeout)
+}
+
+func (r *repoMongo) dump() ([]GatewayDump, error) {
+	list := []GatewayDump{}
+
+	const me = "repoMongo.dump"
+
+	collection := r.client.Database(r.options.database).Collection(r.options.collection)
+
+	filter := bson.D{{}}
+	findOptions := options.Find()
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
+	defer cancel()
+	cursor, errFind := collection.Find(ctxTimeout, filter, findOptions)
+
+	if errFind != nil {
+		log.Printf("%s: dump find error: %v", me, errFind)
+		return list, errFind
+	}
+
+	ctxTimeout2, cancel2 := context.WithTimeout(context.Background(), r.options.timeout)
+	defer cancel2()
+	errAll := cursor.All(ctxTimeout2, &list)
+
+	switch errAll {
+	case mongo.ErrNoDocuments:
+		return list, errRepositoryGatewayNotFound
+	case nil:
+		return list, nil
+	}
+
+	log.Printf("%s: dump cursor error: %v", me, errAll)
+	return list, errAll
 }
 
 func (r *repoMongo) get(gatewayName string) (string, error) {
