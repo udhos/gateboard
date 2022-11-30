@@ -24,7 +24,7 @@ const (
 )
 
 var testTable = []testCase{
-	{"GET empty gateway", "GET", "/gateway/", "", 404, expectAnyID},
+	{"GET empty gateway", "GET", "/gateway/", "", 400, expectAnyID},
 	{"GET non-existing gateway", "GET", "/gateway/gw1", "", 404, expectAnyID},
 	{"PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1"}`, 200, "id1"},
 	{"GET existing gateway", "GET", "/gateway/gw1", "", 200, "id1"},

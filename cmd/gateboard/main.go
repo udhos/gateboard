@@ -211,10 +211,11 @@ func initApplication(app *application, addr string) {
 	app.serverMain.router.Use(gin.Logger())
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
 
-	const pathGateway = "/gateway/:gateway_name"
+	const pathGateway = "/gateway/*gateway_name"
 	log.Printf("registering route: %s %s", addr, pathGateway)
 	app.serverMain.router.GET(pathGateway, func(c *gin.Context) { gatewayGet(c, app) })
 	app.serverMain.router.PUT(pathGateway, func(c *gin.Context) { gatewayPut(c, app) })
+	app.serverMain.router.GET("/dump", func(c *gin.Context) { gatewayDump(c, app) })
 }
 
 func shutdown(app *application) {

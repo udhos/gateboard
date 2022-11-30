@@ -30,8 +30,8 @@ func getTraceID(span trace.Span) string {
 	return span.SpanContext().TraceID().String()
 }
 
-func gatewayGet(c *gin.Context, app *application) {
-	const me = "gatewayGet"
+func gatewayDump(c *gin.Context, app *application) {
+	const me = "gatewayDump"
 
 	/*
 		ctx := c.Request.Context()
@@ -77,6 +77,60 @@ func gatewayGet(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, out)
 }
 
+func gatewayGet(c *gin.Context, app *application) {
+	const me = "gatewayGet"
+
+	/*
+		ctx := c.Request.Context()
+		_, span := app.tracer.Start(ctx, me)
+		defer span.End()
+	*/
+	_, span := getTrace(me, c, app)
+	if span != nil {
+		defer span.End()
+	}
+
+	log.Printf("traceID=%s", getTraceID(span))
+
+	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
+
+	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
+
+	var out gateboard.BodyGetReply
+	out.GatewayName = gatewayName
+	out.TTL = app.TTL
+
+	if strings.TrimSpace(gatewayName) == "" {
+		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
+		log.Print(out.Error)
+		c.JSON(http.StatusBadRequest, out)
+		return
+	}
+
+	//
+	// retrieve gateway_id
+	//
+
+	gatewayID, errID := app.repo.get(gatewayName)
+	switch errID {
+	case nil:
+	case errRepositoryGatewayNotFound:
+		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
+		log.Print(out.Error)
+		c.JSON(http.StatusNotFound, out)
+		return
+	default:
+		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
+		log.Print(out.Error)
+		c.JSON(http.StatusInternalServerError, out)
+		return
+	}
+
+	out.GatewayID = gatewayID
+
+	c.JSON(http.StatusOK, out)
+}
+
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
@@ -92,12 +146,19 @@ func gatewayPut(c *gin.Context, app *application) {
 
 	log.Printf("%s: traceID=%s", me, getTraceID(span))
 
-	gatewayName := c.Param("gateway_name")
+	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
 	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
 
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
+
+	if strings.TrimSpace(gatewayName) == "" {
+		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
+		log.Print(out.Error)
+		c.JSON(http.StatusBadRequest, out)
+		return
+	}
 
 	//
 	// parse body to get gateway_id

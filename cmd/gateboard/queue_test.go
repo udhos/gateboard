@@ -21,7 +21,7 @@ type queueTestCase struct {
 }
 
 var queueTestTable = []queueTestCase{
-	{"empty gateway 1", `{}`, "/gateway/", 404, expectAnyID},
+	{"empty gateway 1", `{}`, "/gateway/", 400, expectAnyID},
 	{"empty gateway 2", `{}`, "/gateway/gw1", 404, expectAnyID},
 	{"empty gateway id 1", `{"gateway_name":"gw1"}`, "/gateway/gw1", 404, expectAnyID},
 	{"empty gateway id 2", `{"gateway_name":"gw1","gateway_id":""}`, "/gateway/gw1", 404, expectAnyID},
