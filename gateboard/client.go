@@ -24,12 +24,10 @@ type Client struct {
 	TTL     time.Duration
 }
 
-// DefaultCacheTTL is the default cache TTL.
-const DefaultCacheTTL = 60 * time.Second
 const (
-	CacheTTLMin     = 60 * time.Second
-	CacheTTLMax     = 600 * time.Second
-	CacheTTLDefault = 300 * time.Second
+	CacheTTLMinimum = 60 * time.Second  // CacheTTLMinimum defines min limit for TTL
+	CacheTTLMax     = 600 * time.Second // CacheTTLMax defines max limit for TTL
+	CacheTTLDefault = 300 * time.Second // CacheTTLDefault defines default value for TTL
 )
 
 type gatewayEntry struct {
@@ -50,7 +48,7 @@ type ClientOptions struct {
 // NewClient creates a new gateboard client.
 func NewClient(options ClientOptions) *Client {
 	if options.TTLMin == 0 {
-		options.TTLMin = CacheTTLMin
+		options.TTLMin = CacheTTLMinimum
 	}
 	if options.TTLMax == 0 {
 		options.TTLMax = CacheTTLMax

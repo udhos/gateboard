@@ -38,6 +38,7 @@ func newRepoMem() *repoMem {
 	return &repoMem{tab: map[string]string{}}
 }
 
+// GatewayDump defines a item type for exporting database.
 type GatewayDump struct {
 	GatewayName string `json:"gateway_name" yaml:"gateway_name" bson:"gateway_name"`
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"   bson:"gateway_id"`

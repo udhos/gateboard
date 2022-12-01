@@ -33,6 +33,9 @@ var testTable = []testCase{
 	{"PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2"}`, 200, "id2"},
 	{"GET updated gateway 2", "GET", "/gateway/gw1", "", 200, "id2"},
 	{"GET non-existing gateway 2", "GET", "/gateway/gw2", "", 404, expectAnyID},
+	{"GET non-existing gateway url-like", "GET", "/gateway/http://a:5555/b/c", "", 404, expectAnyID},
+	{"PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1"}`, 200, "id1"},
+	{"GET existing gateway url-like", "GET", "/gateway/http://a:5555/b/c", "", 200, "id1"},
 }
 
 // go test -v -run TestController ./cmd/gateboard

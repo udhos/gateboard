@@ -29,6 +29,7 @@ var queueTestTable = []queueTestCase{
 	{"non-existing id", `{"gateway_name":"gw1","gateway_id":"id1"}`, "/gateway/gw2", 404, expectAnyID},
 	{"valid gateway id 2", `{"gateway_name":"gw1","gateway_id":"id2"}`, "/gateway/gw1", 200, "id2"},
 	{"non-existing id 2", `{"gateway_name":"gw1","gateway_id":"id1"}`, "/gateway/gw2", 404, expectAnyID},
+	{"valid gateway url-like", `{"gateway_name":"http://a:5555/b/c","gateway_id":"id1"}`, "/gateway/http://a:5555/b/c", 200, "id1"},
 }
 
 // go test -run TestQueue ./cmd/gateboard
