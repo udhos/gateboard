@@ -37,12 +37,12 @@ type gatewayEntry struct {
 
 // ClientOptions defines options for the client.
 type ClientOptions struct {
-	ServerURL   string // main centralized server
-	FallbackURL string // local fallback server (data cached from main server)
-	TTLMin      time.Duration
-	TTLMax      time.Duration
-	TTLDefault  time.Duration
-	Debug       bool
+	ServerURL   string        // main centralized server
+	FallbackURL string        // local fallback server (data cached from main server)
+	TTLMin      time.Duration // if unspecified, defaults to CacheTTLMinimum
+	TTLMax      time.Duration // if unspecified, defaults to CacheTTLMax
+	TTLDefault  time.Duration // if unspecified, defaults to CacheTTLDefault
+	Debug       bool          // log debug information
 }
 
 // NewClient creates a new gateboard client.
