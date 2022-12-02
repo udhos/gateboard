@@ -137,29 +137,6 @@ func sqsListener(app *application) {
 	const errorCooldown = time.Second * 10
 
 	for {
-		/*
-			input := &sqs.ReceiveMessageInput{
-				QueueUrl: &app.sqsClient.queueURL,
-				AttributeNames: []types.QueueAttributeName{
-					"SentTimestamp",
-				},
-				MaxNumberOfMessages: 10, // 1..10
-				MessageAttributeNames: []string{
-					"All",
-				},
-				WaitTimeSeconds: waitTimeSeconds,
-			}
-
-			resp, errRecv := app.sqsClient.sqs.ReceiveMessage(context.TODO(), input)
-			if errRecv != nil {
-				log.Printf("%s: ReceiveMessage: error: %v", me, errRecv)
-				time.Sleep(errorCooldown)
-				continue
-			}
-
-			count := len(resp.Messages)
-		*/
-
 		messages, errRecv := app.sqsClient.receive()
 		if errRecv != nil {
 			log.Printf("%s: receive: error: %v", me, errRecv)
@@ -168,7 +145,6 @@ func sqsListener(app *application) {
 		}
 		count := len(messages)
 
-		//for i, msg := range resp.Messages {
 		for i, msg := range messages {
 			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, msg.id(), msg.body())
 
@@ -202,7 +178,6 @@ func sqsListener(app *application) {
 				continue
 			}
 
-			//sqsDeleteMessage(app, msg)
 			app.sqsClient.deleteMessage(msg)
 		}
 	}
@@ -212,22 +187,6 @@ type sqsPut struct {
 	GatewayName string `json:"gateway_name" yaml:"gateway_name"`
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
 }
-
-/*
-func sqsDeleteMessage(app *application, m types.Message) {
-	const me = "sqsDeleteMessage"
-
-	inputDelete := &sqs.DeleteMessageInput{
-		QueueUrl:      &app.sqsClient.queueURL,
-		ReceiptHandle: m.ReceiptHandle,
-	}
-
-	_, errDelete := app.sqsClient.sqs.DeleteMessage(context.TODO(), inputDelete)
-	if errDelete != nil {
-		log.Printf("%s: MessageId: %s - DeleteMessage: error: %v", me, *m.MessageId, errDelete)
-	}
-}
-*/
 
 func (q *clientConfig) deleteMessage(m queueMessage) error {
 	const me = "clientConfig.deleteMessage"

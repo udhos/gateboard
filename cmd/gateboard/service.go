@@ -33,11 +33,6 @@ func getTraceID(span trace.Span) string {
 func gatewayDump(c *gin.Context, app *application) {
 	const me = "gatewayDump"
 
-	/*
-		ctx := c.Request.Context()
-		_, span := app.tracer.Start(ctx, me)
-		defer span.End()
-	*/
 	_, span := getTrace(me, c, app)
 	if span != nil {
 		defer span.End()
@@ -76,11 +71,6 @@ func gatewayDump(c *gin.Context, app *application) {
 func gatewayGet(c *gin.Context, app *application) {
 	const me = "gatewayGet"
 
-	/*
-		ctx := c.Request.Context()
-		_, span := app.tracer.Start(ctx, me)
-		defer span.End()
-	*/
 	_, span := getTrace(me, c, app)
 	if span != nil {
 		defer span.End()
@@ -130,11 +120,6 @@ func gatewayGet(c *gin.Context, app *application) {
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
-	/*
-		ctx := c.Request.Context()
-		_, span := app.tracer.Start(ctx, me)
-		defer span.End()
-	*/
 	_, span := getTrace(me, c, app)
 	if span != nil {
 		defer span.End()

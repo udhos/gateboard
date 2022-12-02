@@ -53,16 +53,6 @@ func main() {
 		Debug:       env.Bool("DEBUG", true),
 	})
 
-	/*
-		const sleep = time.Second
-		for _, gatewayName := range flag.Args() {
-			status, body := incomingCall(client, gatewayName)
-			log.Printf("RESULT for incomingCall: gateway_name=%s status=%d body:%s sleeping %v",
-				gatewayName, status, body, sleep)
-			time.Sleep(sleep)
-		}
-	*/
-
 	log.Printf("reading gateway name from stdin...")
 	for {
 		reader := bufio.NewReader(os.Stdin)
@@ -85,13 +75,7 @@ func main() {
 
 func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 	const me = "incomingCall"
-	/*
-		gatewayID, err := client.GatewayID(gatewayName)
-		if err != nil {
-			log.Printf("gateway_name=%s error: %v", gatewayName, err)
-			return tryAgain, "could not solve gateway name=>ID"
-		}
-	*/
+
 	gatewayID := client.GatewayID(gatewayName)
 	if gatewayID == "" {
 		log.Printf("%s: GatewayID: gateway_name=%s starting Refresh() async update",

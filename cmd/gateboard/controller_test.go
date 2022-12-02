@@ -45,8 +45,6 @@ func TestController(t *testing.T) {
 
 	for _, data := range testTable {
 
-		//req, _ := http.NewRequest("GET", "/gateway/gw1", strings.NewReader(`{"id": "1","name": "joe"}`))
-		//req, _ := http.NewRequest("GET", "/gateway/gw1", nil)
 		req, _ := http.NewRequest(data.method, data.path, strings.NewReader(data.body))
 		w := httptest.NewRecorder()
 		app.serverMain.router.ServeHTTP(w, req)
