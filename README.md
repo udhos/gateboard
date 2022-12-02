@@ -16,7 +16,7 @@
 - [X] HTTP server tests
 - [X] SQS tests
 - [X] Docker image
-- [ ] Client tests
+- [X] Client tests
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
