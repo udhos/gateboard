@@ -1,5 +1,27 @@
 /*
 Package gateboard provides library for clients.
+
+# Recommended Flow
+
+This psedocode illustrates the recommended flow:
+
+```
+// invokeBackend calls a backend http endpoint at gatewayName:
+// client is created in an wider scope because it caches IDs.
+function invokeBackend(client, gatewayName) that
+ 1. get ID := client.GatewayID(gatewayName)
+ 2. if ID is "" {
+    client.Refresh(gatewayName)
+    return status code 503
+    }
+ 3. call the backend http endpoint with header "x-apigw-api-id: <id>"
+    if backend status code is 403 {
+    clientRefresh(gatewayName)
+    return status code 503
+    }
+ 4. return backend status code
+
+```
 */
 package gateboard
 
@@ -150,11 +172,13 @@ var jobIsRunning uint32
 
 var refreshing uint32
 
-// Refresh runs only one refreshJob() goroutine at a time.
-func (c *Client) Refresh(gatewayName, gatewayID string) {
+// Refresh spawns only one refreshJob() goroutine at a time.
+// The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieve from main server; failing that, will try the fallback server.
+// oldGatewayID is used only in debugging logs, it can be safely omitted with an empty string.
+func (c *Client) Refresh(gatewayName, oldGatewayID string) {
 	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
 		go func() {
-			c.refreshJob(gatewayName, gatewayID)
+			c.refreshJob(gatewayName, oldGatewayID)
 			atomic.StoreUint32(&refreshing, 0)
 		}()
 	}
