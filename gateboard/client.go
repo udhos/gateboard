@@ -1,28 +1,23 @@
-/*
-Package gateboard provides library for clients.
-
-# Recommended Flow
-
-This psedocode illustrates the recommended flow:
-
-```
-// invokeBackend calls a backend http endpoint at gatewayName:
-// client is created in an wider scope because it caches IDs.
-function invokeBackend(client, gatewayName) that
- 1. get ID := client.GatewayID(gatewayName)
- 2. if ID is "" {
-    client.Refresh(gatewayName)
-    return status code 503
-    }
- 3. call the backend http endpoint with header "x-apigw-api-id: <id>"
-    if backend status code is 403 {
-    clientRefresh(gatewayName)
-    return status code 503
-    }
- 4. return backend status code
-
-```
-*/
+// Package gateboard provides library for clients.
+//
+// # Recommended Usage
+//
+// This psedocode illustrates the recommended usage:
+//
+//	// invokeBackend calls a backend http endpoint for a gateway named 'gatewayName'.
+//	// 'client' is created in an wider scope because it caches IDs.
+//	function invokeBackend(client, gatewayName)
+//	1. get ID := client.GatewayID(gatewayName)
+//	2. if ID is "" {
+//	     client.Refresh(gatewayName)
+//	     return status code 503
+//	   }
+//	3. call the backend http endpoint with header "x-apigw-api-id: <id>"
+//	   if backend status code is 403 {
+//	     client.Refresh(gatewayName)
+//	     return status code 503
+//	   }
+//	4. return backend status code
 package gateboard
 
 import (
@@ -160,14 +155,14 @@ func (c *Client) GatewayID(gatewayName string) string {
 
 var jobIsRunning uint32
 
-	func maybeStartJob() {
-	    if atomic.CompareAndSwapUint32(&jobIsRunning, 0, 1) {
-	        go func() {
-	            theJob()
-	            atomic.StoreUint32(&jobIsRunning, 0)
-	        }()
-	    }
-	}
+    func maybeStartJob() {
+        if atomic.CompareAndSwapUint32(&jobIsRunning, 0, 1) {
+            go func() {
+                theJob()
+                atomic.StoreUint32(&jobIsRunning, 0)
+            }()
+        }
+    }
 */
 
 var refreshing uint32
