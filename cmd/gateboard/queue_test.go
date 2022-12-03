@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -32,6 +33,40 @@ var queueTestTable = []queueTestCase{
 	{"valid gateway url-like", `{"gateway_name":"http://a:5555/b/c","gateway_id":"id1"}`, "/gateway/http://a:5555/b/c", 200, "id1"},
 }
 
+// go test -run TestQueueSimple ./cmd/gateboard
+func TestQueueSimple(t *testing.T) {
+	q := &mockQueue{}
+
+	{
+		m := q.send(`{"gateway_name":"gw1","gateway_id":""}`)
+		if l := len(q.messages); l != 1 {
+			t.Errorf("expecting one message in queue, got: %d", l)
+		}
+		q.deleteMessage(m)
+		if l := len(q.messages); l != 0 {
+			t.Errorf("expecting empty queue, got: %d", l)
+		}
+	}
+
+	q.send(`{"gateway_name":"gw1","gateway_id":""}`)
+	if l := len(q.messages); l != 1 {
+		t.Errorf("expecting one message in queue, got: %d", l)
+	}
+	if visible := q.countVisible(); visible != 1 {
+		t.Errorf("expecting one visible messages, got: %d", visible)
+	}
+	list, errRecv := q.receive()
+	if errRecv != nil {
+		t.Errorf("receive error: %v", errRecv)
+	}
+	if l := len(list); l != 1 {
+		t.Errorf("expecting one message in queue, got: %d", l)
+	}
+	if visible := q.countVisible(); visible != 0 {
+		t.Errorf("expecting zero visible messages, got: %d", visible)
+	}
+}
+
 // go test -run TestQueue ./cmd/gateboard
 func TestQueue(t *testing.T) {
 	app := newTestApp()
@@ -48,8 +83,6 @@ func TestQueue(t *testing.T) {
 		req, _ := http.NewRequest("GET", data.path, strings.NewReader(data.body))
 		w := httptest.NewRecorder()
 		app.serverMain.router.ServeHTTP(w, req)
-
-		//q.deleteMessage(m) // delete message
 
 		t.Logf("path: %s", data.path)
 		t.Logf("status: %d", w.Code)
@@ -88,12 +121,43 @@ type mockQueue struct {
 	lock     sync.Mutex
 }
 
-func (q *mockQueue) receive() ([]queueMessage, error) {
+func (q *mockQueue) countVisible() int {
 	q.lock.Lock()
-	m := q.messages
-	q.messages = nil // auto delete
-	q.lock.Unlock()
-	return m, nil
+	defer q.lock.Unlock()
+	var count int
+
+	now := time.Now()
+
+	for _, m := range q.messages {
+		mm := m.(*mockMessage)
+		visible := mm.visible(now)
+		log.Printf("message:%v visible:%v", *mm, visible)
+		if visible {
+			count++
+		}
+	}
+
+	return count
+}
+
+func (q *mockQueue) receive() ([]queueMessage, error) {
+
+	const visibilityTimeout = 10 * time.Second
+	now := time.Now()
+	var result []queueMessage
+
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	for _, m := range q.messages {
+		mm := m.(*mockMessage)
+		if mm.visible(now) {
+			mm.invisibleUntil = now.Add(visibilityTimeout) // set invisibility for message
+			result = append(result, m)
+			continue
+		}
+	}
+	return result, nil
 }
 
 func (q *mockQueue) deleteMessage(old queueMessage) error {
@@ -121,8 +185,13 @@ func (q *mockQueue) send(body string) *mockMessage {
 }
 
 type mockMessage struct {
-	mID   string
-	mBody string
+	mID            string
+	mBody          string
+	invisibleUntil time.Time
+}
+
+func (m *mockMessage) visible(now time.Time) bool {
+	return m.invisibleUntil.IsZero() || m.invisibleUntil.Before(now)
 }
 
 func (m *mockMessage) id() string {
