@@ -2,7 +2,7 @@
 //
 // # Recommended Usage
 //
-// This psedocode illustrates the recommended usage:
+// This pseudocode illustrates the recommended usage:
 //
 //	// invokeBackend calls a backend http endpoint for a gateway named 'gatewayName'.
 //	// 'client' is created in an wider scope because it caches IDs.
@@ -168,7 +168,7 @@ var jobIsRunning uint32
 var refreshing uint32
 
 // Refresh spawns only one refreshJob() goroutine at a time.
-// The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieve from main server; failing that, will try the fallback server.
+// The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieved from main server; failing that, will try the fallback server.
 // oldGatewayID is used only in debugging logs, it can be safely omitted with an empty string.
 func (c *Client) Refresh(gatewayName, oldGatewayID string) {
 	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
