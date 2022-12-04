@@ -133,7 +133,6 @@ func getRegion(queueURL string) (string, error) {
 
 func sqsListener(app *application) {
 	const me = "sqsListener"
-	//const waitTimeSeconds = 20 // 0..20
 	const errorCooldown = time.Second * 10
 
 	for {
