@@ -80,7 +80,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 	if gatewayID == "" {
 		log.Printf("%s: GatewayID: gateway_name=%s starting Refresh() async update",
 			me, gatewayName)
-		client.Refresh(gatewayName, gatewayID) // async update
+		client.Refresh(gatewayName) // async update
 		return tryAgain, "missing gateway_id"
 	}
 
@@ -91,7 +91,7 @@ func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
 	if status == 403 {
 		log.Printf("%s: mockAwsApiGatewayCall: gateway_name=%s gateway_id=%s status=%d starting Refresh() async update",
 			me, gatewayName, gatewayID, status)
-		client.Refresh(gatewayName, gatewayID) // async update
+		client.Refresh(gatewayName) // async update
 		return tryAgain, "refreshing gateway_id"
 	}
 

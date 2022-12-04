@@ -164,7 +164,7 @@ func TestClient(t *testing.T) {
 		case operationPut:
 			dbMain[data.gatewayName] = data.expectedID
 		case operationRefresh:
-			client.Refresh(data.gatewayName, "")
+			client.Refresh(data.gatewayName)
 		case operationSleep100ms:
 			time.Sleep(100 * time.Millisecond)
 		case operationDeleteFromMain:

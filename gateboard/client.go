@@ -169,20 +169,21 @@ var refreshing uint32
 
 // Refresh spawns only one refreshJob() goroutine at a time.
 // The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieved from main server; failing that, will try the fallback server.
-// oldGatewayID is used only in debugging logs, it can be safely omitted with an empty string.
-func (c *Client) Refresh(gatewayName, oldGatewayID string) {
+func (c *Client) Refresh(gatewayName string) {
 	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
 		go func() {
-			c.refreshJob(gatewayName, oldGatewayID)
+			c.refreshJob(gatewayName)
 			atomic.StoreUint32(&refreshing, 0)
 		}()
 	}
 }
 
-func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
+func (c *Client) refreshJob(gatewayName string) {
 	const me = "refreshJob"
 
-	log.Printf("%s: gateway_name=%s old_gateway_id=%s", me, gatewayName, oldGatewayID)
+	if c.options.Debug {
+		log.Printf("%s: gateway_name=%s", me, gatewayName)
+	}
 
 	// 1: query main server
 
@@ -194,8 +195,10 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 			if c.options.FallbackURL != "" {
 				c.saveFallback(gatewayName, gatewayID)
 			}
-			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from server",
-				me, gatewayName, oldGatewayID, gatewayID)
+			if c.options.Debug {
+				log.Printf("%s: gateway_name=%s gateway_id=%s from server",
+					me, gatewayName, gatewayID)
+			}
 			return
 		}
 	}
@@ -206,13 +209,15 @@ func (c *Client) refreshJob(gatewayName, oldGatewayID string) {
 		gatewayID, _ := c.queryServer(c.options.FallbackURL, gatewayName)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
-			log.Printf("%s: gateway_name=%s old_gateway_id=%s new_gateway_id=%s from repo",
-				me, gatewayName, oldGatewayID, gatewayID)
+			if c.options.Debug {
+				log.Printf("%s: gateway_name=%s gateway_id=%s from repo",
+					me, gatewayName, gatewayID)
+			}
 			return
 		}
 	}
 
-	log.Printf("%s: gateway_name=%s old_gateway_id=%s: failed to refresh", me, gatewayName, oldGatewayID)
+	log.Printf("%s: gateway_name=%s: error: failed to refresh", me, gatewayName)
 }
 
 func (c *Client) queryServer(URL, gatewayName string) (string, int) {
