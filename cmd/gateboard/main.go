@@ -22,7 +22,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/udhos/gateboard/env"
 	"github.com/udhos/gateboard/metrics"
 	"github.com/udhos/gateboard/tracing"
 )
@@ -37,7 +36,7 @@ type application struct {
 	tracer        trace.Tracer
 	repo          repository
 	sqsClient     queue
-	TTL           int
+	config        appConfig
 }
 
 func getVersion(me string) string {
@@ -63,12 +62,12 @@ func main() {
 		log.Print(v)
 	}
 
-	queueURL := env.String("QUEUE_URL", "")
-
 	app := &application{
-		me:  me,
-		TTL: env.Int("TTL", 120),
+		me:     me,
+		config: newConfig(),
 	}
+
+	queueURL := app.config.queueURL
 
 	//
 	// pick repo type
@@ -77,15 +76,14 @@ func main() {
 	const debug = true
 
 	{
-		repoType := env.String("REPO", "mongo")
-		switch repoType {
+		switch app.config.repoType {
 		case "mongo":
 			var errMongo error
 			app.repo, errMongo = newRepoMongo(repoMongoOptions{
 				debug:      debug,
-				URI:        env.String("MONGO_URL", "mongodb://localhost:27017"),
-				database:   env.String("MONGO_DATABASE", "gateboard"),
-				collection: env.String("MONGO_COLLECTION", "gateboard"),
+				URI:        app.config.mongoURI,
+				database:   app.config.mongoDatabase,
+				collection: app.config.mongoCollection,
 				timeout:    time.Second * 10,
 			})
 			if errMongo != nil {
@@ -94,7 +92,7 @@ func main() {
 		case "mem":
 			app.repo = newRepoMem()
 		default:
-			log.Fatalf("unsuppported repo type: %s (supported types: mongo, mem)", repoType)
+			log.Fatalf("unsuppported repo type: %s (supported types: mongo, mem)", app.config.repoType)
 		}
 	}
 
@@ -103,23 +101,16 @@ func main() {
 	//
 
 	if queueURL != "" {
-		app.sqsClient = initClient("main", queueURL, env.String("ROLE_ARN", ""), me)
+		app.sqsClient = initClient("main", queueURL, app.config.sqsRoleARN, me)
 		go sqsListener(app)
 	}
-
-	applicationAddr := env.String("LISTEN_ADDR", ":8080")
-	healthAddr := env.String("HEALTH_ADDR", ":8888")
-	healthPath := env.String("HEALTH_PATH", "/health")
-	metricsAddr := env.String("METRICS_ADDR", ":3000")
-	metricsPath := env.String("METRICS_PATH", "/metrics")
-	jaegerURL := env.String("JAEGER_URL", "http://jaeger-collector:14268/api/traces")
 
 	//
 	// initialize tracing
 	//
 
 	{
-		tp, errTracer := tracing.TracerProvider(app.me, jaegerURL)
+		tp, errTracer := tracing.TracerProvider(app.me, app.config.jaegerURL)
 		if errTracer != nil {
 			log.Fatal(errTracer)
 		}
@@ -149,14 +140,14 @@ func main() {
 	//
 	// init application
 	//
-	initApplication(app, applicationAddr)
+	initApplication(app, app.config.applicationAddr)
 
 	//
 	// start application server
 	//
 
 	go func() {
-		log.Printf("application server: listening on %s", applicationAddr)
+		log.Printf("application server: listening on %s", app.config.applicationAddr)
 		err := app.serverMain.server.ListenAndServe()
 		log.Printf("application server: exited: %v", err)
 	}()
@@ -165,15 +156,15 @@ func main() {
 	// start health server
 	//
 
-	app.serverHealth = newServerGin(healthAddr)
+	app.serverHealth = newServerGin(app.config.healthAddr)
 
-	log.Printf("registering route: %s %s", healthAddr, healthPath)
-	app.serverHealth.router.GET(healthPath, func(c *gin.Context) {
+	log.Printf("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
+	app.serverHealth.router.GET(app.config.healthPath, func(c *gin.Context) {
 		c.String(http.StatusOK, "health ok")
 	})
 
 	go func() {
-		log.Printf("health server: listening on %s", healthAddr)
+		log.Printf("health server: listening on %s", app.config.healthAddr)
 		err := app.serverHealth.server.ListenAndServe()
 		log.Printf("health server: exited: %v", err)
 	}()
@@ -182,14 +173,14 @@ func main() {
 	// start metrics server
 	//
 
-	app.serverMetrics = newServerGin(metricsAddr)
+	app.serverMetrics = newServerGin(app.config.metricsAddr)
 
 	go func() {
 		prom := promhttp.Handler()
-		app.serverMetrics.router.GET(metricsPath, func(c *gin.Context) {
+		app.serverMetrics.router.GET(app.config.metricsPath, func(c *gin.Context) {
 			prom.ServeHTTP(c.Writer, c.Request)
 		})
-		log.Printf("metrics server: listening on %s %s", metricsAddr, metricsPath)
+		log.Printf("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
 		err := app.serverMetrics.server.ListenAndServe()
 		log.Printf("metrics server: exited: %v", err)
 	}()

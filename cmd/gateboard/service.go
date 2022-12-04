@@ -84,7 +84,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	var out gateboard.BodyGetReply
 	out.GatewayName = gatewayName
-	out.TTL = app.TTL
+	out.TTL = app.config.TTL
 
 	if strings.TrimSpace(gatewayName) == "" {
 		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)

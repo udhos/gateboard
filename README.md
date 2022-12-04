@@ -17,6 +17,7 @@
 - [X] SQS tests
 - [X] Docker image
 - [X] Client tests
+- [X] Refactor config
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
