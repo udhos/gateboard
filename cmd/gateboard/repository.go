@@ -17,7 +17,7 @@ import (
 type repository interface {
 	get(gatewayName string) (string, error)
 	put(gatewayName, gatewayID string) error
-	dump() ([]GatewayDump, error)
+	dump() ([]interface{}, error)
 }
 
 var (
@@ -44,8 +44,8 @@ type GatewayDump struct {
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"   bson:"gateway_id"`
 }
 
-func (r *repoMem) dump() ([]GatewayDump, error) {
-	list := []GatewayDump{}
+func (r *repoMem) dump() ([]interface{}, error) {
+	list := make([]interface{}, 0, len(r.tab))
 	r.lock.Lock()
 
 	for name, id := range r.tab {
@@ -165,8 +165,8 @@ func (r *repoMongo) dropDatabase() error {
 	return r.client.Database(r.options.database).Drop(ctxTimeout)
 }
 
-func (r *repoMongo) dump() ([]GatewayDump, error) {
-	list := []GatewayDump{}
+func (r *repoMongo) dump() ([]interface{}, error) {
+	list := []interface{}{}
 
 	const me = "repoMongo.dump"
 
