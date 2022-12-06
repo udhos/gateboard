@@ -66,21 +66,22 @@ func main() {
 			log.Printf("ignoring empty gateway name")
 			continue
 		}
-		status, body := incomingCall(client, gatewayName)
+		status, body := invokeBackend(client, gatewayName)
 		log.Printf("RESULT for incomingCall: gateway_name=%s status=%d body:%s",
 			gatewayName, status, body)
 		fmt.Println("------------------------------")
 	}
 }
 
-func incomingCall(client *gateboard.Client, gatewayName string) (int, string) {
-	const me = "incomingCall"
+// invokeBackend implements Recommended Usage from
+// https://pkg.go.dev/github.com/udhos/gateboard@main/gateboard#hdr-Recommended_Usage
+func invokeBackend(client *gateboard.Client, gatewayName string) (int, string) {
+	const me = "invokeBackend"
 
 	gatewayID := client.GatewayID(gatewayName)
 	if gatewayID == "" {
 		log.Printf("%s: GatewayID: gateway_name=%s starting Refresh() async update",
 			me, gatewayName)
-		client.Refresh(gatewayName) // async update
 		return tryAgain, "missing gateway_id"
 	}
 

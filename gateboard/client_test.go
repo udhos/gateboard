@@ -37,18 +37,18 @@ var testTable = []testCase{
 	{"1: non-existing gateway 1", operationQuery, "gateway1", ""},
 
 	{"2: put gateway", operationPut, "gateway1", "id1"},
-	{"2: existing gateway shold not be found before refresh+sleep", operationQuery, "gateway1", ""},
-	{"2: refresh", operationRefresh, "gateway1", ""},
-	{"2: existing gateway should not be found before sleep", operationQuery, "gateway1", ""},
-	{"2: sleep", operationSleep100ms, "gateway1", ""},
+	//{"2: existing gateway shold not be found before refresh+sleep", operationQuery, "gateway1", ""},
+	//{"2: refresh", operationRefresh, "gateway1", ""},
+	//{"2: existing gateway should not be found before sleep", operationQuery, "gateway1", ""},
+	//{"2: sleep", operationSleep100ms, "gateway1", ""},
 	{"2: existing gateway should be found", operationQuery, "gateway1", "id1"},
 
 	{"3: delete gateway from main", operationDeleteFromMain, "gateway1", ""},
 	{"3: find gateway from cache", operationQuery, "gateway1", "id1"},
 	{"3: expire gateway from cache", operationExpireFromCache, "gateway1", ""},
-	{"3: find gateway from fallback should fail before refresh", operationQuery, "gateway1", ""},
-	{"3: refresh", operationRefresh, "gateway1", ""},
-	{"3: sleep", operationSleep100ms, "gateway1", ""},
+	//{"3: find gateway from fallback should fail before refresh", operationQuery, "gateway1", ""},
+	//{"3: refresh", operationRefresh, "gateway1", ""},
+	//{"3: sleep", operationSleep100ms, "gateway1", ""},
 	{"3: find gateway from fallback after refresh", operationQuery, "gateway1", "id1"},
 }
 
@@ -158,7 +158,7 @@ func TestClient(t *testing.T) {
 		case operationQuery:
 			id := client.GatewayID(data.gatewayName)
 			if id != data.expectedID {
-				t.Errorf("%s: gateway=%s expectedID=[%s] foundID=[%s]",
+				t.Errorf("%s: query error: gateway=%s expectedID=[%s] foundID=[%s]",
 					data.name, data.gatewayName, data.expectedID, id)
 			}
 		case operationPut:

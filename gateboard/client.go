@@ -7,22 +7,22 @@
 //	// invokeBackend calls a backend http endpoint for a gateway named 'gatewayName'.
 //	// 'client' is created in an wider scope because it caches IDs.
 //	function invokeBackend(client, gatewayName)
-//	1. get ID := client.GatewayID(gatewayName)
-//	2. if ID is "" {
-//	     client.Refresh(gatewayName)
-//	     return status code 503
-//	   }
-//	3. call the backend http endpoint with header "x-apigw-api-id: <id>"
-//	   if backend status code is 403 {
-//	     client.Refresh(gatewayName)
-//	     return status code 503
-//	   }
-//	4. return backend status code
+//	    1. get ID := client.GatewayID(gatewayName)
+//	    2. if ID is "" {
+//	           return status code 503
+//	       }
+//	    3. call the backend http endpoint with header "x-apigw-api-id: <id>"
+//	       if backend status code is 403 {
+//	           client.Refresh(gatewayName)
+//	           return status code 503
+//	       }
+//	    4. return backend status code
 package gateboard
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -30,15 +30,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/sync/singleflight"
+
 	yaml "gopkg.in/yaml.v3"
 )
 
 // Client holds context for a gateboard client.
 type Client struct {
-	options ClientOptions
-	cache   map[string]gatewayEntry
-	lock    sync.Mutex
-	TTL     time.Duration
+	options     ClientOptions
+	cache       map[string]gatewayEntry
+	lock        sync.Mutex
+	TTL         time.Duration
+	flightGroup singleflight.Group
 }
 
 const (
@@ -128,8 +131,8 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 	c.lock.Unlock()
 }
 
-// GatewayID retrieves the gateway ID for a `gatewayName` from local fast cache.
-// If the result is an empty string, the method `Refresh()` should be called to asynchronously update the cache.
+// GatewayID retrieves the gateway ID for a 'gatewayName' from local fast cache.
+// If the ID is not found in the local fast cache, it will use 'singleflight' to fetch up-to-date data.
 func (c *Client) GatewayID(gatewayName string) string {
 	const me = "gateboard.Client.GatewayID"
 
@@ -141,13 +144,78 @@ func (c *Client) GatewayID(gatewayName string) string {
 			elap := time.Since(entry.creation)
 			TTL := c.getTTL()
 			if elap < TTL {
-				log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
+				if c.options.Debug {
+					log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
+				}
 				return entry.gatewayID
 			}
 		}
 	}
 
-	return ""
+	// 2: fetch from server
+
+	result, err, shared := c.flightGroup.Do(gatewayName, func() (interface{}, error) {
+		return c.refresh(gatewayName)
+	})
+
+	id := result.(string)
+
+	if err != nil {
+		log.Printf("%s: gateway='%s' id='%s' shared=%t error: %v", me, gatewayName, id, shared, err)
+		return id
+	}
+
+	if c.options.Debug {
+		log.Printf("%s: gateway='%s' id='%s' shared=%t", me, gatewayName, id, shared)
+	}
+
+	return id
+}
+
+// refresh fetches up-to-date data from server.
+// Data retrieved from the main server is saved into fallback server, if a fallback server is defined.
+// If data can't be fetched from main server, the fallback server is queried.
+// Whenever new data is found, the local cache is updated.
+func (c *Client) refresh(gatewayName string) (string, error) {
+	const me = "refresh"
+
+	if c.options.Debug {
+		log.Printf("%s: gateway_name=%s", me, gatewayName)
+	}
+
+	// 1: query main server
+
+	{
+		gatewayID, TTL := c.queryServer(c.options.ServerURL, gatewayName)
+		c.updateTTL(TTL)
+		if gatewayID != "" {
+			c.cachePut(gatewayName, gatewayID)
+			if c.options.FallbackURL != "" {
+				c.saveFallback(gatewayName, gatewayID)
+			}
+			if c.options.Debug {
+				log.Printf("%s: gateway_name=%s gateway_id=%s from main server",
+					me, gatewayName, gatewayID)
+			}
+			return gatewayID, nil
+		}
+	}
+
+	// 2: query local fallback repository, if any
+
+	if c.options.FallbackURL != "" {
+		gatewayID, _ := c.queryServer(c.options.FallbackURL, gatewayName)
+		if gatewayID != "" {
+			c.cachePut(gatewayName, gatewayID)
+			if c.options.Debug {
+				log.Printf("%s: gateway_name=%s gateway_id=%s from fallback server",
+					me, gatewayName, gatewayID)
+			}
+			return gatewayID, nil
+		}
+	}
+
+	return "", fmt.Errorf("%s: gateway_name=%s: error: failed to refresh", me, gatewayName)
 }
 
 /*
@@ -180,44 +248,10 @@ func (c *Client) Refresh(gatewayName string) {
 
 func (c *Client) refreshJob(gatewayName string) {
 	const me = "refreshJob"
-
-	if c.options.Debug {
-		log.Printf("%s: gateway_name=%s", me, gatewayName)
+	_, err := c.refresh(gatewayName)
+	if err != nil {
+		log.Printf("%s: %v", me, err)
 	}
-
-	// 1: query main server
-
-	{
-		gatewayID, TTL := c.queryServer(c.options.ServerURL, gatewayName)
-		c.updateTTL(TTL)
-		if gatewayID != "" {
-			c.cachePut(gatewayName, gatewayID)
-			if c.options.FallbackURL != "" {
-				c.saveFallback(gatewayName, gatewayID)
-			}
-			if c.options.Debug {
-				log.Printf("%s: gateway_name=%s gateway_id=%s from server",
-					me, gatewayName, gatewayID)
-			}
-			return
-		}
-	}
-
-	// 2: query local fallback repository, if any
-
-	if c.options.FallbackURL != "" {
-		gatewayID, _ := c.queryServer(c.options.FallbackURL, gatewayName)
-		if gatewayID != "" {
-			c.cachePut(gatewayName, gatewayID)
-			if c.options.Debug {
-				log.Printf("%s: gateway_name=%s gateway_id=%s from repo",
-					me, gatewayName, gatewayID)
-			}
-			return
-		}
-	}
-
-	log.Printf("%s: gateway_name=%s: error: failed to refresh", me, gatewayName)
 }
 
 func (c *Client) queryServer(URL, gatewayName string) (string, int) {
