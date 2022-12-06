@@ -280,7 +280,9 @@ func (c *Client) queryServer(URL, gatewayName string) (string, int) {
 		return "", 0
 	}
 
-	log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
+	if c.options.Debug {
+		log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
+	}
 
 	return reply.GatewayID, reply.TTL
 }
@@ -314,16 +316,12 @@ func (c *Client) saveFallback(gatewayName, gatewayID string) {
 		return
 	}
 
-	//log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s", me, path, gatewayName, gatewayID)
-
 	requestBody := BodyPutRequest{GatewayID: gatewayID}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
 		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
 		return
 	}
-
-	//log.Printf("%s: URL=%s gatewayName=%s gatewayID=%s json:%v", me, path, gatewayName, gatewayID, string(requestBytes))
 
 	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
@@ -349,5 +347,7 @@ func (c *Client) saveFallback(gatewayName, gatewayID string) {
 		return
 	}
 
-	log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
+	if c.options.Debug {
+		log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
+	}
 }
