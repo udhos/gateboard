@@ -83,10 +83,10 @@ func gatewayGet(c *gin.Context, app *application) {
 	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
 
 	var out gateboard.BodyGetReply
-	out.GatewayName = gatewayName
-	out.TTL = app.config.TTL
 
 	if strings.TrimSpace(gatewayName) == "" {
+		out.GatewayName = gatewayName
+		out.TTL = app.config.TTL
 		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
 		log.Print(out.Error)
 		c.JSON(http.StatusBadRequest, out)
@@ -97,7 +97,8 @@ func gatewayGet(c *gin.Context, app *application) {
 	// retrieve gateway_id
 	//
 
-	gatewayID, errID := app.repo.get(gatewayName)
+	out, errID := app.repo.get(gatewayName)
+	out.TTL = app.config.TTL
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:
@@ -111,8 +112,6 @@ func gatewayGet(c *gin.Context, app *application) {
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
-
-	out.GatewayID = gatewayID
 
 	c.JSON(http.StatusOK, out)
 }

@@ -60,15 +60,15 @@ func queryExpectError(t *testing.T, r repository, gatewayName string) {
 }
 
 func queryExpectID(t *testing.T, r repository, gatewayName, expectedGatewayID string) {
-	id, err := r.get(gatewayName)
+	body, err := r.get(gatewayName)
 	if err != nil {
 		t.Errorf("queryExpectID: gatewayName=%s expectedGAtewayID=%s unexpected error:%v",
 			gatewayName, expectedGatewayID, err)
 		return
 	}
-	if id != expectedGatewayID {
+	if body.GatewayID != expectedGatewayID {
 		t.Errorf("queryExpectID: gatewayName=%s expectedGAtewayID=%s got ID=%s",
-			gatewayName, expectedGatewayID, id)
+			gatewayName, expectedGatewayID, body.GatewayID)
 	}
 }
 

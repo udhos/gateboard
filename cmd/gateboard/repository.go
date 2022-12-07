@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/udhos/gateboard/gateboard"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,7 +17,7 @@ import (
 )
 
 type repository interface {
-	get(gatewayName string) (string, error)
+	get(gatewayName string) (gateboard.BodyGetReply, error)
 	put(gatewayName, gatewayID string) error
 	dump() (repoDump, error)
 }
@@ -65,17 +66,20 @@ func (r *repoMem) dump() (repoDump, error) {
 	return list, nil
 }
 
-func (r *repoMem) get(gatewayName string) (string, error) {
+func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
+	var result gateboard.BodyGetReply
 	if strings.TrimSpace(gatewayName) == "" {
-		return "", fmt.Errorf("repoMem.get: bad gateway name: '%s'", gatewayName)
+		return result, fmt.Errorf("repoMem.get: bad gateway name: '%s'", gatewayName)
 	}
 	r.lock.Lock()
 	gatewayID, found := r.tab[gatewayName]
 	r.lock.Unlock()
+	result.GatewayName = gatewayName
 	if found {
-		return gatewayID, nil
+		result.GatewayID = gatewayID
+		return result, nil
 	}
-	return "", errRepositoryGatewayNotFound
+	return result, errRepositoryGatewayNotFound
 }
 
 func (r *repoMem) put(gatewayName, gatewayID string) error {
@@ -203,40 +207,35 @@ func (r *repoMongo) dump() (repoDump, error) {
 	return list, errAll
 }
 
-func (r *repoMongo) get(gatewayName string) (string, error) {
+func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	const me = "repoMongo.get"
 
+	var body gateboard.BodyGetReply
+
 	if strings.TrimSpace(gatewayName) == "" {
-		return "", fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+		return body, fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
 	}
 
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
-	var result map[string]interface{}
+	//var result map[string]interface{}
 	filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 	defer cancel()
-	errFind := collection.FindOne(ctxTimeout, filter).Decode(&result)
+	errFind := collection.FindOne(ctxTimeout, filter).Decode(&body)
 
 	switch errFind {
 	case mongo.ErrNoDocuments:
-		return "", errRepositoryGatewayNotFound
+		return body, errRepositoryGatewayNotFound
 	case nil:
-		value := result["gateway_id"]
-		gatewayID, isStr := value.(string)
-		if isStr {
-			return gatewayID, nil
-		}
-		log.Printf("%s: gateway ID not a string: gatewayName=%s gatewayID=%v %T",
-			me, gatewayName, value, value)
-		return "", errRepositoryGatewayIDNotString
+		return body, nil
 	}
 
 	log.Printf("%s: gatewayName=%s find error: %v",
 		me, gatewayName, errFind)
 
-	return "", errFind
+	return body, errFind
 }
 
 func (r *repoMongo) put(gatewayName, gatewayID string) error {
