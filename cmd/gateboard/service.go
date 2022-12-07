@@ -102,11 +102,13 @@ func gatewayGet(c *gin.Context, app *application) {
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:
+		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		log.Print(out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
+		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		log.Print(out.Error)
 		c.JSON(http.StatusInternalServerError, out)
