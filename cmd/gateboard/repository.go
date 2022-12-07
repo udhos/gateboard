@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,8 +18,10 @@ import (
 type repository interface {
 	get(gatewayName string) (string, error)
 	put(gatewayName, gatewayID string) error
-	dump() ([]interface{}, error)
+	dump() (repoDump, error)
 }
+
+type repoDump []map[string]interface{}
 
 var (
 	errRepositoryGatewayNotFound    = errors.New("repository: gateway not found error")
@@ -38,20 +41,22 @@ func newRepoMem() *repoMem {
 	return &repoMem{tab: map[string]string{}}
 }
 
+/*
 // GatewayDump defines a item type for exporting database.
 type GatewayDump struct {
 	GatewayName string `json:"gateway_name" yaml:"gateway_name" bson:"gateway_name"`
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"   bson:"gateway_id"`
 }
+*/
 
-func (r *repoMem) dump() ([]interface{}, error) {
-	list := make([]interface{}, 0, len(r.tab))
+func (r *repoMem) dump() (repoDump, error) {
+	list := make(repoDump, 0, len(r.tab))
 	r.lock.Lock()
 
 	for name, id := range r.tab {
-		item := GatewayDump{
-			GatewayName: name,
-			GatewayID:   id,
+		item := map[string]interface{}{
+			"GatewayName": name,
+			"GatewayID":   id,
 		}
 		list = append(list, item)
 	}
@@ -165,8 +170,8 @@ func (r *repoMongo) dropDatabase() error {
 	return r.client.Database(r.options.database).Drop(ctxTimeout)
 }
 
-func (r *repoMongo) dump() ([]interface{}, error) {
-	list := []interface{}{}
+func (r *repoMongo) dump() (repoDump, error) {
+	list := repoDump{}
 
 	const me = "repoMongo.dump"
 
@@ -248,7 +253,11 @@ func (r *repoMongo) put(gatewayName, gatewayID string) error {
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
 	filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "gateway_id", Value: gatewayID}}}}
+	update := bson.D{
+		{Key: "$set", Value: bson.D{{Key: "gateway_id", Value: gatewayID}}},                                  // update ID
+		{Key: "$inc", Value: bson.D{{Key: "changes", Value: 1}}},                                             // increment changes counter
+		{Key: "$set", Value: bson.D{{Key: "last_update", Value: primitive.NewDateTimeFromTime(time.Now())}}}, // last update
+	}
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 	opts := options.Update().SetUpsert(true)
 	defer cancel()
