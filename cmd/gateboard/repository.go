@@ -264,9 +264,16 @@ func (r *repoMongo) put(gatewayName, gatewayID string) error {
 
 	if errUpdate != nil {
 		log.Printf("%s: gatewayName=%s gatewayID=%s update error:%v response:%v",
-			me, gatewayName, gatewayID, errUpdate, *response)
+			me, gatewayName, gatewayID, errUpdate, mongoResultString(response))
 		return errUpdate
 	}
 
 	return nil
+}
+
+func mongoResultString(response *mongo.UpdateResult) string {
+	if response == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%v", *response)
 }
