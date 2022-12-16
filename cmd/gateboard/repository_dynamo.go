@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
@@ -48,6 +49,36 @@ func (r *repoDynamo) dump() (repoDump, error) {
 	const me = "repoDynamo.dump"
 
 	list := repoDump{}
+
+	var response *dynamodb.ScanOutput
+	//filtEx := expression.Name("year").Between(expression.Value(startYear), expression.Value(endYear))
+	projEx := expression.NamesList(
+		expression.Name("gateway_name"),
+		expression.Name("gateway_id"),
+		expression.Name("changes"),
+		expression.Name("last_update"),
+	)
+	//expr, err := expression.NewBuilder().WithFilter(filtEx).WithProjection(projEx).Build()
+	expr, errEx := expression.NewBuilder().WithProjection(projEx).Build()
+	if errEx != nil {
+		return list, errEx
+	}
+
+	response, errScan := r.dynamo.Scan(context.TODO(), &dynamodb.ScanInput{
+		TableName:                 aws.String(r.options.table),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		//FilterExpression:          expr.Filter(),
+		ProjectionExpression: expr.Projection(),
+	})
+	if errScan != nil {
+		return list, errScan
+	}
+
+	errUnmarshal := attributevalue.UnmarshalListOfMaps(response.Items, &list)
+	if errUnmarshal != nil {
+		return list, errUnmarshal
+	}
 
 	return list, nil
 }
