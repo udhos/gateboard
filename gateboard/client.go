@@ -111,12 +111,12 @@ func (c *Client) getTTL() time.Duration {
 
 // BodyGetReply defines the payload format for a GET request.
 type BodyGetReply struct {
-	GatewayName string    `json:"gateway_name"    yaml:"gateway_name"    bson:"gateway_name"`
-	GatewayID   string    `json:"gateway_id"      yaml:"gateway_id"      bson:"gateway_id"`
-	Changes     int64     `json:"changes"         yaml:"changes"         bson:"changes"`
-	LastUpdate  time.Time `json:"last_update"     yaml:"last_update"     bson:"last_update"`
-	Error       string    `json:"error,omitempty" yaml:"error,omitempty" bson:"error,omitempty"`
-	TTL         int       `json:"TTL,omitempty"   yaml:"TTL,omitempty"   bson:"TTL,omitempty"`
+	GatewayName string    `json:"gateway_name"    yaml:"gateway_name"    bson:"gateway_name"    dynamodbav:"gateway_name"`
+	GatewayID   string    `json:"gateway_id"      yaml:"gateway_id"      bson:"gateway_id"      dynamodbav:"gateway_id"`
+	Changes     int64     `json:"changes"         yaml:"changes"         bson:"changes"         dynamodbav:"changes"`
+	LastUpdate  time.Time `json:"last_update"     yaml:"last_update"     bson:"last_update"     dynamodbav:"last_update"`
+	Error       string    `json:"error,omitempty" yaml:"error,omitempty" bson:"error,omitempty" dynamodbav:"error,omitempty"`
+	TTL         int       `json:"TTL,omitempty"   yaml:"TTL,omitempty"   bson:"TTL,omitempty"   dynamodbav:"TTL,omitempty"`
 }
 
 func (c *Client) cacheGet(gatewayName string) (gatewayEntry, bool) {

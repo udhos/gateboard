@@ -18,6 +18,8 @@
 - [X] Docker image
 - [X] Client tests
 - [X] Refactor config
+- [X] Repository DynamoDB
+- [ ] Optional authentication
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
@@ -45,6 +47,19 @@ Run repository tests:
 
 ```bash
 export TEST_REPO_MONGO=true ;# enable mongodb tests
+go test -count=1 -run TestRepository ./cmd/gateboard
+```
+
+## Testing repository dynamodb
+
+Create a dynamodb table named `gateboard_test` with partition key `gateway_name`.
+
+Make sure the table is empty before running the tests.
+
+Run repository tests:
+
+```bash
+export TEST_REPO_DYNAMO=true ;# enable dynamodb tests
 go test -count=1 -run TestRepository ./cmd/gateboard
 ```
 

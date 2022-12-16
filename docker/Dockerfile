@@ -1,7 +1,7 @@
 # STEP 1 build executable binary
 
 #FROM golang:alpine as builder
-FROM golang:1.19.3-alpine3.16 as builder
+FROM golang:1.19.4-alpine3.17 as builder
 
 RUN apk update
 RUN apk add git
@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gate
 #
 # STEP 2 build a small image from alpine
 #
-FROM alpine:3.16
+FROM alpine:3.17
 COPY --from=builder /tmp/gateboard /bin/gateboard
 RUN apk add curl
 RUN adduser -D -g '' user

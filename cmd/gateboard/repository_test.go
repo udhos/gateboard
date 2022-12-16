@@ -17,6 +17,26 @@ func TestRepository(t *testing.T) {
 	testRepo(t, newRepoMem())
 
 	//
+	// optionally test repo dynamodb
+	//
+	testDynamo := env.Bool("TEST_REPO_DYNAMO", false)
+	t.Logf("testing repo dynamo: %t", testDynamo)
+	if testDynamo {
+		r, err := newRepoDynamo(repoDynamoOptions{
+			table:  "gateboard_test",
+			region: "us-east-1",
+			debug:  false,
+		})
+		if err != nil {
+			t.Errorf("error initialize dynamodb: %v", err)
+		}
+		if errDrop := r.dropDatabase(); errDrop != nil {
+			t.Errorf("dropping database: %v", errDrop)
+		}
+		testRepo(t, r)
+	}
+
+	//
 	// optionally test repo mongo
 	//
 	testMongo := env.Bool("TEST_REPO_MONGO", false)
@@ -68,12 +88,12 @@ func queryExpectError(t *testing.T, r repository, gatewayName string) {
 func queryExpectID(t *testing.T, r repository, gatewayName, expectedGatewayID string) {
 	body, err := r.get(gatewayName)
 	if err != nil {
-		t.Errorf("queryExpectID: gatewayName=%s expectedGAtewayID=%s unexpected error:%v",
+		t.Errorf("queryExpectID: gatewayName=%s expectedGatewayID=%s unexpected error:%v",
 			gatewayName, expectedGatewayID, err)
 		return
 	}
 	if body.GatewayID != expectedGatewayID {
-		t.Errorf("queryExpectID: gatewayName=%s expectedGAtewayID=%s got ID=%s",
+		t.Errorf("queryExpectID: gatewayName=%s expectedGatewayID=%s got ID=%s",
 			gatewayName, expectedGatewayID, body.GatewayID)
 	}
 }

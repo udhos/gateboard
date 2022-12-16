@@ -78,8 +78,7 @@ func main() {
 	{
 		switch app.config.repoType {
 		case "mongo":
-			var errMongo error
-			app.repo, errMongo = newRepoMongo(repoMongoOptions{
+			repo, errMongo := newRepoMongo(repoMongoOptions{
 				debug:      debug,
 				URI:        app.config.mongoURI,
 				database:   app.config.mongoDatabase,
@@ -89,10 +88,23 @@ func main() {
 			if errMongo != nil {
 				log.Fatalf("repo mongo: %v", errMongo)
 			}
+			app.repo = repo
+		case "dynamodb":
+			repo, errDynamo := newRepoDynamo(repoDynamoOptions{
+				table:       app.config.dynamoDBTable,
+				region:      app.config.dynamoDBRegion,
+				roleArn:     app.config.dynamoDBRoleARN,
+				sessionName: me,
+				debug:       debug,
+			})
+			if errDynamo != nil {
+				log.Fatalf("repo dynamodb: %v", errDynamo)
+			}
+			app.repo = repo
 		case "mem":
 			app.repo = newRepoMem()
 		default:
-			log.Fatalf("unsuppported repo type: %s (supported types: mongo, mem)", app.config.repoType)
+			log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", app.config.repoType)
 		}
 	}
 

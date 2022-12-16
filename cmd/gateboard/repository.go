@@ -34,9 +34,9 @@ var (
 //
 
 type memEntry struct {
-	id          string
-	changes     int64
-	last_update time.Time
+	id         string
+	changes    int64
+	lastUpdate time.Time
 }
 
 type repoMem struct {
@@ -65,7 +65,7 @@ func (r *repoMem) dump() (repoDump, error) {
 			"gateway_name": name,
 			"gateway_id":   e.id,
 			"changes":      e.changes,
-			"last_update":  e.last_update,
+			"last_update":  e.lastUpdate,
 		}
 		list = append(list, item)
 	}
@@ -86,7 +86,7 @@ func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	if found {
 		result.GatewayID = e.id
 		result.Changes = e.changes
-		result.LastUpdate = e.last_update
+		result.LastUpdate = e.lastUpdate
 		return result, nil
 	}
 	return result, errRepositoryGatewayNotFound
@@ -104,7 +104,7 @@ func (r *repoMem) put(gatewayName, gatewayID string) error {
 	e, _ := r.tab[gatewayName]
 	e.id = gatewayID
 	e.changes++
-	e.last_update = now
+	e.lastUpdate = now
 	r.tab[gatewayName] = e
 	r.lock.Unlock()
 	return nil
@@ -234,7 +234,6 @@ func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
-	//var result map[string]interface{}
 	filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 	defer cancel()

@@ -54,30 +54,20 @@ func (q *clientConfig) receive() ([]queueMessage, error) {
 	return messages, nil
 }
 
-func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig {
-
-	//var c clientConfig
-
-	region, errRegion := getRegion(queueURL)
-	if errRegion != nil {
-		log.Fatalf("%s initClient: error: %v", caller, errRegion)
-		os.Exit(1)
-		return nil
-	}
+func awsConfig(region, roleArn, roleSessionName string) aws.Config {
+	const me = "awsConfig"
 
 	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region))
 	if errConfig != nil {
-		log.Fatalf("%s initClient: error: %v", caller, errConfig)
-		os.Exit(1)
-		return nil
+		log.Fatalf("%s: load config: %v", me, errConfig)
 	}
 
 	if roleArn != "" {
 		//
 		// AssumeRole
 		//
-		log.Printf("%s initClient: AssumeRole: arn: %s", caller, roleArn)
+		log.Printf("%s: AssumeRole: arn: %s", me, roleArn)
 		clientSts := sts.NewFromConfig(cfg)
 		cfg2, errConfig2 := config.LoadDefaultConfig(
 			context.TODO(), config.WithRegion(region),
@@ -92,10 +82,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 			),
 		)
 		if errConfig2 != nil {
-			log.Fatalf("%s initClient: AssumeRole %s: error: %v", caller, roleArn, errConfig2)
-			os.Exit(1)
-			return nil
-
+			log.Fatalf("%s: AssumeRole %s: error: %v", me, roleArn, errConfig2)
 		}
 		cfg = cfg2
 	}
@@ -106,11 +93,25 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 		input := sts.GetCallerIdentityInput{}
 		respSts, errSts := clientSts.GetCallerIdentity(context.TODO(), &input)
 		if errSts != nil {
-			log.Printf("%s initClient: GetCallerIdentity: error: %v", caller, errSts)
+			log.Printf("%s: GetCallerIdentity: error: %v", me, errSts)
 		} else {
-			log.Printf("%s initClient: GetCallerIdentity: Account=%s ARN=%s UserId=%s", caller, *respSts.Account, *respSts.Arn, *respSts.UserId)
+			log.Printf("%s: GetCallerIdentity: Account=%s ARN=%s UserId=%s", me, *respSts.Account, *respSts.Arn, *respSts.UserId)
 		}
 	}
+
+	return cfg
+}
+
+func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig {
+
+	region, errRegion := getRegion(queueURL)
+	if errRegion != nil {
+		log.Fatalf("%s initClient: error: %v", caller, errRegion)
+		os.Exit(1)
+		return nil
+	}
+
+	cfg := awsConfig(region, roleArn, roleSessionName)
 
 	c := clientConfig{
 		sqs:      sqs.NewFromConfig(cfg),
