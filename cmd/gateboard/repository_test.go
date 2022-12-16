@@ -10,9 +10,15 @@ import (
 // go test -run TestRepository ./cmd/gateboard
 func TestRepository(t *testing.T) {
 
+	//
+	// test repo mem
+	//
 	t.Logf("testing repo mem")
 	testRepo(t, newRepoMem())
 
+	//
+	// optionally test repo mongo
+	//
 	testMongo := env.Bool("TEST_REPO_MONGO", false)
 	t.Logf("testing repo mongo: %t", testMongo)
 	if testMongo {
