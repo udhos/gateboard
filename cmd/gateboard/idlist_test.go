@@ -85,3 +85,72 @@ func TestIdEntryString(t *testing.T) {
 		}
 	}
 }
+
+type idListTestCase struct {
+	name          string
+	value         string
+	expectedList  string
+	expectedError expectResult
+}
+
+var idListTestTable = []idListTestCase{
+	{"empty", "", "", expectError},
+	{"id", "id", "id", expectSuccess},
+	{"id weight 1", "id:1", "id", expectSuccess},
+	{"id plus weight", "id:2", "id:2", expectSuccess},
+	{"id zero weight", "id:0", "", expectError},
+	{"id negative weigh", "id:-3", "", expectError},
+	{"empty comma", ",", "", expectError},
+	{"id comma", "id,", "", expectError},
+	{"comma id", ",id", "", expectError},
+	{"id list", "id1,id2", "id1,id2", expectSuccess},
+	{"id list weight 1", "id1:1,id2:1", "id1,id2", expectSuccess},
+	{"id list weight", "id1:2,id2:3", "id1:2,id2:3", expectSuccess},
+	{"id list zero weight", "id1:0,id2:0", "", expectError},
+	{"id list negative weigh", "id1:-3,id2:-4", "", expectError},
+	{"id list long", "id1:1,id2:2,id3:3,id4:4", "id1,id2:2,id3:3,id4:4", expectSuccess},
+
+	{"with blanks - empty", "   ", "", expectError},
+	{"with blanks - id", " id ", "id", expectSuccess},
+	{"with blanks - id weight 1", " id : 1 ", "id", expectSuccess},
+	{"with blanks - id plus weight", " id : 2 ", "id:2", expectSuccess},
+	{"with blanks - id zero weight", " id : 0 ", "", expectError},
+	{"with blanks - id negative weigh", " id : -3 ", "", expectError},
+	{"with blanks - empty comma", " , ", "", expectError},
+	{"with blanks - id comma", " id , ", "", expectError},
+	{"with blanks - comma id", " , id ", "", expectError},
+	{"with blanks - id list", " id1 , id2 ", "id1,id2", expectSuccess},
+	{"with blanks - id list weight 1", " id1 : 1 , id2 : 1 ", "id1,id2", expectSuccess},
+	{"with blanks - id list weight", " id1 : 2 , id2 : 3 ", "id1:2,id2:3", expectSuccess},
+	{"with blanks - id list zero weight", " id1 : 0 , id2 : 0 ", "", expectError},
+	{"with blanks - id list negative weigh", " id1 : -3 , id2 : -4 ", "", expectError},
+	{"with blanks - id list long", " id1 : 1 , id2 : 2 , id3 : 3 , id4 : 4 ", "id1,id2:2,id3:3,id4:4", expectSuccess},
+}
+
+// go test -run TestIdList ./cmd/gateboard
+func TestIdList(t *testing.T) {
+
+	for _, data := range idListTestTable {
+		list, err := newIDList(data.value)
+		if err != nil {
+			if data.expectedError == expectSuccess {
+				t.Errorf("%s: list value='%s' expecting success, but got error: %v",
+					data.name, data.value, err)
+			}
+			continue
+		}
+
+		if data.expectedError == expectError {
+			t.Errorf("%s: list value='%s' expecting error, but got success",
+				data.name, data.value)
+			continue
+		}
+
+		listStr := list.String()
+
+		if data.expectedList != listStr {
+			t.Errorf("%s: value='%s' expecting '%v', but got '%v'",
+				data.name, data.value, data.expectedList, listStr)
+		}
+	}
+}

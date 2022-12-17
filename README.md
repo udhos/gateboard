@@ -22,8 +22,10 @@
 - [X] Optional authentication
 - [ ] Generate token for optional authentication
 - [ ] Gateway load sharing
+- [ ] Repository redis
 - [ ] Zap logging
 - [ ] Metrics
+- [ ] Alarm for main server unreachable
 - [ ] Tracing
 - [ ] Benchmark
 - [ ] User guide
