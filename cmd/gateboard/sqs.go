@@ -160,14 +160,14 @@ func sqsListener(app *application) {
 			put.GatewayName = strings.TrimSpace(put.GatewayName)
 			if put.GatewayName == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name",
-					me, put.GatewayName, msg.id(), put.GatewayID)
+					me, put.GatewayName, put.GatewayID, msg.id())
 				continue
 			}
 
 			put.GatewayID = strings.TrimSpace(put.GatewayID)
 			if put.GatewayID == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
-					me, put.GatewayName, msg.id(), put.GatewayID)
+					me, put.GatewayName, put.GatewayID, msg.id())
 				continue
 			}
 
@@ -177,8 +177,8 @@ func sqsListener(app *application) {
 
 			if app.config.writeToken {
 				if invalidToken(app, put.GatewayName, put.Token) {
-					log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
-						me, put.GatewayName, msg.id(), put.GatewayID)
+					log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid token='%s'",
+						me, put.GatewayName, put.GatewayID, msg.id(), put.Token)
 					continue
 				}
 			}

@@ -19,7 +19,8 @@
 - [X] Client tests
 - [X] Refactor config
 - [X] Repository DynamoDB
-- [ ] Optional authentication
+- [X] Optional authentication
+- [ ] Generate token for optional authentication
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing
@@ -88,6 +89,56 @@ Run interactive client:
 
 ```bash
 gateboard-client-example
+```
+
+## Optional Authentication
+
+Enable `WRITE_TOKEN=true` in order to require token authentication for write requests.
+
+```bash
+export WRITE_TOKEN=true
+```
+
+Make sure the repository has the token `token1` assigned to gateway `gw2`.
+
+```bash
+Example for mongodb:
+
+db.gateboard.insertOne({"gateway_name":"gw2","token":"token1"})
+```
+
+Now requests to update gateway `gw2` must include the token `token1`.
+
+
+```bash
+curl -X PUT -s -d '{"gateway_id":"id1","token":"token1"}' localhost:8080/gateway/gw2
+
+{"gateway_name":"gw2","gateway_id":"id1"}
+```
+
+Otherwise the request will be denied.
+
+```bash
+curl -X PUT -v -d '{"gateway_id":"id2"}' localhost:8080/gateway/gw2
+*   Trying ::1:8080...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> PUT /gateway/gw2 HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.68.0
+> Accept: */*
+> Content-Length: 20
+> Content-Type: application/x-www-form-urlencoded
+> 
+* upload completely sent off: 20 out of 20 bytes
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 401 Unauthorized
+< Content-Type: application/json; charset=utf-8
+< Date: Sat, 17 Dec 2022 00:59:22 GMT
+< Content-Length: 65
+< 
+* Connection #0 to host localhost left intact
+{"gateway_name":"gw2","gateway_id":"id2","error":"invalid token"}
 ```
 
 ## Example
