@@ -21,6 +21,7 @@
 - [X] Repository DynamoDB
 - [X] Optional authentication
 - [ ] Generate token for optional authentication
+- [ ] Gateway load sharing
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Tracing

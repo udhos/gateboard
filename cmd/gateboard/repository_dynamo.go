@@ -50,7 +50,6 @@ func (r *repoDynamo) dump() (repoDump, error) {
 
 	list := repoDump{}
 
-	var response *dynamodb.ScanOutput
 	//filtEx := expression.Name("year").Between(expression.Value(startYear), expression.Value(endYear))
 	projEx := expression.NamesList(
 		expression.Name("gateway_name"),
