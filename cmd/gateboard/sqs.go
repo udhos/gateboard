@@ -171,6 +171,18 @@ func sqsListener(app *application) {
 				continue
 			}
 
+			//
+			// check write token
+			//
+
+			if app.config.writeToken {
+				if invalidToken(app, put.GatewayName, put.Token) {
+					log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
+						me, put.GatewayName, msg.id(), put.GatewayID)
+					continue
+				}
+			}
+
 			errPut := app.repo.put(put.GatewayName, put.GatewayID)
 			if errPut != nil {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
@@ -186,6 +198,7 @@ func sqsListener(app *application) {
 type sqsPut struct {
 	GatewayName string `json:"gateway_name" yaml:"gateway_name"`
 	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
+	Token       string `json:"token"        yaml:"token"`
 }
 
 func (q *clientConfig) deleteMessage(m queueMessage) error {

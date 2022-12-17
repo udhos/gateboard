@@ -158,3 +158,34 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 
 	return errPut
 }
+
+func (r *repoDynamo) putToken(gatewayName, token string) error {
+	const me = "repoDynamo.putToken"
+
+	update := expression.Set(expression.Name("token"), expression.Value(token))
+
+	//update.Set(expression.Name("info.plot"), expression.Value(movie.Info["plot"]))
+
+	expr, errBuild := expression.NewBuilder().WithUpdate(update).Build()
+	if errBuild != nil {
+		return errBuild
+	}
+
+	av, errMarshal := attributevalue.Marshal(gatewayName)
+	if errMarshal != nil {
+		return errMarshal
+	}
+
+	key := map[string]types.AttributeValue{"gateway_name": av}
+
+	_, errUpdate := r.dynamo.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(r.options.table),
+		Key:                       key,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+		ReturnValues:              types.ReturnValueUpdatedNew,
+	})
+
+	return errUpdate
+}

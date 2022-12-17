@@ -75,6 +75,30 @@ func testRepo(t *testing.T, r repository) {
 
 	save(t, r, "gw1", "id2", expectOk) // update key
 	queryExpectID(t, r, "gw1", "id2")  // should find updated key
+
+	tokenSaveAndQuery(t, r, "gw1", "token1", "token1")
+	tokenSaveAndQuery(t, r, "gw1", "token1", "token1")
+	tokenSaveAndQuery(t, r, "gw2", "token2", "token2")
+}
+
+func tokenSaveAndQuery(t *testing.T, r repository, gatewayName, token, expectedToken string) {
+
+	errPut := r.putToken(gatewayName, token)
+	if errPut != nil {
+		t.Errorf("tokenSaveAndQuery: putToken: gatewayName=%s token=%s unexpected error: %v",
+			gatewayName, token, errPut)
+	}
+
+	body, err := r.get(gatewayName)
+	if err != nil {
+		t.Errorf("tokenSaveAndQuery: get: gatewayName=%s token=%s unexpected error:%v",
+			gatewayName, token, err)
+	}
+
+	if body.Token != expectedToken {
+		t.Errorf("tokenSaveAndQuery: gatewayName=%s expectedToken=%s got token=%s",
+			gatewayName, expectedToken, body.Token)
+	}
 }
 
 func queryExpectError(t *testing.T, r repository, gatewayName string) {

@@ -69,7 +69,7 @@ func TestQueueSimple(t *testing.T) {
 
 // go test -run TestQueue ./cmd/gateboard
 func TestQueue(t *testing.T) {
-	app := newTestApp()
+	app := newTestApp(false)
 
 	q := &mockQueue{}
 	app.sqsClient = q

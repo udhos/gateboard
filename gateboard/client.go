@@ -117,6 +117,7 @@ type BodyGetReply struct {
 	LastUpdate  time.Time `json:"last_update"     yaml:"last_update"     bson:"last_update"     dynamodbav:"last_update"`
 	Error       string    `json:"error,omitempty" yaml:"error,omitempty" bson:"error,omitempty" dynamodbav:"error,omitempty"`
 	TTL         int       `json:"TTL,omitempty"   yaml:"TTL,omitempty"   bson:"TTL,omitempty"   dynamodbav:"TTL,omitempty"`
+	Token       string    `json:"token,omitempty" yaml:"token,omitempty" bson:"token,omitempty" dynamodbav:"token,omitempty"`
 }
 
 func (c *Client) cacheGet(gatewayName string) (gatewayEntry, bool) {
@@ -300,6 +301,7 @@ func toJSON(v interface{}) string {
 // BodyPutRequest defines the payload format for a PUT request.
 type BodyPutRequest struct {
 	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
+	Token     string `json:"token" yaml:"token"`
 }
 
 // BodyPutReply defines the payload format for a PUT response.

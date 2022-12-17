@@ -38,12 +38,52 @@ var testTable = []testCase{
 	{"GET existing gateway url-like", "GET", "/gateway/http://a:5555/b/c", "", 200, "id1"},
 }
 
+var testWriteTokenNoToken = []testCase{
+	{"missing token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1"}`, 401, "id1"},
+	{"missing token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2"}`, 401, "id2"},
+	{"missing token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2"}`, 401, "id2"},
+	{"missing token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1"}`, 401, "id1"},
+
+	{"empty token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":""}`, 401, "id1"},
+	{"empty token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":""}`, 401, "id2"},
+	{"empty token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":""}`, 401, "id2"},
+	{"empty token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":""}`, 401, "id1"},
+
+	{"bad token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":"BAD_TOKEN"}`, 401, "id1"},
+	{"bad token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"BAD_TOKEN"}`, 401, "id2"},
+	{"bad token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"BAD_TOKEN"}`, 401, "id2"},
+	{"bad token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":"BAD_TOKEN"}`, 401, "id1"},
+}
+
+var testWriteTokenWithToken = []testCase{
+	{"missing token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1"}`, 401, "id1"},
+	{"missing token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2"}`, 401, "id2"},
+	{"missing token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2"}`, 401, "id2"},
+	{"missing token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1"}`, 401, "id1"},
+
+	{"empty token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":""}`, 401, "id1"},
+	{"empty token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":""}`, 401, "id2"},
+	{"empty token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":""}`, 401, "id2"},
+	{"empty token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":""}`, 401, "id1"},
+
+	{"bad token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
+	{"bad token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
+	{"bad token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
+	{"bad token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
+}
+
 // go test -v -run TestController ./cmd/gateboard
 func TestController(t *testing.T) {
+	testController(t, newTestApp(false), testTable)
+	testController(t, newTestApp(true), testWriteTokenNoToken)
+	app := newTestApp(true)
+	app.repo.putToken("gw1", "good_token")
+	app.repo.putToken("http://a:5555/b/c", "good_token")
+	testController(t, app, testWriteTokenWithToken)
+}
 
-	app := newTestApp()
-
-	for _, data := range testTable {
+func testController(t *testing.T, app *application, table []testCase) {
+	for _, data := range table {
 
 		req, _ := http.NewRequest(data.method, data.path, strings.NewReader(data.body))
 		w := httptest.NewRecorder()
@@ -80,10 +120,11 @@ func TestController(t *testing.T) {
 	}
 }
 
-func newTestApp() *application {
+func newTestApp(writeToken bool) *application {
 	app := &application{
-		me:   "gateboard_app_test",
-		repo: newRepoMem(),
+		me:     "gateboard_app_test",
+		repo:   newRepoMem(),
+		config: appConfig{writeToken: writeToken},
 	}
 
 	initApplication(app, ":8080")

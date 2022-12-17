@@ -3,6 +3,7 @@ package main
 import "github.com/udhos/gateboard/env"
 
 type appConfig struct {
+	debug           bool
 	queueURL        string
 	sqsRoleARN      string
 	TTL             int
@@ -19,10 +20,12 @@ type appConfig struct {
 	dynamoDBTable   string
 	dynamoDBRegion  string
 	dynamoDBRoleARN string
+	writeToken      bool
 }
 
 func newConfig() appConfig {
 	return appConfig{
+		debug:           env.Bool("DEBUG", true),
 		queueURL:        env.String("QUEUE_URL", ""),
 		sqsRoleARN:      env.String("SQS_ROLE_ARN", ""),
 		TTL:             env.Int("TTL", 120),
@@ -39,5 +42,6 @@ func newConfig() appConfig {
 		dynamoDBTable:   env.String("DYNAMODB_TABLE", "gateboard"),
 		dynamoDBRegion:  env.String("DYNAMODB_REGION", "us-east-1"),
 		dynamoDBRoleARN: env.String("DYNAMODB_ROLE_ARN", ""),
+		writeToken:      env.Bool("WRITE_TOKEN", false),
 	}
 }

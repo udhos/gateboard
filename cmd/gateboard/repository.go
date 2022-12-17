@@ -20,6 +20,7 @@ type repository interface {
 	get(gatewayName string) (gateboard.BodyGetReply, error)
 	put(gatewayName, gatewayID string) error
 	dump() (repoDump, error)
+	putToken(gatewayName, token string) error
 }
 
 type repoDump []map[string]interface{}
@@ -37,6 +38,7 @@ type memEntry struct {
 	id         string
 	changes    int64
 	lastUpdate time.Time
+	token      string
 }
 
 type repoMem struct {
@@ -66,6 +68,7 @@ func (r *repoMem) dump() (repoDump, error) {
 			"gateway_id":   e.id,
 			"changes":      e.changes,
 			"last_update":  e.lastUpdate,
+			"token":        e.token,
 		}
 		list = append(list, item)
 	}
@@ -87,6 +90,7 @@ func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
 		result.GatewayID = e.id
 		result.Changes = e.changes
 		result.LastUpdate = e.lastUpdate
+		result.Token = e.token
 		return result, nil
 	}
 	return result, errRepositoryGatewayNotFound
@@ -105,6 +109,15 @@ func (r *repoMem) put(gatewayName, gatewayID string) error {
 	e.id = gatewayID
 	e.changes++
 	e.lastUpdate = now
+	r.tab[gatewayName] = e
+	r.lock.Unlock()
+	return nil
+}
+
+func (r *repoMem) putToken(gatewayName, token string) error {
+	r.lock.Lock()
+	e, _ := r.tab[gatewayName]
+	e.token = token
 	r.tab[gatewayName] = e
 	r.lock.Unlock()
 	return nil
@@ -279,6 +292,30 @@ func (r *repoMongo) put(gatewayName, gatewayID string) error {
 	if errUpdate != nil {
 		log.Printf("%s: gatewayName=%s gatewayID=%s update error:%v response:%v",
 			me, gatewayName, gatewayID, errUpdate, mongoResultString(response))
+		return errUpdate
+	}
+
+	return nil
+}
+
+func (r *repoMongo) putToken(gatewayName, token string) error {
+
+	const me = "repoMongo.putToken"
+
+	collection := r.client.Database(r.options.database).Collection(r.options.collection)
+
+	filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
+	update := bson.D{
+		{Key: "$set", Value: bson.D{{Key: "token", Value: token}}},
+	}
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
+	opts := options.Update().SetUpsert(true)
+	defer cancel()
+	response, errUpdate := collection.UpdateOne(ctxTimeout, filter, update, opts)
+
+	if errUpdate != nil {
+		log.Printf("%s: gatewayName=%s token update error:%v response:%v",
+			me, gatewayName, errUpdate, mongoResultString(response))
 		return errUpdate
 	}
 

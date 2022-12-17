@@ -73,13 +73,11 @@ func main() {
 	// pick repo type
 	//
 
-	const debug = true
-
 	{
 		switch app.config.repoType {
 		case "mongo":
 			repo, errMongo := newRepoMongo(repoMongoOptions{
-				debug:      debug,
+				debug:      app.config.debug,
 				URI:        app.config.mongoURI,
 				database:   app.config.mongoDatabase,
 				collection: app.config.mongoCollection,
@@ -91,11 +89,11 @@ func main() {
 			app.repo = repo
 		case "dynamodb":
 			repo, errDynamo := newRepoDynamo(repoDynamoOptions{
+				debug:       app.config.debug,
 				table:       app.config.dynamoDBTable,
 				region:      app.config.dynamoDBRegion,
 				roleArn:     app.config.dynamoDBRoleARN,
 				sessionName: me,
-				debug:       debug,
 			})
 			if errDynamo != nil {
 				log.Fatalf("repo dynamodb: %v", errDynamo)

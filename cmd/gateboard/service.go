@@ -98,6 +98,7 @@ func gatewayGet(c *gin.Context, app *application) {
 	//
 
 	out, errID := app.repo.get(gatewayName)
+	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 	switch errID {
 	case nil:
@@ -175,6 +176,19 @@ func gatewayPut(c *gin.Context, app *application) {
 	out.GatewayID = gatewayID
 
 	//
+	// check write token
+	//
+
+	if app.config.writeToken {
+		if invalidToken(app, gatewayName, in.Token) {
+			out.Error = "invalid token"
+			log.Print(out.Error)
+			c.JSON(http.StatusUnauthorized, out)
+			return
+		}
+	}
+
+	//
 	// save gateway_id
 	//
 
@@ -195,4 +209,20 @@ func toJSON(v interface{}) string {
 		log.Printf("toJSON: %v", err)
 	}
 	return string(b)
+}
+
+func invalidToken(app *application, gatewayName, token string) bool {
+	const me = "invalidToken"
+
+	if token == "" {
+		return true // empty token is always invalid
+	}
+
+	result, errID := app.repo.get(gatewayName)
+	if errID != nil {
+		log.Printf("%s: error: %v", me, errID)
+		return true
+	}
+
+	return result.Token != token
 }
