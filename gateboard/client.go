@@ -150,7 +150,11 @@ func (c *Client) GatewayID(gatewayName string) string {
 				if c.options.Debug {
 					log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
 				}
-				return entry.gatewayID
+				id, errPick := pickOne(gatewayName, entry.gatewayID)
+				if errPick != nil {
+					log.Printf("%s: name=%s id=%s error: %v", me, gatewayName, id, errPick)
+				}
+				return id
 			}
 		}
 	}
@@ -158,7 +162,11 @@ func (c *Client) GatewayID(gatewayName string) string {
 	// 2: fetch from server
 
 	result, err, shared := c.flightGroup.Do(gatewayName, func() (interface{}, error) {
-		return c.refresh(gatewayName)
+		list, errRefresh := c.refresh(gatewayName)
+		if errRefresh != nil {
+			return list, errRefresh
+		}
+		return pickOne(gatewayName, list)
 	})
 
 	id := result.(string)
@@ -173,6 +181,27 @@ func (c *Client) GatewayID(gatewayName string) string {
 	}
 
 	return id
+}
+
+// pickOne randomly picks one id from a weighted list of ids.
+// list entry: "id:weight".
+// list: "id1:weight1,id2:weight2,id3:weight3".
+// example: "id1:5,id2:2,id3:3".
+// simplest list is "id1".
+// omitted weight defaults to 1.
+func pickOne(gatewayName, listStr string) (string, error) {
+	list, err := newIDList(listStr)
+	if err != nil {
+		return "", fmt.Errorf("pickOne: gateway='%s' id='%s' list error: %v",
+			gatewayName, listStr, err)
+	}
+	if len(list) == 0 {
+		return "", fmt.Errorf("pickOne: gateway='%s' id='%s' empty id list",
+			gatewayName, listStr)
+	}
+	entry := list[0]
+	log.Printf("pickOne: FIXME: randomize")
+	return entry.id, nil
 }
 
 // refresh fetches up-to-date data from server.
