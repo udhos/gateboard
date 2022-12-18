@@ -92,8 +92,10 @@ func (r *repoRedis) dump() (repoDump, error) {
 	return list, nil
 }
 
-// gateway_id:gateway1      = id1
-// gateway_changes:gateway1 = 4
+// prefix:field_name:gateway_name = field_value
+//
+// gateway:gateway_id:gateway1    = id1
+// gateway:changes:gateway1       = 4
 func field(gatewayName, field string) string {
 	return prefix + field + ":" + gatewayName
 }
