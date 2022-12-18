@@ -6,11 +6,15 @@ import (
 	"strings"
 )
 
-type idList []idEntry
+type idList struct {
+	list []idEntry
+	sum  int
+}
 
 type idEntry struct {
 	id     string
 	weight int
+	sum    int
 }
 
 func newIDEntry(s string) (idEntry, error) {
@@ -48,14 +52,15 @@ func newIDList(s string) (idList, error) {
 		if err != nil {
 			return result, err
 		}
-		result = append(result, e)
+		result.list = append(result.list, e)
+		result.sum += e.weight
 	}
 	return result, nil
 }
 
 func (l idList) String() string {
-	list := make([]string, 0, len(l))
-	for _, e := range l {
+	list := make([]string, 0, len(l.list))
+	for _, e := range l.list {
 		list = append(list, e.String())
 	}
 	return strings.Join(list, ",")

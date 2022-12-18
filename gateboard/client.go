@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"sync"
@@ -42,6 +43,7 @@ type Client struct {
 	lock        sync.Mutex
 	TTL         time.Duration
 	flightGroup singleflight.Group
+	random      *rand.Rand
 }
 
 const (
@@ -80,6 +82,7 @@ func NewClient(options ClientOptions) *Client {
 		options: options,
 		cache:   map[string]gatewayEntry{},
 		TTL:     options.TTLDefault,
+		random:  rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
@@ -144,7 +147,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 		return ""
 	}
 
-	id, errPick := pickOne(gatewayName, list)
+	id, errPick := c.pickOne(gatewayName, list)
 	if errPick != nil {
 		log.Printf("%s: name=%s id=%s error: %v", me, gatewayName, id, errPick)
 	}
@@ -197,19 +200,45 @@ func (c *Client) getID(gatewayName string) string {
 // example: "id1:5,id2:2,id3:3".
 // simplest list is "id1".
 // omitted weight defaults to 1.
-func pickOne(gatewayName, listStr string) (string, error) {
+func (c *Client) pickOne(gatewayName, listStr string) (string, error) {
 	list, err := newIDList(listStr)
 	if err != nil {
 		return "", fmt.Errorf("pickOne: gateway='%s' id='%s' list error: %v",
 			gatewayName, listStr, err)
 	}
-	if len(list) == 0 {
+	if len(list.list) == 0 {
 		return "", fmt.Errorf("pickOne: gateway='%s' id='%s' empty id list",
 			gatewayName, listStr)
 	}
-	entry := list[0]
-	log.Printf("pickOne: FIXME: randomize")
-	return entry.id, nil
+	if len(list.list) == 1 {
+		return list.list[0].id, nil // only a single element
+	}
+
+	r := c.random.Intn(list.sum) + 1 // random 1..sum
+
+	id := pickRandom(list, r)
+
+	if c.options.Debug {
+		log.Printf("pickOne: list=%s listSum=%d random=%d id=%s",
+			listStr, list.sum, r, id)
+	}
+
+	return id, nil
+}
+
+func pickRandom(list idList, random int) string {
+	var runningSum int
+
+	for _, e := range list.list {
+		runningSum += e.weight
+		if random <= runningSum {
+			return e.id
+		}
+	}
+
+	log.Printf("pickRandom: failed to pick random id: list=%v random=%d", list, random)
+
+	return list.list[0].id
 }
 
 // refresh fetches up-to-date data from server.

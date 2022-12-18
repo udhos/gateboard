@@ -48,8 +48,8 @@ func main() {
 	}
 
 	client := gateboard.NewClient(gateboard.ClientOptions{
-		ServerURL:   "http://localhost:8080/gateway",
-		FallbackURL: "http://localhost:8181/gateway",
+		ServerURL:   env.String("MAIN_URL", "http://localhost:8080/gateway"),
+		FallbackURL: strings.TrimSpace(env.String("FALLBACK_URL", "http://localhost:8181/gateway")),
 		Debug:       env.Bool("DEBUG", true),
 	})
 
