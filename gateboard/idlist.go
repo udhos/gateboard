@@ -14,7 +14,6 @@ type idList struct {
 type idEntry struct {
 	id     string
 	weight int
-	sum    int
 }
 
 func newIDEntry(s string) (idEntry, error) {
