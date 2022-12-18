@@ -72,7 +72,6 @@ Start redis:
 
 ```bash
 docker run --rm --name redis-main -p 6379:6379 -d redis
-gateboard
 ```
 
 Run repository tests:
