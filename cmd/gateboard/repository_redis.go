@@ -42,12 +42,60 @@ func (r *repoRedis) dropDatabase() error {
 	return r.redisClient.Del(r.options.key).Err()
 }
 
+const (
+	prefix = "gateway:"
+	match  = prefix + "*"
+)
+
 func (r *repoRedis) dump() (repoDump, error) {
 	const me = "repoRedis.dump"
 
 	list := repoDump{}
 
+	tab := map[string]map[string]interface{}{}
+
+	isKey := true
+	var gatewayField string
+	var gatewayName string
+
+	iter := r.redisClient.HScan(r.options.key, 0, match, 0).Iterator()
+	for iter.Next() {
+		if err := iter.Err(); err != nil {
+			return list, err
+		}
+		val := iter.Val()
+		if r.options.debug {
+			log.Printf("%s: isKey=%-5v value:%s", me, isKey, val)
+		}
+		if isKey {
+			// found key: gateway:gateway_id:gw1
+			_, after, _ := strings.Cut(val, ":")
+			gatewayField, gatewayName, _ = strings.Cut(after, ":")
+		} else {
+			// found value: id1
+			gateway, found := tab[gatewayName]
+			if !found {
+				gateway = map[string]interface{}{
+					"gateway_name": gatewayName,
+				}
+				tab[gatewayName] = gateway
+			}
+			gateway[gatewayField] = val
+		}
+		isKey = !isKey
+	}
+
+	for _, g := range tab {
+		list = append(list, g)
+	}
+
 	return list, nil
+}
+
+// gateway_id:gateway1      = id1
+// gateway_changes:gateway1 = 4
+func field(gatewayName, field string) string {
+	return prefix + field + ":" + gatewayName
 }
 
 func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
@@ -59,10 +107,10 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 		return body, fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
 	}
 
-	fieldID := "gateway_id:" + gatewayName
-	fieldChanges := "changes:" + gatewayName
-	fieldLastUpdate := "last_update:" + gatewayName
-	fieldToken := "token:" + gatewayName
+	fieldID := field(gatewayName, "gateway_id")
+	fieldChanges := field(gatewayName, "changes")
+	fieldLastUpdate := field(gatewayName, "last_update")
+	fieldToken := field(gatewayName, "token")
 
 	// id
 
@@ -121,9 +169,9 @@ func (r *repoRedis) put(gatewayName, gatewayID string) error {
 		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
 	}
 
-	fieldID := "gateway_id:" + gatewayName
-	fieldChanges := "changes:" + gatewayName
-	fieldLastUpdate := "last_update:" + gatewayName
+	fieldID := field(gatewayName, "gateway_id")
+	fieldChanges := field(gatewayName, "changes")
+	fieldLastUpdate := field(gatewayName, "last_update")
 
 	if errHSetID := r.redisClient.HSet(r.options.key, fieldID, gatewayID).Err(); errHSetID != nil {
 		return errHSetID
@@ -145,7 +193,7 @@ func (r *repoRedis) put(gatewayName, gatewayID string) error {
 func (r *repoRedis) putToken(gatewayName, token string) error {
 	const me = "repoRedis.putToken"
 
-	fieldToken := "token:" + gatewayName
+	fieldToken := field(gatewayName, "token")
 
 	if errHSetToken := r.redisClient.HSet(r.options.key, fieldToken, token).Err(); errHSetToken != nil {
 		return errHSetToken
