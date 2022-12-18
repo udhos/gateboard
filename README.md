@@ -22,7 +22,7 @@
 - [X] Optional authentication
 - [ ] Generate token for optional authentication
 - [X] Gateway load sharing
-- [ ] Repository redis
+- [X] Repository redis
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Alarm for main server unreachable
@@ -44,7 +44,6 @@ Start mongodb:
 
 ```bash
 docker run --rm --name mongo-main -p 27017:27017 -d mongo
-gateboard
 ```
 
 Run repository tests:
@@ -64,6 +63,22 @@ Run repository tests:
 
 ```bash
 export TEST_REPO_DYNAMO=true ;# enable dynamodb tests
+go test -count=1 -run TestRepository ./cmd/gateboard
+```
+
+## Testing repository redis
+
+Start redis:
+
+```bash
+docker run --rm --name redis-main -p 6379:6379 -d redis
+gateboard
+```
+
+Run repository tests:
+
+```bash
+export TEST_REPO_REDIS=true ;# enable redis tests
 go test -count=1 -run TestRepository ./cmd/gateboard
 ```
 

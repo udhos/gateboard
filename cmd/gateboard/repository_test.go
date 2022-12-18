@@ -17,6 +17,27 @@ func TestRepository(t *testing.T) {
 	testRepo(t, newRepoMem())
 
 	//
+	// optionally test repo redis
+	//
+	testRedis := env.Bool("TEST_REPO_REDIS", false)
+	t.Logf("testing repo redis: %t", testRedis)
+	if testRedis {
+		r, err := newRepoRedis(repoRedisOptions{
+			debug:    false,
+			addr:     "localhost:6379",
+			password: "",
+			key:      "gateboard_test",
+		})
+		if err != nil {
+			t.Errorf("error initialize redis: %v", err)
+		}
+		if errDrop := r.dropDatabase(); errDrop != nil {
+			t.Errorf("dropping database: %v", errDrop)
+		}
+		testRepo(t, r)
+	}
+
+	//
 	// optionally test repo dynamodb
 	//
 	testDynamo := env.Bool("TEST_REPO_DYNAMO", false)
@@ -76,6 +97,9 @@ func testRepo(t *testing.T, r repository) {
 	save(t, r, "gw1", "id2", expectOk) // update key
 	queryExpectID(t, r, "gw1", "id2")  // should find updated key
 
+	save(t, r, "gw2", "id2", expectOk) // update key
+	queryExpectID(t, r, "gw2", "id2")  // should find updated key
+
 	tokenSaveAndQuery(t, r, "gw1", "token1", "token1")
 	tokenSaveAndQuery(t, r, "gw1", "token1", "token1")
 	tokenSaveAndQuery(t, r, "gw2", "token2", "token2")
@@ -91,7 +115,7 @@ func tokenSaveAndQuery(t *testing.T, r repository, gatewayName, token, expectedT
 
 	body, err := r.get(gatewayName)
 	if err != nil {
-		t.Errorf("tokenSaveAndQuery: get: gatewayName=%s token=%s unexpected error:%v",
+		t.Errorf("tokenSaveAndQuery: get: gatewayName=%s token=%s unexpected error: %v",
 			gatewayName, token, err)
 	}
 

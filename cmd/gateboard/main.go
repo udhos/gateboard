@@ -99,6 +99,17 @@ func main() {
 				log.Fatalf("repo dynamodb: %v", errDynamo)
 			}
 			app.repo = repo
+		case "redis":
+			repo, errRedis := newRepoRedis(repoRedisOptions{
+				debug:    app.config.debug,
+				addr:     app.config.redisAddr,
+				password: app.config.redisPassword,
+				key:      app.config.redisKey,
+			})
+			if errRedis != nil {
+				log.Fatalf("repo redis: %v", errRedis)
+			}
+			app.repo = repo
 		case "mem":
 			app.repo = newRepoMem()
 		default:
