@@ -139,6 +139,22 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 func (c *Client) GatewayID(gatewayName string) string {
 	const me = "gateboard.Client.GatewayID"
 
+	list := c.getID(gatewayName)
+	if list == "" {
+		return ""
+	}
+
+	id, errPick := pickOne(gatewayName, list)
+	if errPick != nil {
+		log.Printf("%s: name=%s id=%s error: %v", me, gatewayName, id, errPick)
+	}
+
+	return id
+}
+
+func (c *Client) getID(gatewayName string) string {
+	const me = "gateboard.Client.getID"
+
 	// 1: local cache with TTL
 
 	{
@@ -150,11 +166,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 				if c.options.Debug {
 					log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
 				}
-				id, errPick := pickOne(gatewayName, entry.gatewayID)
-				if errPick != nil {
-					log.Printf("%s: name=%s id=%s error: %v", me, gatewayName, id, errPick)
-				}
-				return id
+				return entry.gatewayID
 			}
 		}
 	}
@@ -162,11 +174,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 	// 2: fetch from server
 
 	result, err, shared := c.flightGroup.Do(gatewayName, func() (interface{}, error) {
-		list, errRefresh := c.refresh(gatewayName)
-		if errRefresh != nil {
-			return list, errRefresh
-		}
-		return pickOne(gatewayName, list)
+		return c.refresh(gatewayName)
 	})
 
 	id := result.(string)
