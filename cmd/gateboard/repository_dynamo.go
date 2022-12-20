@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -38,11 +39,77 @@ func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 		dynamo:  dynamodb.NewFromConfig(cfg),
 	}
 
+	r.createTable()
+
 	return r, nil
 }
 
+func (r *repoDynamo) createTable() {
+	const me = "repoDynamo.createTable"
+
+	//var tableDesc *types.TableDescription
+
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String("gateway_name"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+		},
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String("gateway_name"),
+				KeyType:       types.KeyTypeHash,
+			},
+		},
+		TableName: aws.String(r.options.table),
+	}
+
+	const onDemand = true
+
+	if onDemand {
+		// ondemand
+		//input.BillingMode = aws.String(dynamodb.BillingModePayPerRequest)
+		input.BillingMode = types.BillingModePayPerRequest
+	} else {
+		// provisioned
+		/*
+			input.ProvisionedThroughput = &dynamodb.ProvisionedThroughput{
+				ReadCapacityUnits:  aws.Int64(10),
+				WriteCapacityUnits: aws.Int64(10),
+			}
+		*/
+		input.ProvisionedThroughput = &types.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(10),
+			WriteCapacityUnits: aws.Int64(10),
+		}
+	}
+
+	output, errCreate := r.dynamo.CreateTable(context.TODO(), input)
+	if errCreate != nil {
+		log.Printf("%s: creating table '%s': error: %v", me, r.options.table, errCreate)
+		return
+	}
+
+	log.Printf("%s: creating table: '%s': arn=%s status=%s", me, r.options.table, *output.TableDescription.TableArn, output.TableDescription.TableStatus)
+
+	log.Printf("%s: waiting for table '%s'", me, r.options.table)
+
+	waiter := dynamodb.NewTableExistsWaiter(r.dynamo)
+	errWait := waiter.Wait(context.TODO(), &dynamodb.DescribeTableInput{
+		TableName: aws.String(r.options.table)}, 5*time.Minute)
+	if errWait != nil {
+		log.Printf("%s: waiting for table '%s': error: %v", me, r.options.table, errWait)
+		return
+	}
+
+	log.Printf("%s: waiting for table '%s': done", me, r.options.table)
+}
+
 func (r *repoDynamo) dropDatabase() error {
-	return nil
+	_, err := r.dynamo.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
+		TableName: aws.String(r.options.table)})
+	return err
 }
 
 func (r *repoDynamo) dump() (repoDump, error) {
@@ -129,14 +196,18 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 	// get previous items since we need to increase the changes counter
 	//
 
-	body, errGet := r.get(gatewayName)
-	switch errGet {
-	case nil:
-	case errRepositoryGatewayNotFound:
-		body.GatewayName = gatewayName
-	default:
-		return errGet
-	}
+	/*
+		body, errGet := r.get(gatewayName)
+		switch errGet {
+		case nil:
+		case errRepositoryGatewayNotFound:
+			body.GatewayName = gatewayName
+		default:
+			return errGet
+		}
+	*/
+	body, _ := r.get(gatewayName)
+	body.GatewayName = gatewayName
 
 	//
 	// update and save item
