@@ -34,10 +34,6 @@ type repoDynamo struct {
 func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 	const me = "newRepoDynamo"
 
-	if opt.region == "" {
-		return nil, fmt.Errorf("region is required")
-	}
-
 	cfg := awsConfig(opt.region, opt.roleArn, opt.sessionName)
 
 	r := &repoDynamo{
