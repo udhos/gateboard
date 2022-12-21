@@ -117,17 +117,17 @@ func (r *repoDynamo) createTable() {
 	const cooldown = 5 * time.Second
 	const max = 10
 	for i := 1; i <= max; i++ {
-		log.Printf("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
-		exists := r.tableActive()
-		log.Printf("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
-		if exists {
-			log.Printf("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
+		log.Printf("%s: %d/%d table active? '%s'", me, i, max, r.options.table)
+		active := r.tableActive()
+		log.Printf("%s: %d/%d table active? '%s': %t", me, i, max, r.options.table, active)
+		if active {
+			log.Printf("%s: %d/%d table active? '%s': %t: done", me, i, max, r.options.table, active)
 			return
 		}
-		log.Printf("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
+		log.Printf("%s: %d/%d table active? '%s': %t, sleeping for %v", me, i, max, r.options.table, active, cooldown)
 		time.Sleep(cooldown)
 	}
-	log.Fatalf("%s: table '%s' not available, ABORTING", me, r.options.table)
+	log.Fatalf("%s: table '%s' is not active, ABORTING", me, r.options.table)
 }
 
 func (r *repoDynamo) tableActive() bool {
@@ -204,9 +204,9 @@ func (r *repoDynamo) dropDatabase() error {
 		log.Printf("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
 		time.Sleep(cooldown)
 	}
-	log.Fatalf("%s: table '%s' available, ABORTING", me, r.options.table)
+	log.Fatalf("%s: table '%s' exists, ABORTING", me, r.options.table)
 
-	return fmt.Errorf("%s: table '%s' available, ABORTING", me, r.options.table)
+	return fmt.Errorf("%s: table '%s' exists, ABORTING", me, r.options.table)
 }
 
 func (r *repoDynamo) dump() (repoDump, error) {
@@ -293,18 +293,14 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 	// get previous items since we need to increase the changes counter
 	//
 
-	/*
-		body, errGet := r.get(gatewayName)
-		switch errGet {
-		case nil:
-		case errRepositoryGatewayNotFound:
-			body.GatewayName = gatewayName
-		default:
-			return errGet
-		}
-	*/
-	body, _ := r.get(gatewayName)
-	body.GatewayName = gatewayName
+	body, errGet := r.get(gatewayName)
+	switch errGet {
+	case nil:
+	case errRepositoryGatewayNotFound:
+		body.GatewayName = gatewayName
+	default:
+		return errGet
+	}
 
 	//
 	// update and save item
@@ -327,38 +323,6 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 }
 
 func (r *repoDynamo) putToken(gatewayName, token string) error {
-	const me = "repoDynamo.putToken"
-
-	body, errGet := r.get(gatewayName)
-	switch errGet {
-	case nil:
-	case errRepositoryGatewayNotFound:
-
-		//
-		// new entry
-		//
-
-		body.GatewayName = gatewayName
-		body.Token = token
-
-		item, errMarshal := attributevalue.MarshalMap(&body)
-		if errMarshal != nil {
-			return errMarshal
-		}
-
-		_, errPut := r.dynamo.PutItem(context.TODO(), &dynamodb.PutItemInput{
-			TableName: aws.String(r.options.table), Item: item,
-		})
-
-		return errPut
-	default:
-		return errGet
-	}
-
-	//
-	// update entry
-	//
-
 	update := expression.Set(expression.Name("token"), expression.Value(token))
 
 	expr, errBuild := expression.NewBuilder().WithUpdate(update).Build()
