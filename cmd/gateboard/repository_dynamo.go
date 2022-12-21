@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -17,11 +18,12 @@ import (
 )
 
 type repoDynamoOptions struct {
-	table       string
-	region      string
-	roleArn     string
-	sessionName string
-	debug       bool
+	table        string
+	region       string
+	roleArn      string
+	sessionName  string
+	debug        bool
+	manualCreate bool
 }
 
 type repoDynamo struct {
@@ -32,6 +34,10 @@ type repoDynamo struct {
 func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 	const me = "newRepoDynamo"
 
+	if opt.region == "" {
+		return nil, fmt.Errorf("region is required")
+	}
+
 	cfg := awsConfig(opt.region, opt.roleArn, opt.sessionName)
 
 	r := &repoDynamo{
@@ -39,7 +45,9 @@ func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 		dynamo:  dynamodb.NewFromConfig(cfg),
 	}
 
-	r.createTable()
+	if !r.options.manualCreate {
+		r.createTable()
+	}
 
 	return r, nil
 }
@@ -47,7 +55,9 @@ func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 func (r *repoDynamo) createTable() {
 	const me = "repoDynamo.createTable"
 
-	//var tableDesc *types.TableDescription
+	//
+	// Create table
+	//
 
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []types.AttributeDefinition{
@@ -68,17 +78,8 @@ func (r *repoDynamo) createTable() {
 	const onDemand = true
 
 	if onDemand {
-		// ondemand
-		//input.BillingMode = aws.String(dynamodb.BillingModePayPerRequest)
 		input.BillingMode = types.BillingModePayPerRequest
 	} else {
-		// provisioned
-		/*
-			input.ProvisionedThroughput = &dynamodb.ProvisionedThroughput{
-				ReadCapacityUnits:  aws.Int64(10),
-				WriteCapacityUnits: aws.Int64(10),
-			}
-		*/
 		input.ProvisionedThroughput = &types.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(10),
 			WriteCapacityUnits: aws.Int64(10),
@@ -93,6 +94,10 @@ func (r *repoDynamo) createTable() {
 
 	log.Printf("%s: creating table: '%s': arn=%s status=%s", me, r.options.table, *output.TableDescription.TableArn, output.TableDescription.TableStatus)
 
+	//
+	// Waiting for table
+	//
+
 	log.Printf("%s: waiting for table '%s'", me, r.options.table)
 
 	waiter := dynamodb.NewTableExistsWaiter(r.dynamo)
@@ -104,12 +109,104 @@ func (r *repoDynamo) createTable() {
 	}
 
 	log.Printf("%s: waiting for table '%s': done", me, r.options.table)
+
+	//
+	// Refuse to run without table
+	//
+
+	const cooldown = 5 * time.Second
+	const max = 10
+	for i := 1; i <= max; i++ {
+		log.Printf("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
+		exists := r.tableActive()
+		log.Printf("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
+		if exists {
+			log.Printf("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
+			return
+		}
+		log.Printf("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
+		time.Sleep(cooldown)
+	}
+	log.Fatalf("%s: table '%s' not available, ABORTING", me, r.options.table)
+}
+
+func (r *repoDynamo) tableActive() bool {
+	const me = "tableActive"
+
+	t, err := r.dynamo.DescribeTable(
+		context.TODO(), &dynamodb.DescribeTableInput{TableName: aws.String(r.options.table)},
+	)
+
+	if err != nil {
+		var notFoundEx *types.ResourceNotFoundException
+		if errors.As(err, &notFoundEx) {
+			log.Printf("%s: table '%s' does not exist", me, r.options.table)
+		} else {
+			log.Printf("%s: table '%s': error: %v", me, r.options.table, err)
+		}
+		return false
+	}
+
+	if r.options.debug {
+		log.Printf("%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
+	}
+
+	return t.Table.TableStatus == types.TableStatusActive
+}
+
+func (r *repoDynamo) tableExists() bool {
+	const me = "tableExists"
+
+	t, err := r.dynamo.DescribeTable(
+		context.TODO(), &dynamodb.DescribeTableInput{TableName: aws.String(r.options.table)},
+	)
+
+	if err != nil {
+		var notFoundEx *types.ResourceNotFoundException
+		if errors.As(err, &notFoundEx) {
+			log.Printf("%s: table '%s' does not exist", me, r.options.table)
+		} else {
+			log.Printf("%s: table '%s': error: %v", me, r.options.table, err)
+		}
+		return false
+	}
+
+	if r.options.debug {
+		log.Printf("%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
+	}
+
+	return true
 }
 
 func (r *repoDynamo) dropDatabase() error {
+	const me = "repoDynamo.dropDatabase"
+
 	_, err := r.dynamo.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
 		TableName: aws.String(r.options.table)})
-	return err
+	if err != nil {
+		return err
+	}
+
+	//
+	// Refuse to run with table
+	//
+
+	const cooldown = 5 * time.Second
+	const max = 10
+	for i := 1; i <= max; i++ {
+		log.Printf("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
+		exists := r.tableExists()
+		log.Printf("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
+		if !exists {
+			log.Printf("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
+			return nil
+		}
+		log.Printf("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
+		time.Sleep(cooldown)
+	}
+	log.Fatalf("%s: table '%s' available, ABORTING", me, r.options.table)
+
+	return fmt.Errorf("%s: table '%s' available, ABORTING", me, r.options.table)
 }
 
 func (r *repoDynamo) dump() (repoDump, error) {
@@ -232,9 +329,37 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 func (r *repoDynamo) putToken(gatewayName, token string) error {
 	const me = "repoDynamo.putToken"
 
-	update := expression.Set(expression.Name("token"), expression.Value(token))
+	body, errGet := r.get(gatewayName)
+	switch errGet {
+	case nil:
+	case errRepositoryGatewayNotFound:
 
-	//update.Set(expression.Name("info.plot"), expression.Value(movie.Info["plot"]))
+		//
+		// new entry
+		//
+
+		body.GatewayName = gatewayName
+		body.Token = token
+
+		item, errMarshal := attributevalue.MarshalMap(&body)
+		if errMarshal != nil {
+			return errMarshal
+		}
+
+		_, errPut := r.dynamo.PutItem(context.TODO(), &dynamodb.PutItemInput{
+			TableName: aws.String(r.options.table), Item: item,
+		})
+
+		return errPut
+	default:
+		return errGet
+	}
+
+	//
+	// update entry
+	//
+
+	update := expression.Set(expression.Name("token"), expression.Value(token))
 
 	expr, errBuild := expression.NewBuilder().WithUpdate(update).Build()
 	if errBuild != nil {
