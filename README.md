@@ -23,6 +23,8 @@
 - [ ] Generate token for optional authentication
 - [X] Gateway load sharing
 - [X] Repository redis
+- [ ] Cache service
+- [X] Discovery service
 - [ ] Zap logging
 - [ ] Metrics
 - [ ] Alarm for main server unreachable

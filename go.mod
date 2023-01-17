@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.3
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.8
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.34
+	github.com/aws/aws-sdk-go-v2/service/apigateway v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.17.9
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.5
@@ -23,6 +24,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.7.0
 	go.opentelemetry.io/otel/trace v1.11.1
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -75,5 +77,4 @@ require (
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

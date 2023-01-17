@@ -367,14 +367,14 @@ func toJSON(v interface{}) string {
 // BodyPutRequest defines the payload format for a PUT request.
 type BodyPutRequest struct {
 	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
-	Token     string `json:"token" yaml:"token"`
+	Token     string `json:"token"      yaml:"token"`
 }
 
 // BodyPutReply defines the payload format for a PUT response.
 type BodyPutReply struct {
-	GatewayName string `json:"gateway_name"`
-	GatewayID   string `json:"gateway_id"`
-	Error       string `json:"error,omitempty"`
+	GatewayName string `json:"gateway_name"    yaml:"gateway_name"`
+	GatewayID   string `json:"gateway_id"      yaml:"gateway_id"`
+	Error       string `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
 func (c *Client) saveFallback(gatewayName, gatewayID string) {
