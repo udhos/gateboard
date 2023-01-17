@@ -121,7 +121,7 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 			log.Printf("%s: region=%s role=%s accountId=%s name=%s ID=%s",
 				me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
 
-			key := accountID + ":" + gatewayName
+			key := accountID + ":" + cred.Region + ":" + gatewayName
 			gw, found := table[key]
 			if !found {
 				gw = gateway{id: gatewayID}
