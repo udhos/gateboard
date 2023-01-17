@@ -60,9 +60,10 @@ func main() {
 }
 
 type credential struct {
-	RoleArn        string `yaml:"role_arn"`
-	RoleExternalID string `yaml:"role_external_id"`
-	Region         string `yaml:"region"`
+	RoleArn        string   `yaml:"role_arn"`
+	RoleExternalID string   `yaml:"role_external_id"`
+	Region         string   `yaml:"region"`
+	Only           []string `yaml:"only"`
 }
 
 func loadCredentials(input string) []credential {

@@ -89,18 +89,15 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 	log.Printf("%s: region=%s role=%s accountId=%s", me, cred.Region, cred.RoleArn, accountID)
 
 	apiGatewayClient := apigateway.NewFromConfig(cfg)
-
 	var limit int32 = 500 // max number of results per page. default=25, max=500
-	input := apigateway.GetRestApisInput{Limit: &limit}
+	var count int
+	table := map[string]gateway{}
 
+	input := apigateway.GetRestApisInput{Limit: &limit}
 	paginator := apigateway.NewGetRestApisPaginator(apiGatewayClient, &input, func(o *apigateway.GetRestApisPaginatorOptions) {
 		o.Limit = limit
 		o.StopOnDuplicateToken = true
 	})
-
-	var count int
-
-	table := map[string]gateway{}
 
 	for paginator.HasMorePages() {
 		ctx := context.TODO()
@@ -117,6 +114,24 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 
 			gatewayName := *item.Name
 			gatewayID := *item.Id
+
+			if len(cred.Only) != 0 {
+				// filter is defined
+				var found bool
+				for _, name := range cred.Only {
+					if name == gatewayName {
+						found = true
+						break
+					}
+				}
+				if !found {
+					if config.debug {
+						log.Printf("%s: region=%s role=%s accountId=%s skipping filtered gateway=%s id=%s",
+							me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
+					}
+					continue
+				}
+			}
 
 			log.Printf("%s: region=%s role=%s accountId=%s name=%s ID=%s",
 				me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
