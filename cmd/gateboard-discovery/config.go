@@ -17,7 +17,7 @@ type appConfig struct {
 func newConfig() appConfig {
 	return appConfig{
 		accountsFile:       env.String("ACCOUNTS", "discovery-accounts.yaml"),
-		interval:           env.Duration("INTERVAL", 1*time.Minute),
+		interval:           env.Duration("INTERVAL", 5*time.Minute),
 		gateboardServerURL: env.String("GATEBOARD_SERVER_URL", "http://localhost:8080/gateway"),
 		debug:              env.Bool("DEBUG", true),
 		dryRun:             env.Bool("DRY_RUN", true),
