@@ -49,6 +49,10 @@ func main() {
 			log.Printf("---------- main account %d/%d", i+1, len(creds))
 			findGateways(c, me, config)
 		}
+		if config.interval == 0 {
+			log.Printf("interval is %v, exiting after single run", config.interval)
+			break
+		}
 		log.Printf("sleeping for %v", config.interval)
 		time.Sleep(config.interval)
 	}
