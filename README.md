@@ -202,3 +202,27 @@ Multiarch build recipe:
 ```
 ./docker/build-multiarch.sh
 ```
+
+### gateboard-discovery
+
+Docker hub:
+
+https://hub.docker.com/r/udhos/gateboard-discovery
+
+Pull from docker hub:
+
+```
+docker pull udhos/gateboard-discovery:0.0.0
+```
+
+Build recipe:
+
+```
+./docker/build-discovery.sh
+```
+
+Push:
+
+```
+docker push -a udhos/gateboard-discovery
+```
