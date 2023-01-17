@@ -110,6 +110,7 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 		if errOut != nil {
 			log.Printf("%s: region=%s role=%s accountId=%s: error: %v",
 				me, cred.Region, cred.RoleArn, accountID, errOut)
+			continue
 		}
 
 		for _, item := range output.Items {
