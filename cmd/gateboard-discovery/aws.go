@@ -78,7 +78,7 @@ type gateway struct {
 	id    string
 }
 
-func findGateways(cred credential, roleSessionName, serverURL string, debug bool) {
+func findGateways(cred credential, roleSessionName string, config appConfig) {
 
 	const me = "findGateways"
 
@@ -141,18 +141,24 @@ func findGateways(cred credential, roleSessionName, serverURL string, debug bool
 				me, cred.Region, cred.RoleArn, accountID, k, g.count)
 			continue
 		}
-		saveGatewayID(serverURL, k, g.id, debug)
+		saveGatewayID(k, g.id, config)
 	}
 }
 
-func saveGatewayID(serverURL, gatewayName, gatewayID string, debug bool) {
+func saveGatewayID(gatewayName, gatewayID string, config appConfig) {
 	const me = "saveGatewayID"
 
-	if debug {
-		log.Printf("%s: URL=%s name=%s ID=%s", me, serverURL, gatewayName, gatewayID)
+	if config.debug {
+		log.Printf("%s: URL=%s name=%s ID=%s dry=%t",
+			me, config.gateboardServerURL, gatewayName, gatewayID, config.dryRun)
 	}
 
-	path, errPath := url.JoinPath(serverURL, gatewayName)
+	if config.dryRun {
+		log.Printf("%s: running in DRY mode, refusing to update server", me)
+		return
+	}
+
+	path, errPath := url.JoinPath(config.gateboardServerURL, gatewayName)
 	if errPath != nil {
 		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
 		return
@@ -189,7 +195,7 @@ func saveGatewayID(serverURL, gatewayName, gatewayID string, debug bool) {
 		return
 	}
 
-	if debug {
+	if config.debug {
 		log.Printf("%s: URL=%s gateway reply: %v", me, path, toJSON(reply))
 	}
 }

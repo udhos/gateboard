@@ -47,7 +47,7 @@ func main() {
 	for {
 		for i, c := range creds {
 			log.Printf("---------- main account %d/%d", i+1, len(creds))
-			findGateways(c, me, config.gateboardServerURL, config.debug)
+			findGateways(c, me, config)
 		}
 		log.Printf("sleeping for %v", config.interval)
 		time.Sleep(config.interval)
