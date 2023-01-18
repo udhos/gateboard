@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/gateboard"
@@ -192,15 +193,29 @@ func gatewayPut(c *gin.Context, app *application) {
 	// save gateway_id
 	//
 
-	errPut := app.repo.put(gatewayName, gatewayID)
-	if errPut != nil {
-		out.Error = fmt.Sprintf("%s: error: %v", me, errPut)
+	max := app.config.writeRetry
+
+	for attempt := 1; attempt <= max; attempt++ {
+
+		errPut := app.repo.put(gatewayName, gatewayID)
+		if errPut == nil {
+			out.Error = ""
+			c.JSON(http.StatusOK, out)
+			return
+		}
+
+		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
+			me, attempt, max, errPut)
 		log.Print(out.Error)
-		c.JSON(http.StatusInternalServerError, out)
-		return
+
+		if attempt < max {
+			log.Printf("%s: attempt=%d/%d sleeping %v",
+				me, attempt, app.config.writeRetry, app.config.writeRetryInterval)
+			time.Sleep(app.config.writeRetryInterval)
+		}
 	}
 
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusInternalServerError, out)
 }
 
 func toJSON(v interface{}) string {

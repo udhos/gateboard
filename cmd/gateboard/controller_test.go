@@ -85,18 +85,22 @@ func TestController(t *testing.T) {
 func testController(t *testing.T, app *application, table []testCase) {
 	for _, data := range table {
 
-		req, _ := http.NewRequest(data.method, data.path, strings.NewReader(data.body))
+		req, errReq := http.NewRequest(data.method, data.path, strings.NewReader(data.body))
+		if errReq != nil {
+			t.Errorf("%s: NewRequest: %v", data.name, errReq)
+			return
+		}
 		w := httptest.NewRecorder()
 		app.serverMain.router.ServeHTTP(w, req)
 
-		t.Logf("path: %s", data.path)
-		t.Logf("status: %d", w.Code)
-		t.Logf("response: %s", w.Body.String())
+		t.Logf("%s: path: %s", data.name, data.path)
+		t.Logf("%s: status: %d", data.name, w.Code)
+		t.Logf("%s: response: %s", data.name, w.Body.String())
 
 		if data.expectedStatus != expectAnyStatus {
 			if data.expectedStatus != w.Code {
-				t.Errorf("%s: %s %s body='%s' status=%d expectedStatus=%d",
-					data.name, data.method, data.path, data.body, w.Code, data.expectedStatus)
+				t.Errorf("%s: ERROR %s %s token=%t body='%s' status=%d expectedStatus=%d",
+					data.name, data.method, data.path, app.config.writeToken, data.body, w.Code, data.expectedStatus)
 			}
 		}
 
@@ -104,16 +108,16 @@ func testController(t *testing.T, app *application, table []testCase) {
 			response := map[string]string{}
 			errYaml := yaml.Unmarshal(w.Body.Bytes(), &response)
 			if errYaml != nil {
-				t.Errorf("%s: %s %s body='%s' status=%d responseBody='%v' yaml error: %v",
+				t.Errorf("%s: ERROR %s %s body='%s' status=%d responseBody='%v' yaml error: %v",
 					data.name, data.method, data.path, data.body, w.Code, w.Body.String(), errYaml)
 			}
 			id, found := response["gateway_id"]
 			if !found {
-				t.Errorf("%s: %s %s body='%s' status=%d responseBody='%v' missing gateway_id in response",
+				t.Errorf("%s: ERROR %s %s body='%s' status=%d responseBody='%v' missing gateway_id in response",
 					data.name, data.method, data.path, data.body, w.Code, w.Body.String())
 			}
 			if id != data.expectedID {
-				t.Errorf("%s: %s %s body='%s' status=%d responseBody='%v' gateway_id=%s expected_gateway_id=%s",
+				t.Errorf("%s: ERROR %s %s body='%s' status=%d responseBody='%v' gateway_id=%s expected_gateway_id=%s",
 					data.name, data.method, data.path, data.body, w.Code, w.Body.String(), id, data.expectedID)
 			}
 		}
@@ -124,8 +128,10 @@ func newTestApp(writeToken bool) *application {
 	app := &application{
 		me:     "gateboard_app_test",
 		repo:   newRepoMem(),
-		config: appConfig{writeToken: writeToken},
+		config: newConfig(),
 	}
+
+	app.config.writeToken = writeToken
 
 	initApplication(app, ":8080")
 
