@@ -6,6 +6,14 @@
 
 [gateboard](https://github.com/udhos/gateboard) resolves AWS Private API Gateway ID.
 
+## Services
+
+| Service  | Description |
+| --- | --- |
+| gateboard | Holds database of key value mappings: gateway_name => gateway_id. You can populate the database as you wish. |
+| gateboard-discovery | Can be used to scan AWS API Gateway APIs and to save the name x ID mappings into gateboard. |
+| gateboard-cache | Can be used as local fast cache to save resources on a centralized main gateboard service. |
+
 ## TODO
 
 - [X] SQS listener
