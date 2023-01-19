@@ -13,8 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v2"
+
+	"github.com/udhos/gateboard/gateboard"
 )
 
 func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Config, string) {
@@ -90,7 +91,6 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 
 	apiGatewayClient := apigateway.NewFromConfig(cfg)
 	var limit int32 = 500 // max number of results per page. default=25, max=500
-	var count int
 	table := map[string]gateway{}
 
 	input := apigateway.GetRestApisInput{Limit: &limit}
@@ -110,21 +110,25 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 			continue
 		}
 
+		log.Printf("%s: region=%s role=%s accountId=%s gateways_found: %d",
+			me, cred.Region, cred.RoleArn, accountID, len(output.Items))
+
 		for _, item := range output.Items {
 
 			gatewayName := *item.Name
 			gatewayID := *item.Id
+			rename := gatewayName
 
 			if len(cred.Only) != 0 {
+				//
 				// filter is defined
-				var found bool
-				for _, name := range cred.Only {
-					if name == gatewayName {
-						found = true
-						break
+				//
+
+				if gw, found := cred.Only[gatewayName]; found {
+					if gw.Rename != "" {
+						rename = gw.Rename
 					}
-				}
-				if !found {
+				} else {
 					if config.debug {
 						log.Printf("%s: region=%s role=%s accountId=%s skipping filtered gateway=%s id=%s",
 							me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
@@ -133,23 +137,31 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 				}
 			}
 
-			log.Printf("%s: region=%s role=%s accountId=%s name=%s ID=%s",
-				me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
+			log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s ID=%s",
+				me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, gatewayID)
 
-			key := accountID + ":" + cred.Region + ":" + gatewayName
+			//
+			// add gateway to table
+			//
+
+			key := accountID + ":" + cred.Region + ":" + rename
 			gw, found := table[key]
 			if !found {
 				gw = gateway{id: gatewayID}
 			}
 			gw.count++
 			table[key] = gw
-
-			count++
 		}
 	}
 
-	log.Printf("%s: region=%s role=%s accountId=%s found: %d",
-		me, cred.Region, cred.RoleArn, accountID, count)
+	log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
+		me, cred.Region, cred.RoleArn, accountID, len(table))
+
+	//
+	// save gateways from table into server
+	//
+
+	var saved int
 
 	for k, g := range table {
 		if g.count != 1 {
@@ -158,7 +170,11 @@ func findGateways(cred credential, roleSessionName string, config appConfig) {
 			continue
 		}
 		saveGatewayID(k, g.id, config)
+		saved++
 	}
+
+	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d",
+		me, cred.Region, cred.RoleArn, accountID, saved)
 }
 
 func saveGatewayID(gatewayName, gatewayID string, config appConfig) {

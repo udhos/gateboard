@@ -45,10 +45,12 @@ func main() {
 	creds := loadCredentials(config.accountsFile)
 
 	for {
+		begin := time.Now()
 		for i, c := range creds {
 			log.Printf("---------- main account %d/%d", i+1, len(creds))
 			findGateways(c, me, config)
 		}
+		log.Printf("total scan time: %v", time.Since(begin))
 		if config.interval == 0 {
 			log.Printf("interval is %v, exiting after single run", config.interval)
 			break
@@ -60,10 +62,14 @@ func main() {
 }
 
 type credential struct {
-	RoleArn        string   `yaml:"role_arn"`
-	RoleExternalID string   `yaml:"role_external_id"`
-	Region         string   `yaml:"region"`
-	Only           []string `yaml:"only"`
+	RoleArn        string                 `yaml:"role_arn"`
+	RoleExternalID string                 `yaml:"role_external_id"`
+	Region         string                 `yaml:"region"`
+	Only           map[string]credGateway `yaml:"only"`
+}
+
+type credGateway struct {
+	Rename string `yaml:"rename"`
 }
 
 func loadCredentials(input string) []credential {
