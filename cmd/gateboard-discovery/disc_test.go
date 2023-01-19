@@ -56,14 +56,26 @@ func TestDiscovery(t *testing.T) {
 		t.Errorf("expecting 2 saved items, got %d", len(save.items))
 	}
 
-	if save.items[0].name != "123456789012:us-east-1:gw1" || save.items[0].id != "id0" {
-		t.Errorf("unexpected 1st item: %#v", save.items[0])
+	tab := map[string]string{}
+	for _, i := range save.items {
+		tab[i.name] = i.id
 	}
 
-	if save.items[1].name != "123456789012:us-east-1:eraseme3" || save.items[1].id != "id3" {
-		t.Errorf("unexpected 2nd item: %#v", save.items[1])
+	{
+		const k = "123456789012:us-east-1:gw1"
+		const v = "id0"
+		if tab[k] != v {
+			t.Errorf("unexpected 1st item: %#v", save.items[0])
+		}
 	}
 
+	{
+		const k = "123456789012:us-east-1:eraseme3"
+		const v = "id3"
+		if tab[k] != v {
+			t.Errorf("unexpected 2nd item: %#v", save.items[0])
+		}
+	}
 }
 
 type bogusScanner struct {
