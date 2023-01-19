@@ -1,21 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"log"
-	"net/http"
-	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"gopkg.in/yaml.v2"
-
-	"github.com/udhos/gateboard/gateboard"
 )
 
 func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Config, string) {
@@ -74,168 +67,109 @@ func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Con
 	return cfg, accountID
 }
 
-type gateway struct {
-	count int
-	id    string
+type scannerAWS struct {
+	apiGatewayClient *apigateway.Client
+	accountID        string
+	region           string
+	roleARN          string
 }
 
-func findGateways(cred credential, roleSessionName string, config appConfig) {
+func newScannerAWS(region, roleArn, roleExternalID, roleSessionName string) (*scannerAWS, string) {
 
-	const me = "findGateways"
+	const me = "newScannerAWS"
 
-	log.Printf("%s: region=%s role=%s", me, cred.Region, cred.RoleArn)
+	cfg, accountID := awsConfig(region, roleArn, roleExternalID, roleSessionName)
 
-	cfg, accountID := awsConfig(cred.Region, cred.RoleArn, cred.RoleExternalID, roleSessionName)
+	s := scannerAWS{
+		apiGatewayClient: apigateway.NewFromConfig(cfg),
+		accountID:        accountID,
+		region:           region,
+		roleARN:          roleArn,
+	}
 
-	log.Printf("%s: region=%s role=%s accountId=%s", me, cred.Region, cred.RoleArn, accountID)
+	log.Printf("%s: region=%s role=%s accountId=%s", me, region, roleArn, accountID)
 
-	apiGatewayClient := apigateway.NewFromConfig(cfg)
+	return &s, accountID
+}
+
+func (s *scannerAWS) list() []item {
+
+	const me = "scannerAWS.list"
+
 	var limit int32 = 500 // max number of results per page. default=25, max=500
-	table := map[string]gateway{}
+	//table := map[string]gateway{}
 
 	input := apigateway.GetRestApisInput{Limit: &limit}
-	paginator := apigateway.NewGetRestApisPaginator(apiGatewayClient, &input, func(o *apigateway.GetRestApisPaginatorOptions) {
-		o.Limit = limit
-		o.StopOnDuplicateToken = true
-	})
+	paginator := apigateway.NewGetRestApisPaginator(s.apiGatewayClient, &input,
+		func(o *apigateway.GetRestApisPaginatorOptions) {
+			o.Limit = limit
+			o.StopOnDuplicateToken = true
+		})
+
+	var page int
+	var found int
+
+	var array []item
 
 	for paginator.HasMorePages() {
+
+		page++
+
 		ctx := context.TODO()
 		output, errOut := paginator.NextPage(ctx, func(o *apigateway.Options) {
-			o.Region = cred.Region
+			o.Region = s.region
 		})
 		if errOut != nil {
-			log.Printf("%s: region=%s role=%s accountId=%s: error: %v",
-				me, cred.Region, cred.RoleArn, accountID, errOut)
+			log.Printf("%s: region=%s role=%s accountId=%s page=%d: error: %v",
+				me, s.region, s.roleARN, s.accountID, page, errOut)
 			continue
 		}
 
-		log.Printf("%s: region=%s role=%s accountId=%s gateways_found: %d",
-			me, cred.Region, cred.RoleArn, accountID, len(output.Items))
+		found += len(output.Items)
 
-		for _, item := range output.Items {
+		log.Printf("%s: region=%s role=%s accountId=%s page=%d gateways_in_page: %d gateways_total: %d",
+			me, s.region, s.roleARN, s.accountID, page, len(output.Items), found)
 
-			gatewayName := *item.Name
-			gatewayID := *item.Id
-			rename := gatewayName
+		for _, i := range output.Items {
 
-			if len(cred.Only) != 0 {
-				//
-				// filter is defined
-				//
+			gatewayName := *i.Name
+			gatewayID := *i.Id
 
-				if gw, found := cred.Only[gatewayName]; found {
-					if gw.Rename != "" {
-						rename = gw.Rename
-					}
-				} else {
-					if config.debug {
-						log.Printf("%s: region=%s role=%s accountId=%s skipping filtered gateway=%s id=%s",
-							me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
-					}
-					continue
-				}
-			}
-
-			log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s ID=%s",
-				me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, gatewayID)
+			log.Printf("%s: region=%s role=%s accountId=%s page=%d name=%s ID=%s",
+				me, s.region, s.roleARN, s.accountID, page, gatewayName, gatewayID)
 
 			//
 			// add gateway to table
 			//
 
-			key := accountID + ":" + cred.Region + ":" + rename
-			gw, found := table[key]
-			if !found {
-				gw = gateway{id: gatewayID}
+			/*
+				gw, found := table[gatewayName]
+				if !found {
+					gw = gateway{id: gatewayID}
+				}
+				gw.count++
+				table[gatewayName] = gw
+			*/
+
+			array = append(array, item{name: gatewayName, id: gatewayID})
+		}
+	}
+
+	/*
+		var array []item
+
+		for k, g := range table {
+			if g.count != 1 {
+				log.Printf("%s: region=%s role=%s accountId=%s IGNORING dup gateway=%s count=%d",
+					me, s.region, s.roleARN, s.accountID, k, g.count)
+				continue
 			}
-			gw.count++
-			table[key] = gw
+			array = append(array, item{name: k, id: g.id})
 		}
-	}
 
-	log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
-		me, cred.Region, cred.RoleArn, accountID, len(table))
+		log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
+			me, s.region, s.roleARN, s.accountID, len(array))
+	*/
 
-	//
-	// save gateways from table into server
-	//
-
-	var saved int
-
-	for k, g := range table {
-		if g.count != 1 {
-			log.Printf("%s: region=%s role=%s accountId=%s IGNORING dup gateway=%s count=%d",
-				me, cred.Region, cred.RoleArn, accountID, k, g.count)
-			continue
-		}
-		saveGatewayID(k, g.id, config)
-		saved++
-	}
-
-	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d",
-		me, cred.Region, cred.RoleArn, accountID, saved)
-}
-
-func saveGatewayID(gatewayName, gatewayID string, config appConfig) {
-	const me = "saveGatewayID"
-
-	if config.debug {
-		log.Printf("%s: URL=%s name=%s ID=%s dry=%t",
-			me, config.gateboardServerURL, gatewayName, gatewayID, config.dryRun)
-	}
-
-	if config.dryRun {
-		log.Printf("%s: running in DRY mode, refusing to update server", me)
-		return
-	}
-
-	path, errPath := url.JoinPath(config.gateboardServerURL, gatewayName)
-	if errPath != nil {
-		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
-		return
-	}
-
-	requestBody := gateboard.BodyPutRequest{GatewayID: gatewayID}
-	requestBytes, errJSON := json.Marshal(&requestBody)
-	if errJSON != nil {
-		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
-		return
-	}
-
-	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
-	if errReq != nil {
-		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
-		return
-	}
-
-	client := http.DefaultClient
-	resp, errDo := client.Do(req)
-	if errDo != nil {
-		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	var reply gateboard.BodyPutReply
-
-	dec := yaml.NewDecoder(resp.Body)
-	errYaml := dec.Decode(&reply)
-	if errYaml != nil {
-		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
-		return
-	}
-
-	if config.debug {
-		log.Printf("%s: URL=%s gateway reply: %v", me, path, toJSON(reply))
-	}
-}
-
-func toJSON(v interface{}) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		log.Printf("toJSON: %v", err)
-	}
-	return string(b)
+	return array
 }

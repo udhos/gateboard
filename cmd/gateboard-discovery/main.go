@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 const version = "0.0.2"
@@ -42,45 +40,118 @@ func main() {
 
 	config := newConfig()
 
-	creds := loadCredentials(config.accountsFile)
+	creds, errCreds := loadCredentials(config.accountsFile)
+	if errCreds != nil {
+		log.Fatalf("loading credentials: %v", errCreds)
+	}
 
+	//
+	// loop forever if interval greater than 0, run only once otherwise
+	//
 	for {
 		begin := time.Now()
+
+		//
+		// scan all accounts
+		//
 		for i, c := range creds {
 			log.Printf("---------- main account %d/%d", i+1, len(creds))
-			findGateways(c, me, config)
+
+			sessionName := me
+
+			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
+
+			save := newSaverServer(config.gateboardServerURL)
+
+			findGateways(c, scan, save, accountID, config.debug, config.dryRun)
 		}
+
 		log.Printf("total scan time: %v", time.Since(begin))
+
 		if config.interval == 0 {
 			log.Printf("interval is %v, exiting after single run", config.interval)
 			break
 		}
+
 		log.Printf("sleeping for %v", config.interval)
 		time.Sleep(config.interval)
 	}
-
 }
 
-type credential struct {
-	RoleArn        string                 `yaml:"role_arn"`
-	RoleExternalID string                 `yaml:"role_external_id"`
-	Region         string                 `yaml:"region"`
-	Only           map[string]credGateway `yaml:"only"`
-}
+func findGateways(cred credential, scan scanner, save saver, accountID string, debug, dryRun bool) {
 
-type credGateway struct {
-	Rename string `yaml:"rename"`
-}
+	const me = "findGateways"
 
-func loadCredentials(input string) []credential {
-	buf, errRead := os.ReadFile(input)
-	if errRead != nil {
-		log.Fatalf("loadCredentials: read file: %s: %v", input, errRead)
+	log.Printf("%s: region=%s role=%s", me, cred.Region, cred.RoleArn)
+
+	items := scan.list()
+
+	tableDedup := map[string]gateway{}
+
+	for _, i := range items {
+		gw, found := tableDedup[i.name]
+		if !found {
+			gw = gateway{id: i.id}
+		}
+		gw.count++
+		tableDedup[i.name] = gw
 	}
-	var creds []credential
-	errYaml := yaml.Unmarshal(buf, &creds)
-	if errYaml != nil {
-		log.Fatalf("loadCredentials: parse yaml: %s: %v", input, errYaml)
+
+	var unique []item
+
+	for k, g := range tableDedup {
+		if g.count != 1 {
+			log.Printf("%s: region=%s role=%s accountId=%s IGNORING dup gateway=%s count=%d",
+				me, cred.Region, cred.RoleArn, accountID, k, g.count)
+			continue
+		}
+		unique = append(unique, item{name: k, id: g.id})
 	}
-	return creds
+
+	log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
+		me, cred.Region, cred.RoleArn, accountID, len(unique))
+
+	var saved int
+
+	for _, i := range unique {
+
+		gatewayName := i.name
+		gatewayID := i.id
+		rename := gatewayName
+
+		if len(cred.Only) != 0 {
+			//
+			// filter is defined
+			//
+
+			if gw, found := cred.Only[gatewayName]; found {
+				if gw.Rename != "" {
+					rename = gw.Rename
+				}
+			} else {
+				if debug {
+					log.Printf("%s: region=%s role=%s accountId=%s skipping filtered gateway=%s id=%s",
+						me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
+				}
+				continue
+			}
+		}
+
+		full := accountID + ":" + cred.Region + ":" + rename
+
+		save.save(full, i.id, debug, dryRun)
+
+		saved++
+
+		log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s",
+			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID)
+	}
+
+	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d",
+		me, cred.Region, cred.RoleArn, accountID, saved)
+}
+
+type gateway struct {
+	count int
+	id    string
 }
