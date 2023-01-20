@@ -45,6 +45,14 @@ func main() {
 		log.Fatalf("loading credentials: %v", errCreds)
 	}
 
+	var save saver
+	switch config.save {
+	case "webhook":
+		save = newSaverWebhook(config.gateboardServerURL, config.webhookToken)
+	default:
+		save = newSaverServer(config.gateboardServerURL)
+	}
+
 	//
 	// loop forever if interval greater than 0, run only once otherwise
 	//
@@ -60,8 +68,6 @@ func main() {
 			sessionName := me
 
 			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
-
-			save := newSaverServer(config.gateboardServerURL)
 
 			findGateways(c, scan, save, accountID, config.debug, config.dryRun)
 		}

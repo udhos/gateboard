@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -78,9 +79,8 @@ func saveGatewayID(gatewayName, gatewayID, serverURL string, debug, dryRun bool)
 		return
 	}
 
-	if debug {
-		log.Printf("%s: URL=%s gateway reply: %v", me, path, toJSON(reply))
-	}
+	log.Printf("%s: URL=%s gateway reply: status=%d: %v",
+		me, path, resp.StatusCode, toJSON(reply))
 }
 
 func toJSON(v interface{}) string {
@@ -89,4 +89,71 @@ func toJSON(v interface{}) string {
 		log.Printf("toJSON: %v", err)
 	}
 	return string(b)
+}
+
+type saverWebhook struct {
+	serverURL string
+	token     string
+}
+
+func newSaverWebhook(serverURL, token string) *saverWebhook {
+	s := saverWebhook{serverURL: serverURL, token: token}
+	return &s
+}
+
+func (s *saverWebhook) save(name, id string, debug, dryRun bool) {
+
+	const me = "saverWebhook.save"
+
+	path := s.serverURL
+
+	if dryRun {
+		log.Printf("%s: URL=%s name=%s ID=%s dry=%t",
+			me, path, name, id, dryRun)
+	}
+
+	if dryRun {
+		log.Printf("%s: running in DRY mode, refusing to call webhook", me)
+		return
+	}
+
+	type Body struct {
+		GatewayName string `json:"gateway_name"`
+		GatewayID   string `json:"gateway_id"`
+	}
+
+	requestBody := Body{GatewayID: id, GatewayName: name}
+	requestBytes, errJSON := json.Marshal(&requestBody)
+	if errJSON != nil {
+		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
+		return
+	}
+
+	req, errReq := http.NewRequest("POST", path, bytes.NewBuffer(requestBytes))
+	if errReq != nil {
+		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
+		return
+	}
+
+	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := http.DefaultClient
+	resp, errDo := client.Do(req)
+	if errDo != nil {
+		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	body, errRead := io.ReadAll(resp.Body)
+	if errRead != nil {
+		log.Printf("%s: URL=%s gateway reply error: status=%d: %v",
+			me, path, resp.StatusCode, errRead)
+		return
+	}
+
+	log.Printf("%s: URL=%s gateway reply: status=%d: %v",
+		me, path, resp.StatusCode, string(body))
 }

@@ -12,6 +12,8 @@ type appConfig struct {
 	gateboardServerURL string
 	debug              bool
 	dryRun             bool
+	save               string
+	webhookToken       string
 }
 
 func newConfig() appConfig {
@@ -21,5 +23,7 @@ func newConfig() appConfig {
 		gateboardServerURL: env.String("GATEBOARD_SERVER_URL", "http://localhost:8080/gateway"),
 		debug:              env.Bool("DEBUG", true),
 		dryRun:             env.Bool("DRY_RUN", true),
+		save:               env.String("SAVE", "server"),
+		webhookToken:       env.String("WEBHOOK_TOKEN", "secret"),
 	}
 }
