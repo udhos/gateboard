@@ -65,7 +65,7 @@ func TestDiscovery(t *testing.T) {
 		const k = "123456789012:us-east-1:gw1"
 		const v = "id0"
 		if tab[k] != v {
-			t.Errorf("unexpected 1st item: %#v", save.items[0])
+			t.Errorf("unexpected 1st item: %s => %s (expected: %s)", k, tab[k], v)
 		}
 	}
 
@@ -73,7 +73,7 @@ func TestDiscovery(t *testing.T) {
 		const k = "123456789012:us-east-1:eraseme3"
 		const v = "id3"
 		if tab[k] != v {
-			t.Errorf("unexpected 2nd item: %#v", save.items[0])
+			t.Errorf("unexpected 2nd item: %v => %v (expected: %s)", k, tab[k], v)
 		}
 	}
 }
