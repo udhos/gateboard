@@ -2,7 +2,7 @@ import json
 import boto3
 
 sqs = boto3.client('sqs')
-queue_url = 'https://sqs.us-east-1.amazonaws.com/140330866198/gateboard'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/123456789012/gateboard'
 secret = 'secret'
 
 def forbidden():
