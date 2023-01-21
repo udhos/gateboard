@@ -90,9 +90,6 @@ type bogusSaver struct {
 	items []item
 }
 
-func (s *bogusSaver) save(name, id string, debug, dryRun bool) {
-	if dryRun {
-		return
-	}
+func (s *bogusSaver) save(name, id string, debug bool) {
 	s.items = append(s.items, item{name: name, id: id})
 }

@@ -48,13 +48,18 @@ func main() {
 	var save saver
 	switch config.save {
 	case "webhook":
-		save = newSaverWebhook(config.gateboardServerURL, config.webhookToken)
+		save = newSaverWebhook(config.webhookURL, config.webhookToken)
+	case "sqs":
+		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
 	default:
 		save = newSaverServer(config.gateboardServerURL)
 	}
 
+	sessionName := me
+
 	//
-	// loop forever if interval greater than 0, run only once otherwise
+	// loop forever if interval greater than 0,
+	// run only once otherwise
 	//
 	for {
 		begin := time.Now()
@@ -64,8 +69,6 @@ func main() {
 		//
 		for i, c := range creds {
 			log.Printf("---------- main account %d/%d", i+1, len(creds))
-
-			sessionName := me
 
 			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
 
@@ -145,16 +148,18 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 
 		full := accountID + ":" + cred.Region + ":" + rename
 
-		save.save(full, i.id, debug, dryRun)
+		log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s dry=%t",
+			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, dryRun)
+
+		if !dryRun {
+			save.save(full, i.id, debug)
+		}
 
 		saved++
-
-		log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s",
-			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID)
 	}
 
-	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d",
-		me, cred.Region, cred.RoleArn, accountID, saved)
+	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",
+		me, cred.Region, cred.RoleArn, accountID, saved, dryRun)
 }
 
 type gateway struct {

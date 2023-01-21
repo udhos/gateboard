@@ -11,13 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Config, string) {
+func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Config, string, error) {
 	const me = "awsConfig"
 
 	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region))
 	if errConfig != nil {
-		log.Fatalf("%s: load config: %v", me, errConfig)
+		log.Printf("%s: load config: %v", me, errConfig)
+		return cfg, "", errConfig
 	}
 
 	if roleArn != "" {
@@ -42,7 +43,8 @@ func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Con
 			),
 		)
 		if errConfig2 != nil {
-			log.Fatalf("%s: AssumeRole %s: error: %v", me, roleArn, errConfig2)
+			log.Printf("%s: AssumeRole %s: error: %v", me, roleArn, errConfig2)
+			return cfg, "", errConfig
 		}
 		cfg = cfg2
 	}
@@ -64,7 +66,7 @@ func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Con
 		}
 	}
 
-	return cfg, accountID
+	return cfg, accountID, nil
 }
 
 type scannerAWS struct {
@@ -78,7 +80,10 @@ func newScannerAWS(region, roleArn, roleExternalID, roleSessionName string) (*sc
 
 	const me = "newScannerAWS"
 
-	cfg, accountID := awsConfig(region, roleArn, roleExternalID, roleSessionName)
+	cfg, accountID, errConfig := awsConfig(region, roleArn, roleExternalID, roleSessionName)
+	if errConfig != nil {
+		log.Fatalf("%s: region=%s role=%s: %v", me, region, roleArn, errConfig)
+	}
 
 	s := scannerAWS{
 		apiGatewayClient: apigateway.NewFromConfig(cfg),
