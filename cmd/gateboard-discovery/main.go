@@ -155,7 +155,10 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 		log.Printf("%s: region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s dry=%t",
 			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, dryRun)
 
-		if !dryRun {
+		if dryRun {
+                        continue 
+                }
+
 			for attempt := 1; attempt <= retry; attempt++ {
 
 				errSave := save.save(full, i.id, debug)
@@ -173,8 +176,7 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 					time.Sleep(retryInterval)
 				}
 			}
-		}
-
+		
 	}
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",
