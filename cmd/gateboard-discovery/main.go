@@ -47,12 +47,14 @@ func main() {
 
 	var save saver
 	switch config.save {
+	case "server":
+		save = newSaverServer(config.gateboardServerURL)
 	case "webhook":
 		save = newSaverWebhook(config.webhookURL, config.webhookToken)
 	case "sqs":
 		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
 	default:
-		save = newSaverServer(config.gateboardServerURL)
+		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs", config.save)
 	}
 
 	sessionName := me
