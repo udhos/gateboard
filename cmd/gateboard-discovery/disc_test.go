@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"strings"
 	"testing"
 	"time"
 )
 
-// go test -v -run TestDiscovery ./cmd/gateboard-discovery
+// go test -v -count=1 -run TestDiscovery ./cmd/gateboard-discovery
 func TestDiscovery(t *testing.T) {
 
 	accountID := "123456789012"
@@ -93,17 +94,21 @@ func (s *bogusScanner) list() []item {
 type bogusSaver struct {
 	items      []item
 	saveErrors int
+	saves      int
 }
 
 func (s *bogusSaver) save(name, id string, debug bool) error {
+	s.saves++
+	log.Printf("bogusSaver.save: saveErrors=%d saves=%d", s.saveErrors, s.saves)
 	if s.saveErrors > 0 {
 		s.saveErrors--
-		return fmt.Errorf("bogusSaver active")
+		return errors.New("saveErrors active")
 	}
 	s.items = append(s.items, item{name: name, id: id})
 	return nil
 }
 
+// go test -v -count=1 -run TestSaveRetry ./cmd/gateboard-discovery
 func TestSaveRetry(t *testing.T) {
 
 	accountID := "123456789012"
@@ -114,14 +119,17 @@ func TestSaveRetry(t *testing.T) {
 		},
 	}
 
-	save := &bogusSaver{
-		saveErrors: 1, // will fail on first error
-	}
-
 	debug := true
 	dryRun := false
-	retry := 2
 	retryInterval := 100 * time.Millisecond
+
+	// saveErrors must be less than retry
+	retry := 5           // will attempt to save up to 5 times
+	const saveErrors = 2 // save will fail twice
+
+	save := &bogusSaver{
+		saveErrors: saveErrors,
+	}
 
 	credStr := `
 - role_arn: "" # empty role_arn means use current credentials
@@ -147,5 +155,9 @@ func TestSaveRetry(t *testing.T) {
 
 	if len(save.items) != 1 {
 		t.Errorf("expecting 1 saved item, got %d", len(save.items))
+	}
+
+	if save.saves != saveErrors+1 {
+		t.Errorf("expecting %d attempts, got %d", saveErrors+1, save.saves)
 	}
 }

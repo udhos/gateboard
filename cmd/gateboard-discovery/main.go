@@ -157,6 +157,7 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 				errSave := save.save(full, i.id, debug)
 				if errSave == nil {
 					saved++
+					break
 				}
 
 				log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s error: %v",
