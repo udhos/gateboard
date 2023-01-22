@@ -53,8 +53,10 @@ func main() {
 		save = newSaverWebhook(config.webhookURL, config.webhookToken)
 	case "sqs":
 		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
+	case "sns":
+		save = newSaverSNS(config.topicARN, config.topicRoleARN, config.topicRoleExternalID, me)
 	default:
-		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs", config.save)
+		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns", config.save)
 	}
 
 	sessionName := me

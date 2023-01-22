@@ -20,6 +20,9 @@ type appConfig struct {
 	queueURL            string
 	queueRoleARN        string
 	queueRoleExternalID string
+	topicARN            string
+	topicRoleARN        string
+	topicRoleExternalID string
 }
 
 func newConfig() appConfig {
@@ -29,7 +32,7 @@ func newConfig() appConfig {
 		gateboardServerURL:  env.String("GATEBOARD_SERVER_URL", "http://localhost:8080/gateway"),
 		debug:               env.Bool("DEBUG", true),
 		dryRun:              env.Bool("DRY_RUN", true),
-		save:                env.String("SAVE", "server"), // server, webhook, sqs
+		save:                env.String("SAVE", "server"), // server, webhook, sqs, sns
 		saveRetry:           env.Int("SAVE_RETRY", 3),
 		saveRetryInterval:   env.Duration("SAVE_RETRY_INTERVAL", 1*time.Second),
 		webhookToken:        env.String("WEBHOOK_TOKEN", "secret"),
@@ -37,5 +40,8 @@ func newConfig() appConfig {
 		queueURL:            env.String("QUEUE_URL", ""),   // https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
 		queueRoleARN:        env.String("QUEUE_ROLE_ARN", ""),
 		queueRoleExternalID: env.String("QUEUE_ROLE_EXTERNAL_ID", ""),
+		topicARN:            env.String("TOPIC_ARN", ""),
+		topicRoleARN:        env.String("TOPIC_ROLE_ARN", ""),
+		topicRoleExternalID: env.String("TOPIC_ROLE_EXTERNAL_ID", ""),
 	}
 }

@@ -11,9 +11,11 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v2"
+
+	"github.com/udhos/gateboard/gateboard"
 )
 
 type saver interface {
@@ -229,6 +231,90 @@ func (s *saverSQS) save(name, id string, debug bool) error {
 
 	if debug {
 		log.Printf("%s: SendMessage MessageId: %s", me, *resp.MessageId)
+	}
+
+	return nil
+}
+
+//
+// save on sns
+//
+
+type saverSNS struct {
+	topicARN        string
+	roleARN         string
+	roleExternalID  string
+	roleSessionName string
+}
+
+func newSaverSNS(topicARN, roleARN, roleExternalID, roleSessionName string) *saverSNS {
+	s := saverSNS{
+		topicARN:        topicARN,
+		roleARN:         roleARN,
+		roleExternalID:  roleExternalID,
+		roleSessionName: roleSessionName,
+	}
+	return &s
+}
+
+// arn:aws:sns:us-east-1:123456789012:gateboard
+func getTopicRegion(topicARN string) (string, error) {
+	const me = "getRegion"
+	fields := strings.SplitN(topicARN, ":", 5)
+	if len(fields) < 5 {
+		return "", fmt.Errorf("%s: bad topic ARN=[%s]", me, topicARN)
+	}
+	region := fields[3]
+	log.Printf("%s=[%s]", me, region)
+	return region, nil
+}
+
+func (s *saverSNS) save(name, id string, debug bool) error {
+
+	const me = "saverSNS.save"
+
+	region, errRegion := getTopicRegion(s.topicARN)
+	if errRegion != nil {
+		return errRegion
+	}
+
+	if debug {
+		log.Printf("%s: region=%s topicARN=%s roleARN=%s",
+			me, region, s.topicARN, s.roleARN)
+	}
+
+	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
+	if errConfig != nil {
+		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
+	}
+
+	type Body struct {
+		GatewayName string `json:"gateway_name"`
+		GatewayID   string `json:"gateway_id"`
+	}
+
+	requestBody := Body{GatewayID: id, GatewayName: name}
+	requestBytes, errJSON := json.Marshal(&requestBody)
+	if errJSON != nil {
+		return errJSON
+	}
+
+	message := string(requestBytes)
+
+	input := &sns.PublishInput{
+		Message:  &message,
+		TopicArn: &s.topicARN,
+	}
+
+	clientSNS := sns.NewFromConfig(cfg)
+
+	resp, errPublish := clientSNS.Publish(context.TODO(), input)
+	if errPublish != nil {
+		return fmt.Errorf("%s: Publish error: %v", me, errPublish)
+	}
+
+	if debug {
+		log.Printf("%s: Publish MessageId: %s", me, *resp.MessageId)
 	}
 
 	return nil
