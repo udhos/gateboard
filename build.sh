@@ -1,5 +1,7 @@
 #!/bin/bash
 
+gofmt -s -w .
+
 go mod tidy
 
 go test -race ./...

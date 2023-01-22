@@ -156,27 +156,27 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, dryRun)
 
 		if dryRun {
-                        continue 
-                }
+			continue
+		}
 
-			for attempt := 1; attempt <= retry; attempt++ {
+		for attempt := 1; attempt <= retry; attempt++ {
 
-				errSave := save.save(full, i.id, debug)
-				if errSave == nil {
-					saved++
-					break
-				}
-
-				log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s error: %v",
-					me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, errSave)
-
-				if attempt < retry {
-					log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s sleeping %v",
-						me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, retryInterval)
-					time.Sleep(retryInterval)
-				}
+			errSave := save.save(full, i.id, debug)
+			if errSave == nil {
+				saved++
+				break
 			}
-		
+
+			log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s error: %v",
+				me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, errSave)
+
+			if attempt < retry {
+				log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s sleeping %v",
+					me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, retryInterval)
+				time.Sleep(retryInterval)
+			}
+		}
+
 	}
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",

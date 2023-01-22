@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -11,8 +12,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+var awsConfigCache = map[string]cacheEntry{}
+
+type cacheEntry struct {
+	config    aws.Config
+	accountID string
+}
+
 func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Config, string, error) {
 	const me = "awsConfig"
+
+	key := fmt.Sprintf("%s,%s,%s,%s", region, roleArn, roleExternalID, roleSessionName)
+	if cfg, found := awsConfigCache[key]; found {
+		log.Printf("%s: key='%s' retrieved from cache", me, key)
+		return cfg.config, cfg.accountID, nil
+	}
 
 	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region))
@@ -64,6 +78,11 @@ func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Con
 			accountID = *respSts.Account
 			log.Printf("%s: GetCallerIdentity: Account=%s ARN=%s UserId=%s", me, *respSts.Account, *respSts.Arn, *respSts.UserId)
 		}
+	}
+
+	awsConfigCache[key] = cacheEntry{
+		config:    cfg,
+		accountID: accountID,
 	}
 
 	return cfg, accountID, nil
