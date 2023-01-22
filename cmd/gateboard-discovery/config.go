@@ -13,6 +13,8 @@ type appConfig struct {
 	debug               bool
 	dryRun              bool
 	save                string
+	saveRetry           int
+	saveRetryInterval   time.Duration
 	webhookToken        string
 	webhookURL          string
 	queueURL            string
@@ -28,6 +30,8 @@ func newConfig() appConfig {
 		debug:               env.Bool("DEBUG", true),
 		dryRun:              env.Bool("DRY_RUN", true),
 		save:                env.String("SAVE", "server"), // server, webhook, sqs
+		saveRetry:           env.Int("SAVE_RETRY", 3),
+		saveRetryInterval:   env.Duration("SAVE_RETRY_INTERVAL", 1*time.Second),
 		webhookToken:        env.String("WEBHOOK_TOKEN", "secret"),
 		webhookURL:          env.String("WEBHOOK_URL", ""), // https://xxxxxxxxxxxxxxxx.lambda-url.us-east-1.on.aws/
 		queueURL:            env.String("QUEUE_URL", ""),   // https://sqs.us-east-1.amazonaws.com/123456789012/gateboard

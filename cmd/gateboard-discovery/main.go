@@ -72,7 +72,7 @@ func main() {
 
 			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
 
-			findGateways(c, scan, save, accountID, config.debug, config.dryRun)
+			findGateways(c, scan, save, accountID, config.debug, config.dryRun, config.saveRetry, config.saveRetryInterval)
 		}
 
 		log.Printf("total scan time: %v", time.Since(begin))
@@ -87,7 +87,7 @@ func main() {
 	}
 }
 
-func findGateways(cred credential, scan scanner, save saver, accountID string, debug, dryRun bool) {
+func findGateways(cred credential, scan scanner, save saver, accountID string, debug, dryRun bool, retry int, retryInterval time.Duration) {
 
 	const me = "findGateways"
 
@@ -152,10 +152,24 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 			me, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, dryRun)
 
 		if !dryRun {
-			save.save(full, i.id, debug)
+			for attempt := 1; attempt <= retry; attempt++ {
+
+				errSave := save.save(full, i.id, debug)
+				if errSave == nil {
+					saved++
+				}
+
+				log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s error: %v",
+					me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, errSave)
+
+				if attempt < retry {
+					log.Printf("%s: save attempt=%d/%d region=%s role=%s accountId=%s name=%s rename=%s full=%s ID=%s sleeping %v",
+						me, attempt, retry, cred.Region, cred.RoleArn, accountID, gatewayName, rename, full, gatewayID, retryInterval)
+					time.Sleep(retryInterval)
+				}
+			}
 		}
 
-		saved++
 	}
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",

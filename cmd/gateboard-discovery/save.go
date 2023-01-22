@@ -17,7 +17,7 @@ import (
 )
 
 type saver interface {
-	save(name, id string, debug bool)
+	save(name, id string, debug bool) error
 }
 
 //
@@ -33,49 +33,29 @@ func newSaverServer(serverURL string) *saverServer {
 	return &s
 }
 
-func (s *saverServer) save(name, id string, debug bool) {
-	saveGatewayID(name, id, s.serverURL, debug)
-}
+func (s *saverServer) save(name, id string, debug bool) error {
+	const me = "saverServer.save"
 
-func saveGatewayID(gatewayName, gatewayID, serverURL string, debug bool) {
-	const me = "saveGatewayID"
-
-	/*
-		if dryRun {
-			log.Printf("%s: URL=%s name=%s ID=%s dry=%t",
-				me, serverURL, gatewayName, gatewayID, dryRun)
-		}
-
-		if dryRun {
-			log.Printf("%s: running in DRY mode, refusing to update server", me)
-			return
-		}
-	*/
-
-	path, errPath := url.JoinPath(serverURL, gatewayName)
+	path, errPath := url.JoinPath(s.serverURL, name)
 	if errPath != nil {
-		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
-		return
+		return errPath
 	}
 
-	requestBody := gateboard.BodyPutRequest{GatewayID: gatewayID}
+	requestBody := gateboard.BodyPutRequest{GatewayID: name}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
-		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
-		return
+		return errJSON
 	}
 
 	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
-		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
-		return
+		return errReq
 	}
 
 	client := http.DefaultClient
 	resp, errDo := client.Do(req)
 	if errDo != nil {
-		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
-		return
+		return errDo
 	}
 
 	defer resp.Body.Close()
@@ -85,12 +65,20 @@ func saveGatewayID(gatewayName, gatewayID, serverURL string, debug bool) {
 	dec := yaml.NewDecoder(resp.Body)
 	errYaml := dec.Decode(&reply)
 	if errYaml != nil {
-		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
-		return
+		return errYaml
 	}
 
-	log.Printf("%s: URL=%s gateway reply: status=%d: %v",
-		me, path, resp.StatusCode, toJSON(reply))
+	if debug {
+		log.Printf("%s: gateboard URL=%s reply: status=%d: %v",
+			me, path, resp.StatusCode, toJSON(reply))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%s: gateboard URL=%s bad status=%d: %v",
+			me, path, resp.StatusCode, toJSON(reply))
+	}
+
+	return nil
 }
 
 func toJSON(v interface{}) string {
@@ -115,23 +103,11 @@ func newSaverWebhook(serverURL, token string) *saverWebhook {
 	return &s
 }
 
-func (s *saverWebhook) save(name, id string, debug bool) {
+func (s *saverWebhook) save(name, id string, debug bool) error {
 
 	const me = "saverWebhook.save"
 
 	path := s.serverURL
-
-	/*
-		if dryRun {
-			log.Printf("%s: URL=%s name=%s ID=%s dry=%t",
-				me, path, name, id, dryRun)
-		}
-
-		if dryRun {
-			log.Printf("%s: running in DRY mode, refusing to call webhook", me)
-			return
-		}
-	*/
 
 	type Body struct {
 		GatewayName string `json:"gateway_name"`
@@ -141,14 +117,12 @@ func (s *saverWebhook) save(name, id string, debug bool) {
 	requestBody := Body{GatewayID: id, GatewayName: name}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
-		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
-		return
+		return errJSON
 	}
 
 	req, errReq := http.NewRequest("POST", path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
-		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
-		return
+		return errReq
 	}
 
 	req.Header.Set("Authorization", "Bearer "+s.token)
@@ -157,21 +131,27 @@ func (s *saverWebhook) save(name, id string, debug bool) {
 	client := http.DefaultClient
 	resp, errDo := client.Do(req)
 	if errDo != nil {
-		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
-		return
+		return errDo
 	}
 
 	defer resp.Body.Close()
 
 	body, errRead := io.ReadAll(resp.Body)
 	if errRead != nil {
-		log.Printf("%s: URL=%s gateway reply error: status=%d: %v",
-			me, path, resp.StatusCode, errRead)
-		return
+		return errRead
 	}
 
-	log.Printf("%s: URL=%s gateway reply: status=%d: %v",
-		me, path, resp.StatusCode, string(body))
+	if debug {
+		log.Printf("%s: webhook URL=%s reply: status=%d: %v",
+			me, path, resp.StatusCode, string(body))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%s: webhook URL=%s bad status=%d: %v",
+			me, path, resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 //
@@ -207,20 +187,18 @@ func getRegion(queueURL string) (string, error) {
 	return region, nil
 }
 
-func (s *saverSQS) save(name, id string, debug bool) {
+func (s *saverSQS) save(name, id string, debug bool) error {
 
 	const me = "saverSQS.save"
 
 	region, errRegion := getRegion(s.queueURL)
 	if errRegion != nil {
-		log.Printf("%s: region error: %v", me, errRegion)
-		return
+		return fmt.Errorf("%s: region error: %v", me, errRegion)
 	}
 
 	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
 	if errConfig != nil {
-		log.Printf("%s: aws config error: %v", me, errConfig)
-		return
+		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
 	}
 
 	type Body struct {
@@ -231,8 +209,7 @@ func (s *saverSQS) save(name, id string, debug bool) {
 	requestBody := Body{GatewayID: id, GatewayName: name}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
-		log.Printf("%s: URL=%s json error: %v", me, s.queueURL, errJSON)
-		return
+		return errJSON
 	}
 
 	message := string(requestBytes)
@@ -247,9 +224,12 @@ func (s *saverSQS) save(name, id string, debug bool) {
 
 	resp, errSend := clientSQS.SendMessage(context.TODO(), input)
 	if errSend != nil {
-		log.Printf("%s: SendMessage error: %v", me, errSend)
-		return
+		return fmt.Errorf("%s: SendMessage error: %v", me, errSend)
 	}
 
-	log.Printf("%s: SendMessage MessageId: %s", me, *resp.MessageId)
+	if debug {
+		log.Printf("%s: SendMessage MessageId: %s", me, *resp.MessageId)
+	}
+
+	return nil
 }

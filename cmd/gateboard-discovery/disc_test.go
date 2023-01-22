@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 // go test -v -run TestDiscovery ./cmd/gateboard-discovery
@@ -24,6 +26,8 @@ func TestDiscovery(t *testing.T) {
 
 	debug := true
 	dryRun := false
+	retry := 1
+	retryInterval := time.Second
 
 	credStr := `
 - role_arn: "" # empty role_arn means use current credentials
@@ -45,7 +49,7 @@ func TestDiscovery(t *testing.T) {
 	}
 
 	for _, c := range creds {
-		findGateways(c, scan, save, accountID, debug, dryRun)
+		findGateways(c, scan, save, accountID, debug, dryRun, retry, retryInterval)
 	}
 
 	for i, g := range save.items {
@@ -87,9 +91,61 @@ func (s *bogusScanner) list() []item {
 }
 
 type bogusSaver struct {
-	items []item
+	items      []item
+	saveErrors int
 }
 
-func (s *bogusSaver) save(name, id string, debug bool) {
+func (s *bogusSaver) save(name, id string, debug bool) error {
+	if s.saveErrors > 0 {
+		s.saveErrors--
+		return fmt.Errorf("bogusSaver active")
+	}
 	s.items = append(s.items, item{name: name, id: id})
+	return nil
+}
+
+func TestSaveRetry(t *testing.T) {
+
+	accountID := "123456789012"
+
+	scan := &bogusScanner{
+		items: []item{
+			{name: "eraseme", id: "id0"},
+		},
+	}
+
+	save := &bogusSaver{
+		saveErrors: 1, // will fail on first error
+	}
+
+	debug := true
+	dryRun := false
+	retry := 2
+	retryInterval := 100 * time.Millisecond
+
+	credStr := `
+- role_arn: "" # empty role_arn means use current credentials
+  region: us-east-1
+  role_external_id: ""
+  # if section 'only' is provided, only these gateways will be accepted
+  only:
+    eraseme: # accept gateway named 'eraseme'
+`
+
+	creds, errCred := loadCredentialsFromReader(strings.NewReader(credStr))
+	if errCred != nil {
+		t.Errorf("error loading credentials: %v", errCred)
+	}
+
+	for _, c := range creds {
+		findGateways(c, scan, save, accountID, debug, dryRun, retry, retryInterval)
+	}
+
+	for i, g := range save.items {
+		t.Logf("saved %d: name=%s id=%s", i, g.name, g.id)
+	}
+
+	if len(save.items) != 1 {
+		t.Errorf("expecting 1 saved item, got %d", len(save.items))
+	}
 }
