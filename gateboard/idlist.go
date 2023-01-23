@@ -17,7 +17,7 @@ type idEntry struct {
 }
 
 func newIDEntry(s string) (idEntry, error) {
-	id, weight, hasSep := strings.Cut(s, ":")
+	id, weight, hasSep := strings.Cut(s, ";")
 	id = strings.TrimSpace(id)
 	if id == "" {
 		return idEntry{}, fmt.Errorf("invalid blank id")
@@ -40,7 +40,7 @@ func (e idEntry) String() string {
 	if e.weight == 1 {
 		return e.id
 	}
-	return fmt.Sprintf("%s:%d", e.id, e.weight)
+	return fmt.Sprintf("%s;%d", e.id, e.weight)
 }
 
 func newIDList(s string) (idList, error) {
