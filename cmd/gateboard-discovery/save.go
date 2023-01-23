@@ -43,7 +43,7 @@ func (s *saverServer) save(name, id string, debug bool) error {
 		return errPath
 	}
 
-	requestBody := gateboard.BodyPutRequest{GatewayID: name}
+	requestBody := gateboard.BodyPutRequest{GatewayID: id}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
 		return errJSON
