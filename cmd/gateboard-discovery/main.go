@@ -55,6 +55,8 @@ func main() {
 		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
 	case "sns":
 		save = newSaverSNS(config.topicARN, config.topicRoleARN, config.topicRoleExternalID, me)
+	case "lambda":
+		save = newSaverLambda(config.lambdaARN, config.lambdaRoleARN, config.lambdaRoleExternalID, me)
 	default:
 		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns", config.save)
 	}

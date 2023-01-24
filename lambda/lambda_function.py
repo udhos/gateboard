@@ -17,7 +17,17 @@ def lambda_handler(event, context):
     
     print(event_str)
     
-    headers = event['headers']
+    headers = event.get('headers')
+    if headers is None:
+        #
+        # lambda invoked directly
+        #
+        send(event_str)
+        return return_ok()
+
+    #
+    # lambda invoked from function url
+    #
     
     auth = headers.get('authorization')
     if auth is None:
@@ -34,14 +44,18 @@ def lambda_handler(event, context):
         print("invalid token in header authorization")
         return forbidden()
     
-    body = event['body']
-    
+    send(event['body'])
+    return return_ok()
+
+
+def send(body):
     response = sqs.send_message(
         QueueUrl=queue_url,
         MessageAttributes={},
         MessageBody=body
     )
 
+def return_ok():
     return {
         "statusCode": 200,
         "body": "ok"

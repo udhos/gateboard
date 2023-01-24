@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.34
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.17.9
+	github.com/aws/aws-sdk-go-v2/service/lambda v1.29.0
 	github.com/aws/aws-sdk-go-v2/service/sns v1.19.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.5

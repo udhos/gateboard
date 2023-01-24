@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"gopkg.in/yaml.v2"
@@ -258,22 +259,35 @@ func newSaverSNS(topicARN, roleARN, roleExternalID, roleSessionName string) *sav
 }
 
 // arn:aws:sns:us-east-1:123456789012:gateboard
-func getTopicRegion(topicARN string) (string, error) {
-	const me = "getRegion"
-	fields := strings.SplitN(topicARN, ":", 5)
+// arn:aws:lambda:us-east-1:123456789012:function:forward_to_sqs
+func getARNRegion(arn string) (string, error) {
+	const me = "getARNRegion"
+	fields := strings.SplitN(arn, ":", 5)
 	if len(fields) < 5 {
-		return "", fmt.Errorf("%s: bad topic ARN=[%s]", me, topicARN)
+		return "", fmt.Errorf("%s: bad ARN=[%s]", me, arn)
 	}
 	region := fields[3]
 	log.Printf("%s=[%s]", me, region)
 	return region, nil
 }
 
+// arn:aws:lambda:us-east-1:123456789012:function:forward_to_sqs
+func getARNFunctionName(arn string) (string, error) {
+	const me = "getARNFunctionName"
+	fields := strings.SplitN(arn, ":", 7)
+	if len(fields) < 7 {
+		return "", fmt.Errorf("%s: bad ARN=[%s]", me, arn)
+	}
+	funcName := fields[6]
+	log.Printf("%s=[%s]", me, funcName)
+	return funcName, nil
+}
+
 func (s *saverSNS) save(name, id string, debug bool) error {
 
 	const me = "saverSNS.save"
 
-	region, errRegion := getTopicRegion(s.topicARN)
+	region, errRegion := getARNRegion(s.topicARN)
 	if errRegion != nil {
 		return errRegion
 	}
@@ -315,6 +329,96 @@ func (s *saverSNS) save(name, id string, debug bool) error {
 
 	if debug {
 		log.Printf("%s: Publish MessageId: %s", me, *resp.MessageId)
+	}
+
+	return nil
+}
+
+//
+// save on lambda
+//
+
+type saverLambda struct {
+	lambdaARN       string
+	roleARN         string
+	roleExternalID  string
+	roleSessionName string
+}
+
+func newSaverLambda(lambdaARN, roleARN, roleExternalID, roleSessionName string) *saverLambda {
+	s := saverLambda{
+		lambdaARN:       lambdaARN,
+		roleARN:         roleARN,
+		roleExternalID:  roleExternalID,
+		roleSessionName: roleSessionName,
+	}
+	return &s
+}
+
+func (s *saverLambda) save(name, id string, debug bool) error {
+
+	const me = "saverLambda.save"
+
+	region, errRegion := getARNRegion(s.lambdaARN)
+	if errRegion != nil {
+		return errRegion
+	}
+
+	functionName, errFuncName := getARNFunctionName(s.lambdaARN)
+	if errFuncName != nil {
+		return errFuncName
+	}
+
+	if debug {
+		log.Printf("%s: region=%s topicARN=%s roleARN=%s",
+			me, region, s.lambdaARN, s.roleARN)
+	}
+
+	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
+	if errConfig != nil {
+		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
+	}
+
+	type Body struct {
+		GatewayName string `json:"gateway_name"`
+		GatewayID   string `json:"gateway_id"`
+	}
+
+	requestBody := Body{GatewayID: id, GatewayName: name}
+	requestBytes, errJSON := json.Marshal(&requestBody)
+	if errJSON != nil {
+		return errJSON
+	}
+
+	input := &lambda.InvokeInput{
+		FunctionName: &functionName,
+		Payload:      requestBytes,
+	}
+
+	clientLambda := lambda.NewFromConfig(cfg)
+
+	resp, errInvoke := clientLambda.Invoke(context.TODO(), input)
+	if errInvoke != nil {
+		return fmt.Errorf("%s: Invoke error: %v", me, errInvoke)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%s: Invoke ARN=%s bad status=%d payload: %s",
+			me, s.lambdaARN, resp.StatusCode, resp.Payload)
+	}
+
+	var funcError string
+	if resp.FunctionError != nil {
+		funcError = *resp.FunctionError
+	}
+	if funcError != "" {
+		return fmt.Errorf("%s: Invoke ARN=%s function_error='%s' payload: %s",
+			me, s.lambdaARN, funcError, resp.Payload)
+	}
+
+	if debug {
+		log.Printf("%s: Invoke ARN=%s function_error='%s' payload: %s",
+			me, s.lambdaARN, funcError, resp.Payload)
 	}
 
 	return nil
