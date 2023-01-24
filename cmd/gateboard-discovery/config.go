@@ -35,7 +35,7 @@ func newConfig() appConfig {
 		gateboardServerURL:   env.String("GATEBOARD_SERVER_URL", "http://localhost:8080/gateway"),
 		debug:                env.Bool("DEBUG", true),
 		dryRun:               env.Bool("DRY_RUN", true),
-		save:                 env.String("SAVE", "server"), // server, webhook, sqs, sns
+		save:                 env.String("SAVE", "server"), // server, webhook, sqs, sns, lambda
 		saveRetry:            env.Int("SAVE_RETRY", 3),
 		saveRetryInterval:    env.Duration("SAVE_RETRY_INTERVAL", 1*time.Second),
 		webhookToken:         env.String("WEBHOOK_TOKEN", "secret"),

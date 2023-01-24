@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "0.0.10"
+const version = "0.0.11"
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -58,7 +58,7 @@ func main() {
 	case "lambda":
 		save = newSaverLambda(config.lambdaARN, config.lambdaRoleARN, config.lambdaRoleExternalID, me)
 	default:
-		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns", config.save)
+		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns, lambda", config.save)
 	}
 
 	sessionName := me
