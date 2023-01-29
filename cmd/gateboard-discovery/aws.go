@@ -162,38 +162,9 @@ func (s *scannerAWS) list() []item {
 			log.Printf("%s: region=%s role=%s accountId=%s page=%d name=%s ID=%s",
 				me, s.region, s.roleARN, s.accountID, page, gatewayName, gatewayID)
 
-			//
-			// add gateway to table
-			//
-
-			/*
-				gw, found := table[gatewayName]
-				if !found {
-					gw = gateway{id: gatewayID}
-				}
-				gw.count++
-				table[gatewayName] = gw
-			*/
-
 			array = append(array, item{name: gatewayName, id: gatewayID})
 		}
 	}
-
-	/*
-		var array []item
-
-		for k, g := range table {
-			if g.count != 1 {
-				log.Printf("%s: region=%s role=%s accountId=%s IGNORING dup gateway=%s count=%d",
-					me, s.region, s.roleARN, s.accountID, k, g.count)
-				continue
-			}
-			array = append(array, item{name: k, id: g.id})
-		}
-
-		log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
-			me, s.region, s.roleARN, s.accountID, len(array))
-	*/
 
 	return array
 }
