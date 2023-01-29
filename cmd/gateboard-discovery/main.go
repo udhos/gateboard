@@ -101,6 +101,11 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 
 	items := scan.list()
 
+	type gateway struct {
+		count int
+		id    string
+	}
+
 	tableDedup := map[string]gateway{}
 
 	for _, i := range items {
@@ -183,9 +188,4 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",
 		me, cred.Region, cred.RoleArn, accountID, saved, dryRun)
-}
-
-type gateway struct {
-	count int
-	id    string
 }
