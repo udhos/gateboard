@@ -92,6 +92,19 @@ func toJSON(v interface{}) string {
 	return string(b)
 }
 
+type saveBody struct {
+	GatewayName string `json:"gateway_name"`
+	GatewayID   string `json:"gateway_id"`
+}
+
+func bodyJSON(name, id string) ([]byte, error) {
+	requestBody := saveBody{
+		GatewayName: name,
+		GatewayID:   id,
+	}
+	return json.Marshal(&requestBody)
+}
+
 //
 // save on webhook
 //
@@ -112,13 +125,7 @@ func (s *saverWebhook) save(name, id string, debug bool) error {
 
 	path := s.serverURL
 
-	type Body struct {
-		GatewayName string `json:"gateway_name"`
-		GatewayID   string `json:"gateway_id"`
-	}
-
-	requestBody := Body{GatewayID: id, GatewayName: name}
-	requestBytes, errJSON := json.Marshal(&requestBody)
+	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
 		return errJSON
 	}
@@ -204,13 +211,7 @@ func (s *saverSQS) save(name, id string, debug bool) error {
 		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
 	}
 
-	type Body struct {
-		GatewayName string `json:"gateway_name"`
-		GatewayID   string `json:"gateway_id"`
-	}
-
-	requestBody := Body{GatewayID: id, GatewayName: name}
-	requestBytes, errJSON := json.Marshal(&requestBody)
+	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
 		return errJSON
 	}
@@ -302,13 +303,7 @@ func (s *saverSNS) save(name, id string, debug bool) error {
 		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
 	}
 
-	type Body struct {
-		GatewayName string `json:"gateway_name"`
-		GatewayID   string `json:"gateway_id"`
-	}
-
-	requestBody := Body{GatewayID: id, GatewayName: name}
-	requestBytes, errJSON := json.Marshal(&requestBody)
+	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
 		return errJSON
 	}
@@ -379,13 +374,7 @@ func (s *saverLambda) save(name, id string, debug bool) error {
 		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
 	}
 
-	type Body struct {
-		GatewayName string `json:"gateway_name"`
-		GatewayID   string `json:"gateway_id"`
-	}
-
-	requestBody := Body{GatewayID: id, GatewayName: name}
-	requestBytes, errJSON := json.Marshal(&requestBody)
+	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
 		return errJSON
 	}
