@@ -370,7 +370,7 @@ func (s *saverLambda) save(name, id string, debug bool) error {
 	}
 
 	if debug {
-		log.Printf("%s: region=%s topicARN=%s roleARN=%s",
+		log.Printf("%s: region=%s lambdaARN=%s roleARN=%s",
 			me, region, s.lambdaARN, s.roleARN)
 	}
 
