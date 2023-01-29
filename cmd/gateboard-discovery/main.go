@@ -50,7 +50,7 @@ func main() {
 	case "server":
 		save = newSaverServer(config.gateboardServerURL)
 	case "webhook":
-		save = newSaverWebhook(config.webhookURL, config.webhookToken)
+		save = newSaverWebhook(config.webhookURL, config.webhookToken, config.webhookMethod)
 	case "sqs":
 		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
 	case "sns":

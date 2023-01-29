@@ -17,6 +17,7 @@ type appConfig struct {
 	saveRetryInterval    time.Duration
 	webhookToken         string
 	webhookURL           string
+	webhookMethod        string
 	queueURL             string
 	queueRoleARN         string
 	queueRoleExternalID  string
@@ -40,7 +41,8 @@ func newConfig() appConfig {
 		saveRetryInterval:    env.Duration("SAVE_RETRY_INTERVAL", 1*time.Second),
 		webhookToken:         env.String("WEBHOOK_TOKEN", "secret"),
 		webhookURL:           env.String("WEBHOOK_URL", ""), // https://xxxxxxxxxxxxxxxx.lambda-url.us-east-1.on.aws/
-		queueURL:             env.String("QUEUE_URL", ""),   // https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+		webhookMethod:        env.String("WEBHOOK_METHOD", "PUT"),
+		queueURL:             env.String("QUEUE_URL", ""), // https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
 		queueRoleARN:         env.String("QUEUE_ROLE_ARN", ""),
 		queueRoleExternalID:  env.String("QUEUE_ROLE_EXTERNAL_ID", ""),
 		topicARN:             env.String("TOPIC_ARN", ""),

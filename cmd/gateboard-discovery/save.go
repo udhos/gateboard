@@ -112,10 +112,11 @@ func bodyJSON(name, id string) ([]byte, error) {
 type saverWebhook struct {
 	serverURL string
 	token     string
+	method    string
 }
 
-func newSaverWebhook(serverURL, token string) *saverWebhook {
-	s := saverWebhook{serverURL: serverURL, token: token}
+func newSaverWebhook(serverURL, token, method string) *saverWebhook {
+	s := saverWebhook{serverURL: serverURL, token: token, method: method}
 	return &s
 }
 
@@ -130,7 +131,7 @@ func (s *saverWebhook) save(name, id string, debug bool) error {
 		return errJSON
 	}
 
-	req, errReq := http.NewRequest("POST", path, bytes.NewBuffer(requestBytes))
+	req, errReq := http.NewRequest(s.method, path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
 		return errReq
 	}
