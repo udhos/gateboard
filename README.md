@@ -187,6 +187,112 @@ curl localhost:8080/gateway/gate1
 {"gateway_name":"gate1","gateway_id":"id2"}
 ```
 
+## gateway-discovery
+
+### Save to server
+
+Discovery writes directly to server.
+
+Start server.
+
+    export REPO=mem
+    gateboard
+
+Run discovery.
+
+    export SAVE=server
+    export DRY_RUN=false
+    gateboard-discovery
+
+Dump database.
+
+    curl localhost:8080/dump | jq
+
+### Save to webhook
+
+Discovery writes to webhook that forwards to SQS queue.
+
+Start server.
+
+    export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+    export REPO=mem
+    gateboard
+
+Run discovery.
+
+    export SAVE=webhook
+    # use lambda function url as webhook
+    export WEBHOOK_URL=https://xxxxxxxxxxxxx.lambda-url.us-east-1.on.aws
+    export DRY_RUN=false
+    gateboard-discovery
+
+Dump database.
+
+    curl localhost:8080/dump | jq
+
+### Save to SQS
+
+Discovery writes to SQS queue.
+
+Start server.
+
+    export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+    export REPO=mem
+    gateboard
+
+Run discovery.
+
+    export SAVE=sqs
+    export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+    export DRY_RUN=false
+    gateboard-discovery
+
+Dump database.
+
+    curl localhost:8080/dump | jq
+
+### Save to SNS
+
+Discovery writes to SNS topic that forwards to SQS queue.
+
+Start server.
+
+    export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+    export REPO=mem
+    gateboard
+
+Run discovery.
+
+    export SAVE=sns
+    export TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:gateboard
+    export DRY_RUN=false
+    gateboard-discovery
+
+Dump database.
+
+    curl localhost:8080/dump | jq
+
+### Save to lambda
+
+Discovery writes to lambda function that forwards to SQS queue.
+
+Start server.
+
+    export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
+    export REPO=mem
+    gateboard
+
+Run discovery.
+
+    export SAVE=lambda
+    export LAMBDA_ARN=arn:aws:lambda:us-east-1:123456789012:function:forward_to_sqs
+    export DRY_RUN=false
+    gateboard-discovery
+
+Dump database.
+
+    curl localhost:8080/dump | jq
+
 ## Docker
 
 Docker hub:
@@ -211,7 +317,7 @@ Multiarch build recipe:
 ./docker/build-multiarch.sh
 ```
 
-### gateboard-discovery
+### gateboard-discovery docker image
 
 Docker hub:
 
