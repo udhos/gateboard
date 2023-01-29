@@ -121,7 +121,6 @@ func (s *scannerAWS) list() []item {
 	const me = "scannerAWS.list"
 
 	var limit int32 = 500 // max number of results per page. default=25, max=500
-	//table := map[string]gateway{}
 
 	input := apigateway.GetRestApisInput{Limit: &limit}
 	paginator := apigateway.NewGetRestApisPaginator(s.apiGatewayClient, &input,
