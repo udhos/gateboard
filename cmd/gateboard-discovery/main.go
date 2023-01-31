@@ -78,6 +78,12 @@ func main() {
 
 			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
 
+			if accountID == "" {
+				log.Printf("ERROR missing accountId=[%s] %d/%d: region=%s role_arn=%s",
+					accountID, i+1, len(creds), c.Region, c.RoleArn)
+				continue
+			}
+
 			findGateways(c, scan, save, accountID, config.debug, config.dryRun, config.saveRetry, config.saveRetryInterval)
 		}
 
