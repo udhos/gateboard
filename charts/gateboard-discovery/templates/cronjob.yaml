@@ -26,10 +26,17 @@ spec:
             envFrom:
             - configMapRef:
                 name: {{ include "gateboard-discovery.fullname" . }}
+            volumeMounts:
+            - name: accounts
+              mountPath: /etc/gateboard
             resources:
               {{- toYaml .Values.resources | nindent 14 }}
           restartPolicy: OnFailure
           {{- with .Values.nodeSelector }}
+          volumes:
+          - name: accounts
+            configMap:
+              name: {{ include "gateboard-discovery.fullname" . }}-accounts
           nodeSelector:
             {{- toYaml . | nindent 8 }}
           {{- end }}

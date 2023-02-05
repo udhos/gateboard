@@ -3,9 +3,9 @@ entries:
   gateboard:
   - apiVersion: v2
     appVersion: 0.0.8
-    created: "2023-02-04T20:35:30.90644555-03:00"
-    description: A Helm chart for Kubernetes
-    digest: 836b7b8cf9b911bc3f7755ce442c038ddad05a0a1ecd85c295c1e6a447b0a572
+    created: "2023-02-04T21:55:50.928337225-03:00"
+    description: A Helm chart for gateboard
+    digest: 6e2de01a0b957d93a617a42de62d8249f4a9c12ffdf62785755efe57f3089ef8
     name: gateboard
     sources:
     - https://github.com/udhos/gateboard
@@ -16,9 +16,9 @@ entries:
   gateboard-discovery:
   - apiVersion: v2
     appVersion: 0.0.11
-    created: "2023-02-04T20:35:30.907084543-03:00"
-    description: A Helm chart for Kubernetes
-    digest: 448a39b39b25c02a117e6d6bcd94d927008f0b7c9e1a6b3d834869805c5bea57
+    created: "2023-02-04T21:55:50.928630726-03:00"
+    description: A Helm chart for gateboard-discovery
+    digest: 035fc0e286c9e4b119ac5614191f857e147f4b3510e50d42ede36d04b3baecec
     name: gateboard-discovery
     sources:
     - https://github.com/udhos/gateboard
@@ -26,4 +26,4 @@ entries:
     urls:
     - https://udhos.github.io/miniapi/gateboard-discovery-0.0.0.tgz
     version: 0.0.0
-generated: "2023-02-04T20:35:30.905880161-03:00"
+generated: "2023-02-04T21:55:50.927870262-03:00"

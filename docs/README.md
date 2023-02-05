@@ -5,36 +5,34 @@ Helm's [documentation](https://helm.sh/docs) to get started.
 
 Once Helm has been set up correctly, add the repo as follows:
 
-    helm repo add miniapi https://udhos.github.io/miniapi
+    helm repo add gateboard https://udhos.github.io/gateboard
 
 Update files from repo:
 
     helm repo update
 
-Search miniapi:
+Search gateboard:
 
-    helm search repo miniapi -l
-    NAME           	CHART VERSION	APP VERSION	DESCRIPTION
-    miniapi/miniapi	0.1.7        	0.0.2      	A Helm chart for miniapi
-    miniapi/miniapi	0.1.6        	0.0.2      	A Helm chart for miniapi
-    miniapi/miniapi	0.1.5        	0.0.1      	A Helm chart for miniapi
-    miniapi/miniapi	0.1.4        	0.0.1      	A Helm chart for miniapi
-    miniapi/miniapi	0.1.3        	0.0.1      	A Helm chart for miniapi
+    helm search repo bateboard -l
+    NAME           	                CHART VERSION	APP VERSION	DESCRIPTION
+    gateboard/gateboard	            0.0.0        	0.0.8      	A Helm chart for gateboard
+    bateboard/gateboard-discovery	0.0.0        	0.0.11     	A Helm chart for gateboard-discovery
 
-To install the miniapi chart:
+To install the chart:
 
-    helm install my-miniapi miniapi/miniapi
-    #            ^          ^       ^
-    #            |          |        \__ chart
-    #            |          |
-    #            |           \__________ repo
+    helm install my-gateboard gateboard/gateboard
+    helm install my-discovery gateboard/gateboard-discovery
+    #            ^            ^         ^
+    #            |            |          \__ chart
+    #            |            |
+    #            |             \____________ repo
     #            |
-    #             \_____________________ release (chart instance installed in cluster)
+    #             \_________________________ release (chart instance installed in cluster)
 
 To uninstall the chart:
 
-    helm uninstall my-miniapi
+    helm uninstall my-discovery
 
 # Source
 
-<https://github.com/udhos/miniapi>
+<https://github.com/udhos/gateboard>

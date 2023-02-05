@@ -59,7 +59,7 @@ affinity: {}
 #
 configMapProperties:
   DRY_RUN: false
-  #ACCOUNTS: "discovery-accounts.yaml"
+  ACCOUNTS: "/etc/gateboard/discovery-accounts.yaml"
   #INTERVAL: 0
   #GATEBOARD_SERVER_URL: http://localhost:8080/gateway
   #DEBUG: true
@@ -76,4 +76,20 @@ configMapProperties:
   #TOPIC_ROLE_ARN: ""
   #TOPIC_ROLE_EXTERNAL_ID: ""
   #LAMBDA_ROLE_EXTERNAL_ID: ""
-  
+
+configMapAccounts:
+  discovery-accounts.yaml:
+  - role_arn: "" # empty role_arn means use current credentials
+    region: us-east-1
+    role_external_id: ""
+    # if section 'only' is provided, only these gateways will be accepted
+    only:
+      eraseme: # accept gateway named 'eraseme'
+        rename: gw1 # rename gateway to 'gw1' before saving into server
+      eraseme2:
+        rename: gw2
+      eraseme3: {} # do not rename
+
+  - role_arn: "" # empty role_arn means use current credentials
+    region: sa-east-1
+    role_external_id: ""
