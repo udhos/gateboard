@@ -13,10 +13,10 @@ Update files from repo:
 
 Search gateboard:
 
-    helm search repo bateboard -l
-    NAME           	                CHART VERSION	APP VERSION	DESCRIPTION
-    gateboard/gateboard	            0.0.0        	0.0.8      	A Helm chart for gateboard
-    bateboard/gateboard-discovery	0.0.0        	0.0.11     	A Helm chart for gateboard-discovery
+    helm search repo gateboard -l --version ">=0.0.0"
+    NAME                         	CHART VERSION	APP VERSION	DESCRIPTION
+    gateboard/gateboard          	0.0.0        	0.0.8      	A Helm chart for gateboard
+    gateboard/gateboard-discovery	0.0.0        	0.0.11     	A Helm chart for gateboard-discovery
 
 To install the chart:
 
