@@ -112,4 +112,3 @@ configMapProperties:
   #REDIS_KEY: gateboard
   #WRITE_RETRY: 3
   #WRITE_RETRY_INTERVAL: 1s
-

@@ -32,11 +32,11 @@ spec:
             resources:
               {{- toYaml .Values.resources | nindent 14 }}
           restartPolicy: OnFailure
-          {{- with .Values.nodeSelector }}
           volumes:
           - name: accounts
             configMap:
               name: {{ include "gateboard-discovery.fullname" . }}-accounts
+          {{- with .Values.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 8 }}
           {{- end }}
