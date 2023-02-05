@@ -36,10 +36,6 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-service:
-  type: ClusterIP
-  port: 80
-
 ingress:
   enabled: false
   className: ""
@@ -81,8 +77,12 @@ tolerations: []
 
 affinity: {}
 
-podHealthCheck:
+service:
+  type: ClusterIP
   port: 8080
+
+podHealthCheck:
+  port: 8888
   path: /health
 
 #
@@ -93,7 +93,8 @@ configMapProperties:
   #QUEUE_URL: ""
   #SQS_ROLE_ARN: ""
   #TTL: 120
-  #REPO: mongo
+  #REPO: server
+  REPO: mem
   #MONGO_URL: mongodb://localhost:27017
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
@@ -102,7 +103,6 @@ configMapProperties:
   #HEALTH_PATH: /health
   #METRICS_ADDR: "":3000"
   #METRICS_PATH: /metrics
-  #JAEGER_URL: http://jaeger-collector:14268/api/traces
   #DYNAMODB_TABLE: gateboard
   #DYNAMODB_REGION: us-east-1
   #DYNAMODB_ROLE_ARN: ""
@@ -112,3 +112,7 @@ configMapProperties:
   #REDIS_KEY: gateboard
   #WRITE_RETRY: 3
   #WRITE_RETRY_INTERVAL: 1s
+  #GIN_MODE: release
+  #JAEGER_URL: http://jaeger-collector:14268/api/traces
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: "0.01"
