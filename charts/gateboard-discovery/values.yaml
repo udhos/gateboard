@@ -58,7 +58,7 @@ affinity: {}
 # See: https://stackoverflow.com/questions/72816925/helm-templating-in-configmap-for-values-yaml
 #
 configMapProperties:
-  DRY_RUN: false
+  DRY_RUN: "false"
   ACCOUNTS: "/etc/gateboard/discovery-accounts.yaml"
   #INTERVAL: 0
   #GATEBOARD_SERVER_URL: http://localhost:8080/gateway
@@ -78,7 +78,6 @@ configMapProperties:
   #LAMBDA_ROLE_EXTERNAL_ID: ""
 
 configMapAccounts:
-  discovery-accounts.yaml:
   - role_arn: "" # empty role_arn means use current credentials
     region: us-east-1
     role_external_id: ""

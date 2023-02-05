@@ -12,6 +12,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "gateboard-discovery.fullname" . }}-accounts
 data:
-  {{- if .Values.configMapAccounts }}
-  {{- include "common.tplvalues.render" ( dict "value" .Values.configMapAccounts "context" $ ) | nindent 2 }}
-  {{- end }}
+  discovery-accounts.yaml: |
+    {{- if .Values.configMapAccounts }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.configMapAccounts "context" $ ) | nindent 4 }}
+    {{- end }}
