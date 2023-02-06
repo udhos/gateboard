@@ -81,6 +81,9 @@ func main() {
 				URI:        app.config.mongoURI,
 				database:   app.config.mongoDatabase,
 				collection: app.config.mongoCollection,
+				username:   app.config.mongoUsername,
+				password:   app.config.mongoPassword,
+				tlsCAFile:  app.config.mongoTlsCaFile,
 				timeout:    time.Second * 10,
 			})
 			if errMongo != nil {

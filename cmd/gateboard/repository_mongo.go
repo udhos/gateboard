@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,6 +24,9 @@ type repoMongoOptions struct {
 	URI        string
 	database   string
 	collection string
+	username   string
+	password   string
+	tlsCAFile  string
 	timeout    time.Duration
 }
 
@@ -37,6 +41,39 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	r := &repoMongo{options: opt}
 
 	//
+	// URI
+	//
+
+	var uri string
+
+	{
+		s := r.options.URI
+		if !strings.HasSuffix(s, "/") {
+			s += "/"
+		}
+
+		u, errURI := url.Parse(s)
+		if errURI != nil {
+			log.Printf("%s: mongo connect URI: %v", me, errURI)
+			return nil, errURI
+		}
+
+		q := u.Query()
+
+		if opt.tlsCAFile != "" {
+			q.Set("tlsCAFile", opt.tlsCAFile)
+		}
+
+		u.RawQuery = q.Encode()
+
+		uri = u.String()
+
+		if opt.debug {
+			log.Printf("%s: mongo connect URI: %s", me, uri)
+		}
+	}
+
+	//
 	// connect
 	//
 
@@ -44,7 +81,17 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 		defer cancel()
 		var errConnect error
-		r.client, errConnect = mongo.Connect(ctx, options.Client().ApplyURI(r.options.URI).SetRetryWrites(false))
+
+		if opt.username != "" || opt.password != "" {
+			cred := options.Credential{
+				Username: opt.username,
+				Password: opt.password,
+			}
+			r.client, errConnect = mongo.Connect(ctx, options.Client().ApplyURI(uri).SetAuth(cred).SetRetryWrites(false))
+
+		} else {
+			r.client, errConnect = mongo.Connect(ctx, options.Client().ApplyURI(uri).SetRetryWrites(false))
+		}
 		if errConnect != nil {
 			log.Printf("%s: mongo connect: %v", me, errConnect)
 			return nil, errConnect
