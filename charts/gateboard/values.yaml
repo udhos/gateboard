@@ -95,9 +95,9 @@ configMapProperties:
   #TTL: 120
   #REPO: server
   REPO: mem
-  #MONGO_URL: mongodb://localhost:27017
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
+  #MONGO_TLS_CA_FILE: ""
   #LISTEN_ADDR: ":8080"
   #HEALTH_ADDR: ":8888"
   #HEALTH_PATH: /health
@@ -116,3 +116,9 @@ configMapProperties:
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"
+
+secrets:
+  mongo:
+    username: ""
+    password: ""
+    url: bW9uZ29kYjovL2xvY2FsaG9zdDoyNzAxNw==

@@ -40,6 +40,9 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ include "gateboard.fullname" . }}
+          envFrom:
+          - secretRef:
+              name: {{ include "gateboard.fullname" . }}
           startupProbe:
             # must initialize within 3*100=300 seconds
             httpGet:
