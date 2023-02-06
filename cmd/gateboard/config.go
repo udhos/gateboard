@@ -17,7 +17,7 @@ type appConfig struct {
 	mongoCollection    string
 	mongoUsername      string
 	mongoPassword      string
-	mongoTlsCaFile     string
+	mongoTLSCaFile     string
 	applicationAddr    string
 	healthAddr         string
 	healthPath         string
@@ -47,7 +47,7 @@ func newConfig() appConfig {
 		mongoCollection:    env.String("MONGO_COLLECTION", "gateboard"),
 		mongoUsername:      env.String("MONGO_USERNAME", ""),
 		mongoPassword:      env.String("MONGO_PASSWORD", ""),
-		mongoTlsCaFile:     env.String("MONGO_TLS_CA_FILE", ""),
+		mongoTLSCaFile:     env.String("MONGO_TLS_CA_FILE", ""),
 		applicationAddr:    env.String("LISTEN_ADDR", ":8080"),
 		healthAddr:         env.String("HEALTH_ADDR", ":8888"),
 		healthPath:         env.String("HEALTH_PATH", "/health"),

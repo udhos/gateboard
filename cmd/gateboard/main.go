@@ -83,7 +83,7 @@ func main() {
 				collection: app.config.mongoCollection,
 				username:   app.config.mongoUsername,
 				password:   app.config.mongoPassword,
-				tlsCAFile:  app.config.mongoTlsCaFile,
+				tlsCAFile:  app.config.mongoTLSCaFile,
 				timeout:    time.Second * 10,
 			})
 			if errMongo != nil {
