@@ -97,7 +97,7 @@ configMapProperties:
   REPO: mem
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
-  #MONGO_TLS_CA_FILE: ""
+  #MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
   #LISTEN_ADDR: ":8080"
   #HEALTH_ADDR: ":8888"
   #HEALTH_PATH: /health
@@ -122,3 +122,13 @@ secrets:
     username: ""
     password: ""
     url: bW9uZ29kYjovL2xvY2FsaG9zdDoyNzAxNw==
+
+#
+# In order to use MongoDB TLS:
+# 1. uncomment in configMapProperties above: MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
+# 2. put the cabundle inline below
+#
+configDir:
+  mongo-tls-ca-bundle.pem: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
