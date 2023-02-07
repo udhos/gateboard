@@ -61,7 +61,9 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 		q := u.Query()
 
 		if opt.tlsCAFile != "" {
+			q.Set("ssl", "true")
 			q.Set("tlsCAFile", opt.tlsCAFile)
+			q.Set("ssl_ca_certs", opt.tlsCAFile) // documentdb?
 		}
 
 		u.RawQuery = q.Encode()
