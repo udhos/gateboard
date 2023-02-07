@@ -47,12 +47,7 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	var uri string
 
 	{
-		s := r.options.URI
-		if !strings.HasSuffix(s, "/") {
-			s += "/"
-		}
-
-		u, errURI := url.Parse(s)
+		u, errURI := url.Parse(r.options.URI)
 		if errURI != nil {
 			log.Printf("%s: mongo connect URI: %v", me, errURI)
 			return nil, errURI
