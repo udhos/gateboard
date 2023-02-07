@@ -15,12 +15,15 @@ Search gateboard:
 
     helm search repo gateboard -l --version ">=0.0.0"
     NAME                         	CHART VERSION	APP VERSION	DESCRIPTION
+    gateboard/gateboard          	0.0.2        	0.0.10     	A Helm chart for gateboard
+    gateboard/gateboard          	0.0.1        	0.0.9      	A Helm chart for gateboard
     gateboard/gateboard          	0.0.0        	0.0.8      	A Helm chart for gateboard
     gateboard/gateboard-discovery	0.0.0        	0.0.11     	A Helm chart for gateboard-discovery
 
-To install the chart:
+To install the charts:
 
     helm install my-gateboard gateboard/gateboard
+
     helm install my-discovery gateboard/gateboard-discovery
     #            ^            ^         ^
     #            |            |          \__ chart
@@ -29,7 +32,9 @@ To install the chart:
     #            |
     #             \_________________________ release (chart instance installed in cluster)
 
-To uninstall the chart:
+To uninstall the charts:
+
+    helm uninstall my-gateboard
 
     helm uninstall my-discovery
 
