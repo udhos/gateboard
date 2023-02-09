@@ -49,19 +49,19 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	{
 		u, errURI := url.Parse(r.options.URI)
 		if errURI != nil {
-			log.Printf("%s: mongo connect URI: %v", me, errURI)
+			log.Printf("%s: mongo connect parse URI: %v", me, errURI)
 			return nil, errURI
 		}
 
-		q := u.Query()
-
 		if opt.tlsCAFile != "" {
+			q := u.Query()
+
 			q.Set("ssl", "true")
 			q.Set("tlsCAFile", opt.tlsCAFile)
 			q.Set("ssl_ca_certs", opt.tlsCAFile) // documentdb?
-		}
 
-		u.RawQuery = q.Encode()
+			u.RawQuery = q.Encode()
+		}
 
 		uri = u.String()
 
