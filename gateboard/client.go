@@ -47,9 +47,9 @@ type Client struct {
 }
 
 const (
-	CacheTTLMinimum = 60 * time.Second  // CacheTTLMinimum defines min limit for TTL
-	CacheTTLMax     = 600 * time.Second // CacheTTLMax defines max limit for TTL
-	CacheTTLDefault = 300 * time.Second // CacheTTLDefault defines default value for TTL
+	CacheTTLMinimum = 1 * time.Minute  // CacheTTLMinimum defines min limit for TTL
+	CacheTTLMax     = 20 * time.Minute // CacheTTLMax defines max limit for TTL
+	CacheTTLDefault = 5 * time.Minute  // CacheTTLDefault defines default value for TTL
 )
 
 type gatewayEntry struct {

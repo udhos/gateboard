@@ -40,7 +40,7 @@ func newConfig() appConfig {
 		debug:              env.Bool("DEBUG", true),
 		queueURL:           env.String("QUEUE_URL", ""),
 		sqsRoleARN:         env.String("SQS_ROLE_ARN", ""),
-		TTL:                env.Int("TTL", 120),
+		TTL:                env.Int("TTL", 300), // seconds
 		repoType:           env.String("REPO", "mongo"),
 		mongoURI:           env.String("MONGO_URL", "mongodb://localhost:27017"),
 		mongoDatabase:      env.String("MONGO_DATABASE", "gateboard"),
