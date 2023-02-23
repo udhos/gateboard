@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "0.0.13"
+const version = "0.0.14"
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
