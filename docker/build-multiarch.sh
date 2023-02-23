@@ -7,6 +7,7 @@ echo version=$version
 # Multiarch
 
 docker buildx build \
+   --no-cache \
    --push \
    --tag udhos/gateboard:latest \
    --tag udhos/gateboard:$version \

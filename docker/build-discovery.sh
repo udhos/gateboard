@@ -5,6 +5,7 @@ version=$(go run ./cmd/gateboard-discovery -version | awk '{ print $2 }' | awk -
 echo version=$version
 
 docker build \
+    --no-cache \
     -t udhos/gateboard-discovery:latest \
     -t udhos/gateboard-discovery:$version \
     -f docker/Dockerfile.discovery .

@@ -2,6 +2,8 @@
 
 gofmt -s -w .
 
+revive ./...
+
 go mod tidy
 
 go test -race ./...
