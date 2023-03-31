@@ -31,6 +31,7 @@
 - [X] Refactor config
 - [X] Repository DynamoDB
 - [X] Optional authentication
+- [X] AWS Secrets Manager
 - [ ] Generate token for optional authentication
 - [X] Gateway load sharing
 - [X] Repository redis
@@ -295,6 +296,24 @@ Run discovery.
 Dump database.
 
     curl localhost:8080/dump | jq
+
+## AWS Secrets Manager
+
+Retrieve config vars from AWS Secrets Manager.
+
+    export CONFIG_VAR=secretsmanager:region:name:json_field
+
+Example.
+
+    export MONGO_URL=secretsmanager::mongo_uri
+
+    # The secret `mongo_uri` must store a scalar value like: `mongodb://127.0.0.1:27017`
+
+Example with JSON field `uri`. 
+
+    export MONGO_URL=secretsmanager::mongo:uri
+
+    # The secret `mongo` must store a JSON value like: `{"uri":"mongodb://127.0.0.2:27017"}`
 
 ## Docker
 

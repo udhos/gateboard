@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
+	"github.com/udhos/gateboard/awsconfig"
 	"github.com/udhos/gateboard/gateboard"
 )
 
@@ -34,7 +35,7 @@ type repoDynamo struct {
 func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 	const me = "newRepoDynamo"
 
-	cfg := awsConfig(opt.region, opt.roleArn, opt.sessionName)
+	cfg := awsconfig.AwsConfig(opt.region, opt.roleArn, opt.sessionName)
 
 	r := &repoDynamo{
 		options: opt,

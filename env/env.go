@@ -14,7 +14,7 @@ import (
 // It returns the provided defaultValue if the env var is empty.
 // The string returned is also recorded in logs.
 func String(name string, defaultValue string) string {
-	str := os.Getenv(name)
+	str := getEnv(name)
 	if str != "" {
 		log.Printf("%s=[%s] using %s=%s default=%s", name, str, name, str, defaultValue)
 		return str
@@ -27,7 +27,7 @@ func String(name string, defaultValue string) string {
 // It returns the provided defaultValue if the env var is empty.
 // The value returned is also recorded in logs.
 func Bool(name string, defaultValue bool) bool {
-	str := os.Getenv(name)
+	str := getEnv(name)
 	if str != "" {
 		value, errConv := strconv.ParseBool(str)
 		if errConv == nil {
@@ -44,7 +44,7 @@ func Bool(name string, defaultValue bool) bool {
 // It returns the provided defaultValue if the env var is empty.
 // The value returned is also recorded in logs.
 func Duration(name string, defaultValue time.Duration) time.Duration {
-	str := os.Getenv(name)
+	str := getEnv(name)
 	if str != "" {
 		value, errConv := time.ParseDuration(str)
 		if errConv == nil {
@@ -61,7 +61,7 @@ func Duration(name string, defaultValue time.Duration) time.Duration {
 // It returns the provided defaultValue if the env var is empty.
 // The value returned is also recorded in logs.
 func Int(name string, defaultValue int) int {
-	str := os.Getenv(name)
+	str := getEnv(name)
 	if str != "" {
 		value, errConv := strconv.Atoi(str)
 		if errConv == nil {
@@ -72,4 +72,16 @@ func Int(name string, defaultValue int) int {
 	}
 	log.Printf("%s=[%s] using %s=%v default=%v", name, str, name, defaultValue, defaultValue)
 	return defaultValue
+}
+
+func getEnv(name string) string {
+	value := os.Getenv(name)
+
+	if value == "" {
+		return ""
+	}
+
+	value = secretsManagerGet(value, os.Getenv("SECRETSMANAGER_ROLE"), os.Getenv("SECRETSMANAGER_SESSION"))
+
+	return value
 }

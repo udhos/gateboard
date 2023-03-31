@@ -39,8 +39,9 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRF
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
 github.com/aws/aws-sdk-go-v2 v1.17.1/go.mod h1:JLnGeGONAyi2lWXI1p0PCIOIy333JMVK1U7Hf0aRFLw=
-github.com/aws/aws-sdk-go-v2 v1.17.3 h1:shN7NlnVzvDUgPQ+1rLMSxY8OWRNDRYtiqe0p/PgrhY=
 github.com/aws/aws-sdk-go-v2 v1.17.3/go.mod h1:uzbQtefpm44goOPmdKyAlXSNcwlRgF3ePWVW6EtJvvw=
+github.com/aws/aws-sdk-go-v2 v1.17.7 h1:CLSjnhJSTSogvqUGhIC6LqFKATMRexcxLZ0i/Nzk9Eg=
+github.com/aws/aws-sdk-go-v2 v1.17.7/go.mod h1:uzbQtefpm44goOPmdKyAlXSNcwlRgF3ePWVW6EtJvvw=
 github.com/aws/aws-sdk-go-v2/config v1.18.3 h1:3kfBKcX3votFX84dm00U8RGA1sCCh3eRMOGzg5dCWfU=
 github.com/aws/aws-sdk-go-v2/config v1.18.3/go.mod h1:BYdrbeCse3ZnOD5+2/VE/nATOK8fEUpBtmPMdKSyhMU=
 github.com/aws/aws-sdk-go-v2/credentials v1.13.3 h1:ur+FHdp4NbVIv/49bUjBW+FE7e57HOo03ELodttmagk=
@@ -52,11 +53,13 @@ github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.34/go.mod h1:l6eC7
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.19 h1:E3PXZSI3F2bzyj6XxUXdTIfvp425HHhwKsFvmzBwHgs=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.19/go.mod h1:VihW95zQpeKQWVPGkwT+2+WJNQV8UXFfMTWdU6VErL8=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.25/go.mod h1:Zb29PYkf42vVYQY6pvSyJCJcFHlPIiY+YKdPtwnvMkY=
-github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.27 h1:I3cakv2Uy1vNmmhRQmFptYDxOvBnwCdNwyw63N0RaRU=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.27/go.mod h1:a1/UpzeyBBerajpnP5nGZa9mGzsBn5cOKxm6NWQsvoI=
+github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.31 h1:sJLYcS+eZn5EeNINGHSCRAwUJMFVqklwkH36Vbyai7M=
+github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.31/go.mod h1:QT0BqUvX1Bh2ABdTGnjqEjvjzrCfIniM9Sc8zn9Yndo=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.19/go.mod h1:6Q0546uHDp421okhmmGfbxzq2hBqbXFNpi4k+Q1JnQA=
-github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.21 h1:5NbbMrIzmUn/TXFqAle6mgrH5m9cOvMLRGL7pnG8tRE=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.21/go.mod h1:+Gxn8jYn5k9ebfHEqlhrMirFjSW0v0C9fI+KN5vk2kE=
+github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.25 h1:1mnRASEKnkqsntcxHaysxwgVoUUp5dkiB+l3llKnqyg=
+github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.25/go.mod h1:zBHOPwhBc3FlQjQJE/D3IfPWiWaQmT06Vq9aNukDo0k=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.3.26 h1:Mza+vlnZr+fPKFKRq/lKGVvM6B/8ZZmNdEopOwSQLms=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.3.26/go.mod h1:Y2OJ+P+MC1u1VKnavT+PshiEuGPyh/7DqxoDNij4/bg=
 github.com/aws/aws-sdk-go-v2/service/apigateway v1.16.0 h1:INMBcLcEY29u2ZHMnva693HZNCwzO6v42d92HOCk5DA=
@@ -73,6 +76,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.19 h1:GE25AWCdN
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.19/go.mod h1:02CP6iuYP+IVnBX5HULVdSAku/85eHB2Y9EsFhrkEwU=
 github.com/aws/aws-sdk-go-v2/service/lambda v1.29.0 h1:Sp35L0xlhQ+9D5hzF/KKYD3b+mvGXT2krVXKA4JSLO8=
 github.com/aws/aws-sdk-go-v2/service/lambda v1.29.0/go.mod h1:swAeO/+tSUbMwB9EF2miaCxPDSQwzRjfnRsYaNwbeRk=
+github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.19.1 h1:+rANS0SbrDUqF3VJeil1HJHhNK8vdUu1VGqnkr4o6kw=
+github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.19.1/go.mod h1:SUiYnlcBDUvSLD6iUmwSwXni2i6iGa9WHc+eM5061W4=
 github.com/aws/aws-sdk-go-v2/service/sns v1.19.0 h1:ZU8uo+/XBgJLoYMEN5iPUd+WQXLt53S46ULtRa85+uk=
 github.com/aws/aws-sdk-go-v2/service/sns v1.19.0/go.mod h1:iTh9DgwDnFqF5LfFHNXWAxLe9zV0/XcWaMCWXIRDqXA=
 github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15 h1:5PgOVgJWObGxve+0qU7T/C0reU6RxqpNwbuunLT9Vlc=
