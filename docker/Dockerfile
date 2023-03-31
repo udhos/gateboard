@@ -22,7 +22,9 @@ RUN CGO_ENABLED=0 go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gate
 #
 # STEP 2 build a small image from alpine
 #
-FROM alpine:3.17.2
+# curl: https://security.alpinelinux.org/srcpkg/curl
+#
+FROM alpine:3.17.3
 COPY --from=builder /tmp/gateboard /bin/gateboard
 RUN apk add curl=7.88.1-r1
 RUN adduser -D -g '' user
