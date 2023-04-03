@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/udhos/gateboard/env"
+	"github.com/udhos/boilerplate/envconfig"
 )
 
 // go test -run TestRepository ./cmd/gateboard
@@ -22,6 +22,9 @@ func TestRepository(t *testing.T) {
 	//
 	// optionally test repo redis
 	//
+
+	env := envconfig.New(envconfig.Options{})
+
 	testRedis := env.Bool("TEST_REPO_REDIS", false)
 	t.Logf("testing repo redis: %t", testRedis)
 	if testRedis {

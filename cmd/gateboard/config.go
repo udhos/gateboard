@@ -1,9 +1,11 @@
 package main
 
 import (
+	"log"
 	"time"
 
-	"github.com/udhos/gateboard/env"
+	"github.com/udhos/boilerplate/awsconfig"
+	"github.com/udhos/boilerplate/envconfig"
 )
 
 type appConfig struct {
@@ -36,6 +38,21 @@ type appConfig struct {
 }
 
 func newConfig() appConfig {
+
+	awsConfOptions := awsconfig.Options{}
+
+	awsConf, errAwsConfig := awsconfig.AwsConfig(awsConfOptions)
+	if errAwsConfig != nil {
+		log.Printf("error loading aws config: %v", errAwsConfig)
+	}
+
+	envOptions := envconfig.Options{
+		AwsConfig:           awsConf,
+		QuerySecretsManager: true,
+	}
+
+	env := envconfig.New(envOptions)
+
 	return appConfig{
 		debug:              env.Bool("DEBUG", true),
 		queueURL:           env.String("QUEUE_URL", ""),

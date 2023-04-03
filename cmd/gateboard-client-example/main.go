@@ -14,7 +14,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/udhos/gateboard/env"
+	"github.com/udhos/boilerplate/envconfig"
 	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v3"
 )
@@ -46,6 +46,8 @@ func main() {
 		}
 		log.Print(v)
 	}
+
+	env := envconfig.New(envconfig.Options{})
 
 	client := gateboard.NewClient(gateboard.ClientOptions{
 		ServerURL:   env.String("MAIN_URL", "http://localhost:8080/gateway"),

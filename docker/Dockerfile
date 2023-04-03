@@ -10,11 +10,9 @@ RUN apk add git
 RUN adduser -D -g '' appuser
 
 COPY ./cmd/ /tmp/app/cmd
-COPY ./env/ /tmp/app/env
 COPY ./gateboard/ /tmp/app/gateboard
 COPY ./metrics/ /tmp/app/metrics
 COPY ./tracing/ /tmp/app/tracing
-COPY ./awsconfig/ /tmp/app/awsconfig
 COPY go.* /tmp/app/
 WORKDIR /tmp/app
 RUN go mod tidy

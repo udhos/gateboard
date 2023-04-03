@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/udhos/gateboard/env"
+	"github.com/udhos/boilerplate/envconfig"
 )
 
 type appConfig struct {
@@ -30,6 +30,9 @@ type appConfig struct {
 }
 
 func newConfig() appConfig {
+
+	env := envconfig.New(envconfig.Options{})
+
 	return appConfig{
 		accountsFile:         env.String("ACCOUNTS", "discovery-accounts.yaml"),
 		interval:             env.Duration("INTERVAL", 0),

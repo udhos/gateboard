@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/udhos/gateboard/awsconfig"
+	"github.com/udhos/boilerplate/awsconfig"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -60,7 +60,17 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 		return nil
 	}
 
-	cfg := awsconfig.AwsConfig(region, roleArn, roleSessionName)
+	awsConfOptions := awsconfig.Options{
+		Region:          region,
+		RoleArn:         roleArn,
+		RoleSessionName: roleSessionName,
+	}
+
+	cfg, errAwsConfig := awsconfig.AwsConfig(awsConfOptions)
+	if errAwsConfig != nil {
+		log.Fatalf("%s initClient: aws config error: %v", caller, errRegion)
+		return nil
+	}
 
 	c := clientConfig{
 		sqs:      sqs.NewFromConfig(cfg),

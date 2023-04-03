@@ -301,17 +301,17 @@ Dump database.
 
 Retrieve config vars from AWS Secrets Manager.
 
-    export CONFIG_VAR=secretsmanager:region:name:json_field
+    export CONFIG_VAR=aws-secretsmanager:region:name:json_field
 
 Example.
 
-    export MONGO_URL=secretsmanager::mongo_uri
+    export MONGO_URL=aws-secretsmanager::mongo_uri
 
     # The secret `mongo_uri` must store a scalar value like: `mongodb://127.0.0.1:27017`
 
 Example with JSON field `uri`. 
 
-    export MONGO_URL=secretsmanager::mongo:uri
+    export MONGO_URL=aws-secretsmanager::mongo:uri
 
     # The secret `mongo` must store a JSON value like: `{"uri":"mongodb://127.0.0.2:27017"}`
 
