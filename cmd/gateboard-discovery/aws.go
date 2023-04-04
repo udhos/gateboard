@@ -6,10 +6,8 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/udhos/boilerplate/awsconfig"
 )
 
 var awsConfigCache = map[string]cacheEntry{}
@@ -28,64 +26,23 @@ func awsConfig(region, roleArn, roleExternalID, roleSessionName string) (aws.Con
 		return cfg.config, cfg.accountID, nil
 	}
 
-	cfg, errConfig := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(region))
-	if errConfig != nil {
-		log.Printf("%s: load config: %v", me, errConfig)
-		return cfg, "", errConfig
+	awsConfOptions := awsconfig.Options{
+		Region:          region,
+		RoleArn:         roleArn,
+		RoleSessionName: roleSessionName,
+		RoleExternalID:  roleExternalID,
 	}
-
-	if roleArn != "" {
-		//
-		// AssumeRole
-		//
-		log.Printf("%s: AssumeRole: arn: %s", me, roleArn)
-		clientSts := sts.NewFromConfig(cfg)
-		cfg2, errConfig2 := config.LoadDefaultConfig(
-			context.TODO(), config.WithRegion(region),
-			config.WithCredentialsProvider(aws.NewCredentialsCache(
-				stscreds.NewAssumeRoleProvider(
-					clientSts,
-					roleArn,
-					func(o *stscreds.AssumeRoleOptions) {
-						o.RoleSessionName = roleSessionName
-						if roleExternalID != "" {
-							o.ExternalID = &roleExternalID
-						}
-					},
-				)),
-			),
-		)
-		if errConfig2 != nil {
-			log.Printf("%s: AssumeRole %s: error: %v", me, roleArn, errConfig2)
-			return cfg, "", errConfig
-		}
-		cfg = cfg2
-	}
-
-	var accountID string
-
-	{
-		//
-		// show caller identity
-		//
-		clientSts := sts.NewFromConfig(cfg)
-		input := sts.GetCallerIdentityInput{}
-		respSts, errSts := clientSts.GetCallerIdentity(context.TODO(), &input)
-		if errSts != nil {
-			log.Printf("%s: GetCallerIdentity: error: %v", me, errSts)
-		} else {
-			accountID = *respSts.Account
-			log.Printf("%s: GetCallerIdentity: Account=%s ARN=%s UserId=%s", me, *respSts.Account, *respSts.Arn, *respSts.UserId)
-		}
+	awsConf, errAwsConf := awsconfig.AwsConfig(awsConfOptions)
+	if errAwsConf != nil {
+		return awsConf.AwsConfig, awsConf.StsAccountID, errAwsConf
 	}
 
 	awsConfigCache[key] = cacheEntry{
-		config:    cfg,
-		accountID: accountID,
+		config:    awsConf.AwsConfig,
+		accountID: awsConf.StsAccountID,
 	}
 
-	return cfg, accountID, nil
+	return awsConf.AwsConfig, awsConf.StsAccountID, errAwsConf
 }
 
 type scannerAWS struct {

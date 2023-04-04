@@ -73,7 +73,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 	}
 
 	c := clientConfig{
-		sqs:      sqs.NewFromConfig(cfg),
+		sqs:      sqs.NewFromConfig(cfg.AwsConfig),
 		queueURL: queueURL,
 	}
 

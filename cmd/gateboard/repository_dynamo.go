@@ -48,7 +48,7 @@ func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
 
 	r := &repoDynamo{
 		options: opt,
-		dynamo:  dynamodb.NewFromConfig(cfg),
+		dynamo:  dynamodb.NewFromConfig(cfg.AwsConfig),
 	}
 
 	if !r.options.manualCreate {
