@@ -47,8 +47,7 @@ func newConfig() appConfig {
 	}
 
 	envOptions := envconfig.Options{
-		AwsConfig:           awsConf.AwsConfig,
-		QuerySecretsManager: true,
+		AwsConfig: awsConf.AwsConfig,
 	}
 
 	env := envconfig.New(envOptions)
