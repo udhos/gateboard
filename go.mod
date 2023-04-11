@@ -8,14 +8,14 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.34
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.4
-	github.com/aws/aws-sdk-go-v2/service/lambda v1.29.0
+	github.com/aws/aws-sdk-go-v2/service/lambda v1.31.1
 	github.com/aws/aws-sdk-go-v2/service/sns v1.19.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/prometheus/client_golang v1.14.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/udhos/boilerplate v0.6.0
+	github.com/udhos/boilerplate v0.9.0
 	go.mongodb.org/mongo-driver v1.11.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.36.4
 	go.opentelemetry.io/contrib/propagators/b3 v1.11.1

@@ -26,7 +26,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.0.21"
+const version = "0.0.22"
 
 type application struct {
 	serverMain    *serverGin
@@ -64,7 +64,7 @@ func main() {
 
 	app := &application{
 		me:     me,
-		config: newConfig(),
+		config: newConfig(me),
 	}
 
 	queueURL := app.config.queueURL

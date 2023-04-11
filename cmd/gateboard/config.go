@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
-	"github.com/udhos/boilerplate/awsconfig"
 	"github.com/udhos/boilerplate/envconfig"
 )
 
@@ -37,17 +37,15 @@ type appConfig struct {
 	writeRetryInterval time.Duration
 }
 
-func newConfig() appConfig {
+func newConfig(roleSessionName string) appConfig {
 
-	awsConfOptions := awsconfig.Options{}
+	configRoleArn := os.Getenv("CONFIG_ROLE_ARN")
 
-	awsConf, errAwsConfig := awsconfig.AwsConfig(awsConfOptions)
-	if errAwsConfig != nil {
-		log.Printf("error loading aws config: %v", errAwsConfig)
-	}
+	log.Printf("CONFIG_ROLE_ARN='%s'", configRoleArn)
 
 	envOptions := envconfig.Options{
-		AwsConfig: awsConf.AwsConfig,
+		RoleSessionName: roleSessionName,
+		RoleArn:         configRoleArn,
 	}
 
 	env := envconfig.New(envOptions)

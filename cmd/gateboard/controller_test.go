@@ -125,10 +125,13 @@ func testController(t *testing.T, app *application, table []testCase) {
 }
 
 func newTestApp(writeToken bool) *application {
+
+	const me = "gateboard_app_test"
+
 	app := &application{
-		me:     "gateboard_app_test",
+		me:     me,
 		repo:   newRepoMem(),
-		config: newConfig(),
+		config: newConfig(me),
 	}
 
 	app.config.writeToken = writeToken
