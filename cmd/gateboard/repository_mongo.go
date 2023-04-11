@@ -77,16 +77,14 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	{
 		ctx, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 		defer cancel()
-		var mongoOptions *options.ClientOptions
+		mongoOptions := options.Client().ApplyURI(uri).SetRetryWrites(false)
 
 		if opt.username != "" || opt.password != "" {
 			cred := options.Credential{
 				Username: opt.username,
 				Password: opt.password,
 			}
-			mongoOptions = options.Client().ApplyURI(uri).SetAuth(cred).SetRetryWrites(false)
-		} else {
-			mongoOptions = options.Client().ApplyURI(uri).SetRetryWrites(false)
+			mongoOptions.SetAuth(cred)
 		}
 
 		var errConnect error
