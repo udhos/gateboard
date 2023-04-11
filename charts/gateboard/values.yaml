@@ -118,6 +118,8 @@ configMapProperties:
   OTEL_TRACES_SAMPLER_ARG: "0.01"
 
 secrets:
+  # set base64encoded to false to specify secrets in plain text
+  base64encoded: true
   mongo:
     username: ""
     password: ""
