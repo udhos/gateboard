@@ -303,13 +303,15 @@ Retrieve config vars from AWS Secrets Manager.
 
     export CONFIG_VAR=aws-secretsmanager:region:name:json_field
 
-Example.
+See detailed documentation at https://github.com/udhos/boilerplate.
+
+Example:
 
     export MONGO_URL=aws-secretsmanager::mongo_uri
 
     # The secret `mongo_uri` must store a scalar value like: `mongodb://127.0.0.1:27017`
 
-Example with JSON field `uri`. 
+Example with JSON field `uri`:
 
     export MONGO_URL=aws-secretsmanager::mongo:uri
 
