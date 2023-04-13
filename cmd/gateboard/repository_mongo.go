@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"time"
 
-	"github.com/udhos/gateboard/gateboard"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/udhos/mongodbclient/mongodbclient"
+
+	"github.com/udhos/gateboard/gateboard"
 )
 
 //
@@ -40,59 +42,20 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 
 	r := &repoMongo{options: opt}
 
-	//
-	// URI
-	//
-
-	var uri string
-
 	{
-		u, errURI := url.Parse(r.options.URI)
-		if errURI != nil {
-			log.Printf("%s: mongo connect parse URI: %v", me, errURI)
-			return nil, errURI
+		clientOptions := mongodbclient.Options{
+			URI:       opt.URI,
+			Username:  opt.username,
+			Password:  opt.password,
+			TLSCAFile: opt.tlsCAFile,
+			Timeout:   opt.timeout,
+			Debug:     opt.debug,
 		}
-
-		if opt.tlsCAFile != "" {
-			q := u.Query()
-
-			q.Set("ssl", "true")
-			q.Set("tlsCAFile", opt.tlsCAFile)
-			q.Set("ssl_ca_certs", opt.tlsCAFile) // documentdb?
-
-			u.RawQuery = q.Encode()
-		}
-
-		uri = u.String()
-
-		if opt.debug {
-			log.Printf("%s: mongo connect URI: %s", me, uri)
-		}
-	}
-
-	//
-	// connect
-	//
-
-	{
-		ctx, cancel := context.WithTimeout(context.Background(), r.options.timeout)
-		defer cancel()
-		mongoOptions := options.Client().ApplyURI(uri).SetRetryWrites(false)
-
-		if opt.username != "" || opt.password != "" {
-			cred := options.Credential{
-				Username: opt.username,
-				Password: opt.password,
-			}
-			mongoOptions.SetAuth(cred)
-		}
-
-		var errConnect error
-		r.client, errConnect = mongo.Connect(ctx, mongoOptions)
+		client, errConnect := mongodbclient.New(clientOptions)
 		if errConnect != nil {
-			log.Printf("%s: mongo connect: %v", me, errConnect)
 			return nil, errConnect
 		}
+		r.client = client
 	}
 
 	//

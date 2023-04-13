@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/udhos/boilerplate/envconfig"
+	"github.com/udhos/boilerplate/secret"
 )
 
 type appConfig struct {
@@ -43,11 +44,14 @@ func newConfig(roleSessionName string) appConfig {
 
 	log.Printf("CONFIG_ROLE_ARN='%s'", configRoleArn)
 
-	envOptions := envconfig.Options{
+	secretOptions := secret.Options{
 		RoleSessionName: roleSessionName,
 		RoleArn:         configRoleArn,
 	}
-
+	secret := secret.New(secretOptions)
+	envOptions := envconfig.Options{
+		Secret: secret,
+	}
 	env := envconfig.New(envOptions)
 
 	return appConfig{
