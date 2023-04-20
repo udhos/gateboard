@@ -2,6 +2,18 @@ apiVersion: v1
 entries:
   gateboard:
   - apiVersion: v2
+    appVersion: 0.4.0
+    created: "2023-04-20T20:20:31.533343096-03:00"
+    description: A Helm chart for gateboard
+    digest: 69bf082204ece0600dcacbef7f77886c8f5148f96cbfd2c40a86ecfdd72c58be
+    name: gateboard
+    sources:
+    - https://github.com/udhos/gateboard
+    type: application
+    urls:
+    - https://udhos.github.io/gateboard/gateboard-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
     appVersion: 0.3.0
     created: "2023-04-20T13:36:54.545729804-03:00"
     description: A Helm chart for gateboard
@@ -374,4 +386,4 @@ entries:
     urls:
     - https://udhos.github.io/gateboard/gateboard-discovery-0.0.0.tgz
     version: 0.0.0
-generated: "2023-04-20T13:36:54.371888167-03:00"
+generated: "2023-04-20T20:20:31.523107887-03:00"
