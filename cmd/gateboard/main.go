@@ -26,7 +26,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -84,6 +84,7 @@ func main() {
 				username:   app.config.mongoUsername,
 				password:   app.config.mongoPassword,
 				tlsCAFile:  app.config.mongoTLSCaFile,
+				minPool:    app.config.mongoMinPool,
 				timeout:    time.Second * 10,
 			})
 			if errMongo != nil {

@@ -15,8 +15,8 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/prometheus/client_golang v1.14.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/udhos/boilerplate v0.10.0
-	github.com/udhos/mongodbclient v0.0.1
+	github.com/udhos/boilerplate v0.11.0
+	github.com/udhos/mongodbclient v0.1.0
 	go.mongodb.org/mongo-driver v1.11.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.36.4
 	go.opentelemetry.io/contrib/propagators/b3 v1.11.1

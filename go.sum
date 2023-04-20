@@ -344,10 +344,10 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
-github.com/udhos/boilerplate v0.10.0 h1:zmTt4FjZouETQgNdcSSp0EhN3cTUi5dab6cspqnkVbQ=
-github.com/udhos/boilerplate v0.10.0/go.mod h1:OyOI42LQ/InYtgWNA4G5Bvc7jprvfM9tXNjAzXVhkY0=
-github.com/udhos/mongodbclient v0.0.1 h1:CYKTD2/ivGHAH24wUnfz3tBmuF2vC/88ZojWdsyJrHY=
-github.com/udhos/mongodbclient v0.0.1/go.mod h1:uM1lfHX/+R6bE9S7u4RfAewQGMxFIHo5Blii4GDh4jQ=
+github.com/udhos/boilerplate v0.11.0 h1:+TDd7jnTKrzcKWVLGuN6k5fMgSd9HbPeqJdtkIlmzbg=
+github.com/udhos/boilerplate v0.11.0/go.mod h1:OyOI42LQ/InYtgWNA4G5Bvc7jprvfM9tXNjAzXVhkY0=
+github.com/udhos/mongodbclient v0.1.0 h1:QKmpA4ZFxtkEbKYaiIm8Pyo36pDKhrlp5XIJ5uFdJk8=
+github.com/udhos/mongodbclient v0.1.0/go.mod h1:uM1lfHX/+R6bE9S7u4RfAewQGMxFIHo5Blii4GDh4jQ=
 github.com/ugorji/go v1.2.7/go.mod h1:nF9osbDWLy6bDVv/Rtoh6QgnvNDpmCalQV5urGCCS6M=
 github.com/ugorji/go/codec v1.2.7 h1:YPXUKf7fYbp/y8xloBqZOw2qaVggbfwMlI8WM3wZUJ0=
 github.com/ugorji/go/codec v1.2.7/go.mod h1:WGN1fab3R1fzQlVQTkfxVtIBhWDRqOviHU95kRgeqEY=

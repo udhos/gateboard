@@ -18,6 +18,7 @@ type appConfig struct {
 	mongoUsername      string
 	mongoPassword      string
 	mongoTLSCaFile     string
+	mongoMinPool       uint64
 	applicationAddr    string
 	healthAddr         string
 	healthPath         string
@@ -51,6 +52,7 @@ func newConfig(roleSessionName string) appConfig {
 		mongoUsername:      env.String("MONGO_USERNAME", ""),
 		mongoPassword:      env.String("MONGO_PASSWORD", ""),
 		mongoTLSCaFile:     env.String("MONGO_TLS_CA_FILE", ""),
+		mongoMinPool:       env.Uint64("MONGO_MIN_POOL", 1),
 		applicationAddr:    env.String("LISTEN_ADDR", ":8080"),
 		healthAddr:         env.String("HEALTH_ADDR", ":8888"),
 		healthPath:         env.String("HEALTH_PATH", "/health"),

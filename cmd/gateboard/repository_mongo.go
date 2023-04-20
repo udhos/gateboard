@@ -29,6 +29,7 @@ type repoMongoOptions struct {
 	username   string
 	password   string
 	tlsCAFile  string
+	minPool    uint64
 	timeout    time.Duration
 }
 
@@ -44,12 +45,13 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 
 	{
 		clientOptions := mongodbclient.Options{
-			URI:       opt.URI,
-			Username:  opt.username,
-			Password:  opt.password,
-			TLSCAFile: opt.tlsCAFile,
-			Timeout:   opt.timeout,
-			Debug:     opt.debug,
+			URI:         opt.URI,
+			Username:    opt.username,
+			Password:    opt.password,
+			TLSCAFile:   opt.tlsCAFile,
+			Timeout:     opt.timeout,
+			MinPoolSize: opt.minPool,
+			Debug:       opt.debug,
 		}
 		client, errConnect := mongodbclient.New(clientOptions)
 		if errConnect != nil {
