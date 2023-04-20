@@ -16,7 +16,8 @@ COPY ./tracing/ /tmp/app/tracing
 COPY go.* /tmp/app/
 WORKDIR /tmp/app
 RUN go mod tidy
-RUN CGO_ENABLED=0 go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gateboard
+RUN go env -w CGO_ENABLED=0
+RUN go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gateboard
 
 #
 # STEP 2 build a small image from alpine
