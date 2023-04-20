@@ -31,6 +31,12 @@ func getTraceID(span trace.Span) string {
 	return span.SpanContext().TraceID().String()
 }
 
+const (
+	repoStatusOK       = "success"
+	repoStatusError    = "error"
+	repoStatusNotFound = "not-found"
+)
+
 func gatewayDump(c *gin.Context, app *application) {
 	const me = "gatewayDump"
 
@@ -38,12 +44,15 @@ func gatewayDump(c *gin.Context, app *application) {
 	if span != nil {
 		defer span.End()
 	}
+	traceID := getTraceID(span)
 
-	log.Printf("traceID=%s", getTraceID(span))
+	log.Printf("%s: traceID=%s", me, traceID)
 
 	//
 	// dump gateways
 	//
+
+	begin := time.Now()
 
 	type output struct {
 		Error string
@@ -51,16 +60,28 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	var out output
 
-	dump, errID := app.repo.dump()
-	switch errID {
+	dump, errDump := app.repo.dump()
+
+	elap := time.Since(begin)
+	if app.config.debug {
+		log.Printf("%s: traceID=%s repo_dump_latency: elapsed=%v (error:%v)",
+			me, traceID, elap, errDump)
+	}
+
+	const repoMethod = "dump"
+
+	switch errDump {
 	case nil:
+		recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
-		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
+		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
+		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		log.Print(out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
-		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
+		recordRepositoryLatency(repoMethod, repoStatusError, elap)
+		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		log.Print(out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
@@ -105,20 +126,26 @@ func gatewayGet(c *gin.Context, app *application) {
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
+	elap := time.Since(begin)
 	if app.config.debug {
 		log.Printf("%s: traceID=%s gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
-			me, traceID, gatewayName, time.Since(begin), errID)
+			me, traceID, gatewayName, elap, errID)
 	}
+
+	const repoMethod = "get"
 
 	switch errID {
 	case nil:
+		recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
+		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		log.Print(out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
+		recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		log.Print(out.Error)
@@ -136,12 +163,13 @@ func gatewayPut(c *gin.Context, app *application) {
 	if span != nil {
 		defer span.End()
 	}
+	traceID := getTraceID(span)
 
-	log.Printf("%s: traceID=%s", me, getTraceID(span))
+	log.Printf("%s: traceID=%s", me, traceID)
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
+	log.Printf("%s: traceID=%s gateway_name=%s", me, traceID, gatewayName)
 
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
@@ -167,7 +195,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		return
 	}
 
-	log.Printf("%s: traceID=%s gateway_name=%s body:%v", me, getTraceID(span), gatewayName, toJSON(in))
+	log.Printf("%s: traceID=%s gateway_name=%s body:%v", me, traceID, gatewayName, toJSON(in))
 
 	out.GatewayID = in.GatewayID
 
@@ -206,12 +234,26 @@ func gatewayPut(c *gin.Context, app *application) {
 
 	for attempt := 1; attempt <= max; attempt++ {
 
+		begin := time.Now()
+
 		errPut := app.repo.put(gatewayName, gatewayID)
+
+		elap := time.Since(begin)
+		if app.config.debug {
+			log.Printf("%s: traceID=%s gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
+				me, traceID, gatewayName, elap, errPut)
+		}
+
+		const repoMethod = "put"
+
 		if errPut == nil {
+			recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 			out.Error = ""
 			c.JSON(http.StatusOK, out)
 			return
 		}
+
+		recordRepositoryLatency(repoMethod, repoStatusError, elap)
 
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, max, errPut)

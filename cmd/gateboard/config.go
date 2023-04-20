@@ -25,6 +25,7 @@ type appConfig struct {
 	metricsAddr        string
 	metricsPath        string
 	metricsMaskPath    bool
+	metricsNamespace   string
 	jaegerURL          string
 	dynamoDBTable      string
 	dynamoDBRegion     string
@@ -60,6 +61,7 @@ func newConfig(roleSessionName string) appConfig {
 		metricsAddr:        env.String("METRICS_ADDR", ":3000"),
 		metricsPath:        env.String("METRICS_PATH", "/metrics"),
 		metricsMaskPath:    env.Bool("METRICS_MASK_PATH", true),
+		metricsNamespace:   env.String("METRICS_NAMESPACE", ""),
 		jaegerURL:          env.String("JAEGER_URL", "http://jaeger-collector:14268/api/traces"),
 		dynamoDBTable:      env.String("DYNAMODB_TABLE", "gateboard"),
 		dynamoDBRegion:     env.String("DYNAMODB_REGION", "us-east-1"),

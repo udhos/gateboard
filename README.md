@@ -289,6 +289,20 @@ Example with JSON field `uri`:
 
     # The secret `mongo` must store a JSON value like: `{"uri":"mongodb://127.0.0.2:27017"}`
 
+## Metrics
+
+```
+# HELP http_server_requests_seconds Spring-like server request duration in seconds.
+# TYPE http_server_requests_seconds histogram
+
+Example: http_server_requests_seconds_bucket{method="GET",status="200",uri="/gateway/*gateway_name",le="0.001"} 4
+
+# HELP repository_requests_seconds Repository request duration in seconds.
+# TYPE repository_requests_seconds histogram
+
+Example: repository_requests_seconds_bucket{method="get",status="success",le="0.00025"} 4
+```
+
 ## Docker
 
 Docker hub:

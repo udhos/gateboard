@@ -11,7 +11,6 @@ RUN adduser -D -g '' appuser
 
 COPY ./cmd/ /tmp/app/cmd
 COPY ./gateboard/ /tmp/app/gateboard
-COPY ./metrics/ /tmp/app/metrics
 COPY ./tracing/ /tmp/app/tracing
 COPY go.* /tmp/app/
 WORKDIR /tmp/app/

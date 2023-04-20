@@ -25,8 +25,8 @@ var (
 	)
 )
 
-// Middleware provides a gin middleware for exposing prometheus metrics.
-func Middleware(metricsMaskPath bool) gin.HandlerFunc {
+// middleware provides a gin middleware for exposing prometheus metrics.
+func middleware(metricsMaskPath bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 

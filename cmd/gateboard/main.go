@@ -22,7 +22,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/udhos/gateboard/metrics"
 	"github.com/udhos/gateboard/tracing"
 )
 
@@ -218,12 +217,15 @@ func main() {
 }
 
 func initApplication(app *application, addr string) {
+
+	initMetrics(app.config.metricsNamespace)
+
 	//
 	// register application routes
 	//
 
 	app.serverMain = newServerGin(addr)
-	app.serverMain.router.Use(metrics.Middleware(app.config.metricsMaskPath))
+	app.serverMain.router.Use(middlewareMetrics(app.config.metricsMaskPath))
 	app.serverMain.router.Use(gin.Logger())
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
 
