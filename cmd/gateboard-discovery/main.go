@@ -38,7 +38,7 @@ func main() {
 		log.Print(v)
 	}
 
-	config := newConfig()
+	config := newConfig(me)
 
 	creds, errCreds := loadCredentials(config.accountsFile)
 	if errCreds != nil {

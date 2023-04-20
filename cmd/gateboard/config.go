@@ -1,12 +1,9 @@
 package main
 
 import (
-	"log"
-	"os"
 	"time"
 
-	"github.com/udhos/boilerplate/envconfig"
-	"github.com/udhos/boilerplate/secret"
+	"github.com/udhos/gateboard/gateboard"
 )
 
 type appConfig struct {
@@ -40,19 +37,7 @@ type appConfig struct {
 
 func newConfig(roleSessionName string) appConfig {
 
-	configRoleArn := os.Getenv("CONFIG_ROLE_ARN")
-
-	log.Printf("CONFIG_ROLE_ARN='%s'", configRoleArn)
-
-	secretOptions := secret.Options{
-		RoleSessionName: roleSessionName,
-		RoleArn:         configRoleArn,
-	}
-	secret := secret.New(secretOptions)
-	envOptions := envconfig.Options{
-		Secret: secret,
-	}
-	env := envconfig.New(envOptions)
+	env := gateboard.NewEnv(roleSessionName)
 
 	return appConfig{
 		debug:              env.Bool("DEBUG", true),

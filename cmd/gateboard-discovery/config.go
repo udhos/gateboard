@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/udhos/boilerplate/envconfig"
+	"github.com/udhos/gateboard/gateboard"
 )
 
 type appConfig struct {
@@ -29,9 +29,9 @@ type appConfig struct {
 	lambdaRoleExternalID string
 }
 
-func newConfig() appConfig {
+func newConfig(me string) appConfig {
 
-	env := envconfig.New(envconfig.Options{})
+	env := gateboard.NewEnv(me)
 
 	return appConfig{
 		accountsFile:         env.String("ACCOUNTS", "discovery-accounts.yaml"),
