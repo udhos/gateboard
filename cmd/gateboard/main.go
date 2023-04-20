@@ -26,7 +26,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.3.0"
+const version = "0.4.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -223,7 +223,7 @@ func initApplication(app *application, addr string) {
 	//
 
 	app.serverMain = newServerGin(addr)
-	app.serverMain.router.Use(metrics.Middleware())
+	app.serverMain.router.Use(metrics.Middleware(app.config.metricsMaskPath))
 	app.serverMain.router.Use(gin.Logger())
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
 

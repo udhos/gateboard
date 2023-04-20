@@ -15,34 +15,39 @@ import (
 var (
 	dimensionsSpring = []string{"method", "status", "uri"}
 
-	springRequestsCount = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_server_requests_seconds_count",
-		Help: "Total number of requests",
-	}, dimensionsSpring)
-
-	springRequestsDuration = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_server_requests_seconds_sum",
-		Help: "Sum of the the duration of every request",
-	}, dimensionsSpring)
+	latencySpring = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_server_requests_seconds",
+			Help:    "Spring-like request durations in seconds.",
+			Buckets: []float64{0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5, 10},
+		},
+		dimensionsSpring,
+	)
 )
 
 // Middleware provides a gin middleware for exposing prometheus metrics.
-func Middleware() gin.HandlerFunc {
-	return handlerMetrics
-}
+func Middleware(metricsMaskPath bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
 
-func handlerMetrics(c *gin.Context) {
-	start := time.Now()
+		c.Next()
 
-	c.Next()
+		elap := time.Since(start)
 
-	elap := time.Since(start)
+		status := strconv.Itoa(c.Writer.Status())
+		elapsedSeconds := float64(elap) / float64(time.Second)
 
-	status := strconv.Itoa(c.Writer.Status())
-	elapsedSeconds := float64(elap) / float64(time.Second)
-	//path := c.FullPath()
-	path := c.Request.URL.Path
+		var path string
+		if metricsMaskPath {
+			path = c.FullPath() // masked path: GET /gateway/*gateway_name
+			// FullPath returns a matched route full path. For not found routes returns an empty string.
+			if path == "" {
+				path = "NO_ROUTE_HANDLER"
+			}
+		} else {
+			path = c.Request.URL.Path // actual path: GET /gateway/actual_gateway_name
+		}
 
-	springRequestsCount.WithLabelValues(c.Request.Method, status, path).Inc()
-	springRequestsDuration.WithLabelValues(c.Request.Method, status, path).Add(elapsedSeconds)
+		latencySpring.WithLabelValues(c.Request.Method, status, path).Observe(elapsedSeconds)
+	}
 }

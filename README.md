@@ -37,7 +37,7 @@
 - [X] Repository redis
 - [ ] Cache service
 - [X] Discovery service
-- [ ] Metrics
+- [X] Metrics
 - [ ] Tracing
 - [ ] Benchmark
 - [ ] User guide
