@@ -76,12 +76,13 @@ func gatewayGet(c *gin.Context, app *application) {
 	if span != nil {
 		defer span.End()
 	}
+	traceID := getTraceID(span)
 
-	log.Printf("traceID=%s", getTraceID(span))
+	log.Printf("traceID=%s", traceID)
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, getTraceID(span), gatewayName)
+	log.Printf("%s: traceID=%s gateway_name=%s", me, traceID, gatewayName)
 
 	var out gateboard.BodyGetReply
 
@@ -98,9 +99,17 @@ func gatewayGet(c *gin.Context, app *application) {
 	// retrieve gateway_id
 	//
 
+	begin := time.Now()
+
 	out, errID := app.repo.get(gatewayName)
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
+
+	if app.config.debug {
+		log.Printf("%s: traceID=%s gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
+			me, traceID, gatewayName, time.Since(begin), errID)
+	}
+
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:

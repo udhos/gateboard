@@ -140,12 +140,27 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 func (c *Client) GatewayID(gatewayName string) string {
 	const me = "gateboard.Client.GatewayID"
 
-	list := c.getID(gatewayName)
+	begin := time.Now()
+
+	var id string
+	var fromCache bool
+
+	if c.options.Debug {
+		defer func() {
+			log.Printf("%s: name=%s id=%s: elapsed:%v (from_cache:%t)",
+				me, gatewayName, id, time.Since(begin), fromCache)
+		}()
+	}
+
+	var list string
+
+	list, fromCache = c.getID(gatewayName)
 	if list == "" {
 		return ""
 	}
 
-	id, errPick := c.pickOne(gatewayName, list)
+	var errPick error
+	id, errPick = c.pickOne(gatewayName, list)
 	if errPick != nil {
 		log.Printf("%s: name=%s id=%s error: %v", me, gatewayName, id, errPick)
 	}
@@ -153,7 +168,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 	return id
 }
 
-func (c *Client) getID(gatewayName string) string {
+func (c *Client) getID(gatewayName string) (string, bool) {
 	const me = "gateboard.Client.getID"
 
 	// 1: local cache with TTL
@@ -167,7 +182,7 @@ func (c *Client) getID(gatewayName string) string {
 				if c.options.Debug {
 					log.Printf("%s: name=%s id=%s from cache TTL=%v", me, gatewayName, entry.gatewayID, TTL-elap)
 				}
-				return entry.gatewayID
+				return entry.gatewayID, true
 			}
 		}
 	}
@@ -182,10 +197,10 @@ func (c *Client) getID(gatewayName string) string {
 
 	if err != nil || c.options.Debug {
 		log.Printf("%s: gateway='%s' id='%s' shared=%t error:%v", me, gatewayName, id, shared, err)
-		return id
+		return id, false
 	}
 
-	return id
+	return id, false
 }
 
 // pickOne randomly picks one id from a weighted list of ids.
