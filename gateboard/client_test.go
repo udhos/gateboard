@@ -2,8 +2,6 @@ package gateboard
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,8 +9,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	yaml "gopkg.in/yaml.v3"
 )
 
 type operationType int
@@ -46,10 +42,8 @@ var testTable = []testCase{
 	{"3: delete gateway from main", operationDeleteFromMain, "gateway1", ""},
 	{"3: find gateway from cache", operationQuery, "gateway1", "id1"},
 	{"3: expire gateway from cache", operationExpireFromCache, "gateway1", ""},
-	//{"3: find gateway from fallback should fail before refresh", operationQuery, "gateway1", ""},
 	//{"3: refresh", operationRefresh, "gateway1", ""},
 	//{"3: sleep", operationSleep100ms, "gateway1", ""},
-	{"3: find gateway from fallback after refresh", operationQuery, "gateway1", "id1"},
 }
 
 func jsonWrite(w http.ResponseWriter, code int, v interface{}) {
@@ -108,49 +102,10 @@ func TestClient(t *testing.T) {
 	defer main.Close()
 	mainURL, _ := url.JoinPath(main.URL, "/gateway")
 
-	dbFallback := map[string]string{}
-	fallback := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Logf("fallback server: %s %s", r.Method, r.URL)
-
-		gatewayName := strings.TrimPrefix(r.URL.Path, "/gateway/")
-
-		if r.Method == "PUT" {
-
-			buf, errRead := io.ReadAll(r.Body)
-			if errRead != nil {
-				errorPut(w, gatewayName, "", fmt.Sprintf("fallback server: read body: %v", errRead), 400)
-				return
-			}
-
-			var bodyReq BodyPutRequest
-
-			errYaml := yaml.Unmarshal(buf, &bodyReq)
-			if errYaml != nil {
-				errorPut(w, gatewayName, "", fmt.Sprintf("fallback server: yaml: %v", errYaml), 400)
-				return
-			}
-
-			t.Logf("fallback server: %s %s gateway=%s id=%s", r.Method, r.URL, gatewayName, bodyReq.GatewayID)
-
-			dbFallback[gatewayName] = bodyReq.GatewayID
-
-			resultPut(w, gatewayName, bodyReq.GatewayID)
-			return
-		}
-
-		id, found := dbFallback[gatewayName]
-
-		resultGet(w, gatewayName, id, found)
-	}))
-	defer fallback.Close()
-	fallbackURL, _ := url.JoinPath(fallback.URL, "/gateway")
-
 	t.Logf("main url:%s", mainURL)
-	t.Logf("fallback url:%s", fallbackURL)
 
 	client := NewClient(ClientOptions{
-		ServerURL:   mainURL,
-		FallbackURL: fallbackURL,
+		ServerURL: mainURL,
 	})
 
 	for _, data := range testTable {

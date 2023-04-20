@@ -20,7 +20,6 @@
 package gateboard
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -59,12 +58,11 @@ type gatewayEntry struct {
 
 // ClientOptions defines options for the client.
 type ClientOptions struct {
-	ServerURL   string        // required main centralized server
-	FallbackURL string        // optional, recommended, local fallback server (data cached from main server)
-	TTLMin      time.Duration // optional, if unspecified defaults to CacheTTLMinimum
-	TTLMax      time.Duration // optional, if unspecified defaults to CacheTTLMax
-	TTLDefault  time.Duration // optional, if unspecified defaults to CacheTTLDefault
-	Debug       bool          // optional, log debug information
+	ServerURL  string        // required main centralized server
+	TTLMin     time.Duration // optional, if unspecified defaults to CacheTTLMinimum
+	TTLMax     time.Duration // optional, if unspecified defaults to CacheTTLMax
+	TTLDefault time.Duration // optional, if unspecified defaults to CacheTTLDefault
+	Debug      bool          // optional, log debug information
 }
 
 // NewClient creates a new gateboard client.
@@ -242,8 +240,6 @@ func pickRandom(list idList, random int) string {
 }
 
 // refresh fetches up-to-date data from server.
-// Data retrieved from the main server is saved into fallback server, if a fallback server is defined.
-// If data can't be fetched from main server, the fallback server is queried.
 // Whenever new data is found, the local cache is updated.
 func (c *Client) refresh(gatewayName string) (string, error) {
 	const me = "refresh"
@@ -252,32 +248,13 @@ func (c *Client) refresh(gatewayName string) (string, error) {
 		log.Printf("%s: gateway_name=%s", me, gatewayName)
 	}
 
-	// 1: query main server
-
 	{
 		gatewayID, TTL := c.queryServer(c.options.ServerURL, gatewayName)
 		c.updateTTL(TTL)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
-			if c.options.FallbackURL != "" {
-				c.saveFallback(gatewayName, gatewayID)
-			}
 			if c.options.Debug {
 				log.Printf("%s: gateway_name=%s gateway_id=%s from main server",
-					me, gatewayName, gatewayID)
-			}
-			return gatewayID, nil
-		}
-	}
-
-	// 2: query local fallback repository, if any
-
-	if c.options.FallbackURL != "" {
-		gatewayID, _ := c.queryServer(c.options.FallbackURL, gatewayName)
-		if gatewayID != "" {
-			c.cachePut(gatewayName, gatewayID)
-			if c.options.Debug {
-				log.Printf("%s: gateway_name=%s gateway_id=%s from fallback server",
 					me, gatewayName, gatewayID)
 			}
 			return gatewayID, nil
@@ -305,7 +282,7 @@ var jobIsRunning uint32
 var refreshing uint32
 
 // Refresh spawns only one refreshJob() goroutine at a time.
-// The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieved from main server; failing that, will try the fallback server.
+// The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieved from server.
 func (c *Client) Refresh(gatewayName string) {
 	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
 		go func() {
@@ -375,49 +352,4 @@ type BodyPutReply struct {
 	GatewayName string `json:"gateway_name"    yaml:"gateway_name"`
 	GatewayID   string `json:"gateway_id"      yaml:"gateway_id"`
 	Error       string `json:"error,omitempty" yaml:"error,omitempty"`
-}
-
-func (c *Client) saveFallback(gatewayName, gatewayID string) {
-	const me = "gateboard.Client.saveFallback"
-
-	path, errPath := url.JoinPath(c.options.FallbackURL, gatewayName)
-	if errPath != nil {
-		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
-		return
-	}
-
-	requestBody := BodyPutRequest{GatewayID: gatewayID}
-	requestBytes, errJSON := json.Marshal(&requestBody)
-	if errJSON != nil {
-		log.Printf("%s: URL=%s json error: %v", me, path, errJSON)
-		return
-	}
-
-	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
-	if errReq != nil {
-		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
-		return
-	}
-
-	client := http.DefaultClient
-	resp, errDo := client.Do(req)
-	if errDo != nil {
-		log.Printf("%s: URL=%s server error: %v", me, path, errDo)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	var reply BodyPutReply
-
-	dec := yaml.NewDecoder(resp.Body)
-	errYaml := dec.Decode(&reply)
-	if errYaml != nil {
-		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
-		return
-	}
-
-	if c.options.Debug {
-		log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
-	}
 }

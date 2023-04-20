@@ -50,9 +50,8 @@ func main() {
 	env := envconfig.New(envconfig.Options{})
 
 	client := gateboard.NewClient(gateboard.ClientOptions{
-		ServerURL:   env.String("MAIN_URL", "http://localhost:8080/gateway"),
-		FallbackURL: strings.TrimSpace(env.String("FALLBACK_URL", "http://localhost:8181/gateway")),
-		Debug:       env.Bool("DEBUG", true),
+		ServerURL: env.String("MAIN_URL", "http://localhost:8080/gateway"),
+		Debug:     env.Bool("DEBUG", true),
 	})
 
 	log.Printf("reading gateway name from stdin...")

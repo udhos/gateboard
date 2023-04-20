@@ -37,12 +37,11 @@
 - [X] Repository redis
 - [ ] Cache service
 - [X] Discovery service
-- [ ] Zap logging
 - [ ] Metrics
-- [ ] Alarm for main server unreachable
 - [ ] Tracing
 - [ ] Benchmark
 - [ ] User guide
+- [ ] Zap logging
 
 ## Build
 
@@ -93,33 +92,6 @@ Run repository tests:
 ```bash
 export TEST_REPO_REDIS=true ;# enable redis tests
 go test -count=1 -run TestRepository ./cmd/gateboard
-```
-
-## Running both servers on same host
-
-Main:
-
-```bash
-docker run --rm --name mongo-main -p 27017:27017 -d mongo
-export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-gateboard
-```
-
-Fallback:
-
-```bash
-docker run --rm --name mongo-fallback -p 27018:27017 -d mongo
-export LISTEN_ADDR=:8181                   ;# main 8080
-export HEALTH_ADDR=:9999                   ;# main 8888
-export METRICS_ADDR=:3001                  ;# main 3000
-export MONGO_URL=mongodb://localhost:27018 ;# main mongodb://localhost:27017
-gateboard
-```
-
-Run interactive client:
-
-```bash
-gateboard-client-example
 ```
 
 ## Optional Authentication
