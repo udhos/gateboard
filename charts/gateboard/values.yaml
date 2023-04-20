@@ -90,12 +90,13 @@ configMapProperties:
   #DEBUG: true
   #QUEUE_URL: ""
   #SQS_ROLE_ARN: ""
-  #TTL: 120
+  #TTL: "120"
   #REPO: server
   REPO: mem
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
   #MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
+  #MONGO_MIN_POOL: "1"
   #LISTEN_ADDR: ":8080"
   #HEALTH_ADDR: ":8888"
   #HEALTH_PATH: /health
@@ -108,7 +109,7 @@ configMapProperties:
   #REDIS_ADDR: localhost:6379
   #REDIS_PASSWORD: ""
   #REDIS_KEY: gateboard
-  #WRITE_RETRY: 3
+  #WRITE_RETRY: "3"
   #WRITE_RETRY_INTERVAL: 1s
   #GIN_MODE: release
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
