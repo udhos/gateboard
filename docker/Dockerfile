@@ -25,7 +25,7 @@ RUN CGO_ENABLED=0 go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gate
 #
 FROM alpine:3.17.3
 COPY --from=builder /tmp/gateboard /bin/gateboard
-RUN apk add curl=7.88.1-r1
+RUN apk add curl=8.0.1-r0
 RUN adduser -D -g '' user
 USER user
 ENTRYPOINT ["/bin/gateboard"]
