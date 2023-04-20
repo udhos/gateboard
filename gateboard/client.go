@@ -189,9 +189,9 @@ func (c *Client) getID(gatewayName string) string {
 }
 
 // pickOne randomly picks one id from a weighted list of ids.
-// list entry: "id:weight".
-// list: "id1:weight1,id2:weight2,id3:weight3".
-// example: "id1:5,id2:2,id3:3".
+// list entry: "id;weight".
+// list: "id1;weight1,id2;weight2,id3;weight3".
+// example: "id1;5,id2;2,id3;3".
 // simplest list is "id1".
 // omitted weight defaults to 1.
 func (c *Client) pickOne(gatewayName, listStr string) (string, error) {
