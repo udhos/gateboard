@@ -180,13 +180,9 @@ func (c *Client) getID(gatewayName string) string {
 
 	id := result.(string)
 
-	if err != nil {
-		log.Printf("%s: gateway='%s' id='%s' shared=%t error: %v", me, gatewayName, id, shared, err)
+	if err != nil || c.options.Debug {
+		log.Printf("%s: gateway='%s' id='%s' shared=%t error:%v", me, gatewayName, id, shared, err)
 		return id
-	}
-
-	if c.options.Debug {
-		log.Printf("%s: gateway='%s' id='%s' shared=%t", me, gatewayName, id, shared)
 	}
 
 	return id
