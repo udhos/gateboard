@@ -1,5 +1,5 @@
 {{- if .Values.autoscaling.enabled }}
-apiVersion: autoscaling/v2
+apiVersion: {{ .Values.autoscaling.apiVersion }}
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "gateboard.fullname" . }}
@@ -12,13 +12,18 @@ spec:
     name: {{ include "gateboard.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  {{- if eq .Values.autoscaling.apiVersion "autoscaling/v1" }}
+  targetCPUUtilizationPercentage: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+  {{- else }}
+  {{- /*
+    defaults to autoscaling/v2
+  */}}
   metrics:
-    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
-          type: Utilization
-    {{- end }}
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+        type: Utilization
+  {{- end }}
 {{- end }}
