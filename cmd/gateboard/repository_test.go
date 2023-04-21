@@ -121,14 +121,14 @@ func TestRepository(t *testing.T) {
 				region:       "us-east-1",
 				prefix:       "gateboard",
 				debug:        debug,
-				manualCreate: true, // do not create table
+				manualCreate: true, // do not create bucket
 			})
 			if err != nil {
 				t.Errorf("error initializing s3: %v", err)
 			}
 			if errDrop := r.dropDatabase(); errDrop != nil {
 				// just log since it is not an error,
-				// the table might not exist
+				// the bucket might not exist
 				t.Logf("dropping database: %v", errDrop)
 			}
 		}

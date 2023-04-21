@@ -105,6 +105,19 @@ export TEST_REPO_REDIS=true ;# enable redis tests
 go test -count=1 -run TestRepository ./cmd/gateboard
 ```
 
+## Testing repository S3
+
+Create a bucket.
+
+Make sure the bucket is empty before running the tests.
+
+Run repository tests:
+
+```bash
+export TEST_REPO_S3=put_bucket_name_here ;# enable S3 tests
+go test -count=1 -run TestRepository ./cmd/gateboard
+```
+
 ## Optional Authentication
 
 Enable `WRITE_TOKEN=true` in order to require token authentication for write requests.
