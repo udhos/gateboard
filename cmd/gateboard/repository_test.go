@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func TestRepository(t *testing.T) {
 			key:      table,
 		})
 		if err != nil {
-			t.Errorf("error initialize redis: %v", err)
+			t.Errorf("error initializing redis: %v", err)
 		}
 		if errDrop := r.dropDatabase(); errDrop != nil {
 			t.Errorf("dropping database: %v", errDrop)
@@ -60,7 +61,7 @@ func TestRepository(t *testing.T) {
 				manualCreate: true, // do not create table
 			})
 			if err != nil {
-				t.Errorf("error initialize dynamodb: %v", err)
+				t.Errorf("error initializing dynamodb: %v", err)
 			}
 			if errDrop := r.dropDatabase(); errDrop != nil {
 				// just log since it is not an error,
@@ -77,7 +78,7 @@ func TestRepository(t *testing.T) {
 			debug:  debug,
 		})
 		if err != nil {
-			t.Errorf("error initialize dynamodb: %v", err)
+			t.Errorf("error initializing dynamodb: %v", err)
 		}
 		testRepo(t, r, table)
 	}
@@ -96,13 +97,56 @@ func TestRepository(t *testing.T) {
 			timeout:    time.Second * 10,
 		})
 		if err != nil {
-			t.Errorf("error initialize mongodb: %v", err)
+			t.Errorf("error initializing mongodb: %v", err)
 		}
 		if errDrop := r.dropDatabase(); errDrop != nil {
 			t.Errorf("dropping database: %v", errDrop)
 		}
 		testRepo(t, r, table)
 	}
+
+	//
+	// optionally test repo s3
+	//
+	testS3Bucket := os.Getenv("TEST_REPO_S3")
+	testS3 := testS3Bucket != ""
+	t.Logf("testing repo s3: %t", testS3)
+	if testS3 {
+		{
+			//
+			// temporary client just to reset the bucket
+			//
+			r, err := newRepoS3(repoS3Options{
+				bucket:       testS3Bucket,
+				region:       "us-east-1",
+				prefix:       "gateboard",
+				debug:        debug,
+				manualCreate: true, // do not create table
+			})
+			if err != nil {
+				t.Errorf("error initializing s3: %v", err)
+			}
+			if errDrop := r.dropDatabase(); errDrop != nil {
+				// just log since it is not an error,
+				// the table might not exist
+				t.Logf("dropping database: %v", errDrop)
+			}
+		}
+		//
+		// actual client for testing
+		//
+		r, err := newRepoS3(repoS3Options{
+			bucket: testS3Bucket,
+			region: "us-east-1",
+			prefix: "gateboard",
+			debug:  debug,
+		})
+		if err != nil {
+			t.Errorf("error initializing s3: %v", err)
+		}
+		testRepo(t, r, table)
+	}
+
 }
 
 func testRepo(t *testing.T, r repository, table string) {

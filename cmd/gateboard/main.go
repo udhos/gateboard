@@ -25,7 +25,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.4.0"
+const version = "0.5.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -115,6 +115,19 @@ func main() {
 			app.repo = repo
 		case "mem":
 			app.repo = newRepoMem()
+		case "s3":
+			repo, errS3 := newRepoS3(repoS3Options{
+				debug:       app.config.debug,
+				bucket:      app.config.s3BucketName,
+				region:      app.config.s3BucketRegion,
+				prefix:      app.config.s3Prefix,
+				roleArn:     app.config.s3RoleArn,
+				sessionName: me,
+			})
+			if errS3 != nil {
+				log.Fatalf("repo s3: %v", errS3)
+			}
+			app.repo = repo
 		default:
 			log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", app.config.repoType)
 		}

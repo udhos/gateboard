@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.19.4
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.31.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.31.1
 	github.com/aws/aws-sdk-go-v2/service/sns v1.19.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15
 	github.com/gin-gonic/gin v1.8.1
@@ -44,7 +45,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.7.26 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.14.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.31.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.19.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.36.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.12.6 // indirect

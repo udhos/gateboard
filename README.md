@@ -38,6 +38,7 @@
 - [ ] Cache service
 - [X] Discovery service
 - [X] Metrics
+- [ ] Repository S3
 - [ ] Tracing
 - [ ] Benchmark
 - [ ] User guide
@@ -49,6 +50,16 @@
 git clone https://github.com/udhos/gateboard
 cd gateboard
 CGO_ENABLED=0 go install ./...
+```
+
+## Supported Repositories (Persistent Storage)
+
+```
+export REPO=mem      ;# testing-only pseudo-storage
+export REPO=mongo    ;# MongoDB
+export REPO=redis    ;# redis
+export REPO=dynamodb ;# DynamoDB
+export REPO=s3       ;# S3
 ```
 
 ## Testing repository mongo

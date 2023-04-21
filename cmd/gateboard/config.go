@@ -36,6 +36,10 @@ type appConfig struct {
 	redisKey           string
 	writeRetry         int
 	writeRetryInterval time.Duration
+	s3BucketName       string
+	s3BucketRegion     string
+	s3Prefix           string
+	s3RoleArn          string
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -72,5 +76,9 @@ func newConfig(roleSessionName string) appConfig {
 		redisKey:           env.String("REDIS_KEY", "gateboard"),
 		writeRetry:         env.Int("WRITE_RETRY", 3),
 		writeRetryInterval: env.Duration("WRITE_RETRY_INTERVAL", 1*time.Second),
+		s3BucketName:       env.String("S3_BUCKET_NAME", ""),
+		s3BucketRegion:     env.String("S3_BUCKET_REGION", "us-east-1"),
+		s3Prefix:           env.String("S3_PREFIX", "gateboard"),
+		s3RoleArn:          env.String("S3_ROLE_ARN", ""),
 	}
 }
