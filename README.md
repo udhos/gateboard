@@ -38,7 +38,7 @@
 - [ ] Cache service
 - [X] Discovery service
 - [X] Metrics
-- [ ] Repository S3
+- [X] Repository S3
 - [ ] Tracing
 - [ ] Benchmark
 - [ ] User guide
