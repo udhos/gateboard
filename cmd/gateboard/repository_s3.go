@@ -13,7 +13,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
 	"github.com/goccy/go-json"
@@ -73,7 +72,7 @@ func (r *repoS3) createBucket() {
 
 	// cant specify us-east-1
 	if r.options.region != "us-east-1" {
-		input.CreateBucketConfiguration = &types.CreateBucketConfiguration{
+		input.CreateBucketConfiguration = &s3types.CreateBucketConfiguration{
 			LocationConstraint: s3types.BucketLocationConstraint(r.options.region),
 		}
 	}
