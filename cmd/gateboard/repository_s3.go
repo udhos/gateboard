@@ -109,7 +109,6 @@ func (r *repoS3) dropDatabase() error {
 	_, err := r.s3Client.DeleteObjects(context.TODO(), &input)
 
 	return err
-
 }
 
 func (r *repoS3) dump() (repoDump, error) {
@@ -178,7 +177,6 @@ func (r *repoS3) listKeys() ([]string, error) {
 	}
 
 	return list, nil
-
 }
 
 func (r *repoS3) get(gatewayName string) (gateboard.BodyGetReply, error) {
@@ -280,7 +278,6 @@ func (r *repoS3) s3put(gatewayName string, body gateboard.BodyGetReply) error {
 	_, errS3 := r.s3Client.PutObject(context.TODO(), input)
 
 	return errS3
-
 }
 
 func (r *repoS3) putToken(gatewayName, token string) error {
