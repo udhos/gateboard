@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 
 schedule: "*/5 * * * *"
+startingDeadlineSeconds: 120
 
 image:
   repository: udhos/gateboard-discovery

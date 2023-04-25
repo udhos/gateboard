@@ -6,6 +6,7 @@ metadata:
     {{- include "gateboard-discovery.labels" . | nindent 4 }}
 spec:
   schedule: {{ .Values.schedule | quote }}
+  startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
   jobTemplate:
     spec:
       template:
