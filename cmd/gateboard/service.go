@@ -11,25 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/gateboard"
-	"go.opentelemetry.io/otel/trace"
 	yaml "gopkg.in/yaml.v3"
 )
-
-func getTrace(caller string, c *gin.Context, app *application) (context.Context, trace.Span) {
-	ctx := c.Request.Context()
-	if app.tracer == nil {
-		return ctx, nil
-	}
-	newCtx, span := app.tracer.Start(ctx, caller)
-	return newCtx, span
-}
-
-func getTraceID(span trace.Span) string {
-	if span == nil {
-		return "tracing-disabled"
-	}
-	return span.SpanContext().TraceID().String()
-}
 
 const (
 	repoStatusOK       = "success"
@@ -40,13 +23,12 @@ const (
 func gatewayDump(c *gin.Context, app *application) {
 	const me = "gatewayDump"
 
-	_, span := getTrace(me, c, app)
+	ctx, span := newSpanGin(c, me, app)
 	if span != nil {
 		defer span.End()
 	}
-	traceID := getTraceID(span)
 
-	log.Printf("%s: traceID=%s", me, traceID)
+	logf(ctx, "%s", me)
 
 	//
 	// dump gateways
@@ -64,8 +46,8 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	elap := time.Since(begin)
 	if app.config.debug {
-		log.Printf("%s: traceID=%s repo_dump_latency: elapsed=%v (error:%v)",
-			me, traceID, elap, errDump)
+		logf(ctx, "%s: repo_dump_latency: elapsed=%v (error:%v)",
+			me, elap, errDump)
 	}
 
 	const repoMethod = "dump"
@@ -76,13 +58,15 @@ func gatewayDump(c *gin.Context, app *application) {
 	case errRepositoryGatewayNotFound:
 		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
 		recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -90,20 +74,51 @@ func gatewayDump(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, dump)
 }
 
-func gatewayGet(c *gin.Context, app *application) {
-	const me = "gatewayGet"
-
-	_, span := getTrace(me, c, app)
+func repoGet(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
+	// create trace span
+	_, span := newSpan(ctx, "repoGet", app)
 	if span != nil {
 		defer span.End()
 	}
-	traceID := getTraceID(span)
 
-	log.Printf("traceID=%s", traceID)
+	body, err := app.repo.get(gatewayName)
+
+	// record error in trace span
+	if err != nil {
+		traceError(span, err.Error())
+	}
+
+	return body, err
+}
+
+func repoPut(ctx context.Context, app *application, gatewayName, gatewayID string) error {
+	// create trace span
+	_, span := newSpan(ctx, "repoPut", app)
+	if span != nil {
+		defer span.End()
+	}
+
+	err := app.repo.put(gatewayName, gatewayID)
+
+	// record error in trace span
+	if err != nil {
+		traceError(span, err.Error())
+	}
+
+	return err
+}
+
+func gatewayGet(c *gin.Context, app *application) {
+	const me = "gatewayGet"
+
+	ctx, span := newSpanGin(c, me, app)
+	if span != nil {
+		defer span.End()
+	}
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, traceID, gatewayName)
+	logf(ctx, "%s: gateway_name=%s", me, gatewayName)
 
 	var out gateboard.BodyGetReply
 
@@ -111,7 +126,8 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.GatewayName = gatewayName
 		out.TTL = app.config.TTL
 		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -122,14 +138,14 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	begin := time.Now()
 
-	out, errID := app.repo.get(gatewayName)
+	out, errID := repoGet(ctx, app, gatewayName)
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
 	elap := time.Since(begin)
 	if app.config.debug {
-		log.Printf("%s: traceID=%s gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
-			me, traceID, gatewayName, elap, errID)
+		logf(ctx, "%s: gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
+			me, gatewayName, elap, errID)
 	}
 
 	const repoMethod = "get"
@@ -141,14 +157,16 @@ func gatewayGet(c *gin.Context, app *application) {
 		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
 		recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -159,24 +177,22 @@ func gatewayGet(c *gin.Context, app *application) {
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
-	_, span := getTrace(me, c, app)
+	ctx, span := newSpanGin(c, me, app)
 	if span != nil {
 		defer span.End()
 	}
-	traceID := getTraceID(span)
-
-	log.Printf("%s: traceID=%s", me, traceID)
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	log.Printf("%s: traceID=%s gateway_name=%s", me, traceID, gatewayName)
+	logf(ctx, "%s: gateway_name=%s", me, gatewayName)
 
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
 
 	if strings.TrimSpace(gatewayName) == "" {
 		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -190,12 +206,13 @@ func gatewayPut(c *gin.Context, app *application) {
 	errYaml := dec.Decode(&in)
 	if errYaml != nil {
 		out.Error = fmt.Sprintf("%s: body yaml: %v", me, errYaml)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
 
-	log.Printf("%s: traceID=%s gateway_name=%s body:%v", me, traceID, gatewayName, toJSON(in))
+	logf(ctx, "%s: gateway_name=%s body:%v", me, gatewayName, toJSON(in))
 
 	out.GatewayID = in.GatewayID
 
@@ -205,8 +222,9 @@ func gatewayPut(c *gin.Context, app *application) {
 
 	gatewayID := strings.TrimSpace(in.GatewayID)
 	if gatewayID == "" {
-		out.Error = "invalid gateway_id"
-		log.Print(out.Error)
+		out.Error = "invalid blank gateway_id"
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -218,9 +236,10 @@ func gatewayPut(c *gin.Context, app *application) {
 	//
 
 	if app.config.writeToken {
-		if invalidToken(app, gatewayName, in.Token) {
+		if invalidToken(ctx, app, gatewayName, in.Token) {
 			out.Error = "invalid token"
-			log.Print(out.Error)
+			traceError(span, out.Error)
+			logf(ctx, out.Error)
 			c.JSON(http.StatusUnauthorized, out)
 			return
 		}
@@ -236,12 +255,12 @@ func gatewayPut(c *gin.Context, app *application) {
 
 		begin := time.Now()
 
-		errPut := app.repo.put(gatewayName, gatewayID)
+		errPut := repoPut(ctx, app, gatewayName, gatewayID)
 
 		elap := time.Since(begin)
 		if app.config.debug {
-			log.Printf("%s: traceID=%s gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
-				me, traceID, gatewayName, elap, errPut)
+			logf(ctx, "%s: gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
+				me, gatewayName, elap, errPut)
 		}
 
 		const repoMethod = "put"
@@ -257,10 +276,11 @@ func gatewayPut(c *gin.Context, app *application) {
 
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, max, errPut)
-		log.Print(out.Error)
+		traceError(span, out.Error)
+		logf(ctx, out.Error)
 
 		if attempt < max {
-			log.Printf("%s: attempt=%d/%d sleeping %v",
+			logf(ctx, "%s: attempt=%d/%d sleeping %v",
 				me, attempt, app.config.writeRetry, app.config.writeRetryInterval)
 			time.Sleep(app.config.writeRetryInterval)
 		}
@@ -277,16 +297,16 @@ func toJSON(v interface{}) string {
 	return string(b)
 }
 
-func invalidToken(app *application, gatewayName, token string) bool {
+func invalidToken(ctx context.Context, app *application, gatewayName, token string) bool {
 	const me = "invalidToken"
 
 	if token == "" {
 		return true // empty token is always invalid
 	}
 
-	result, errID := app.repo.get(gatewayName)
+	result, errID := repoGet(ctx, app, gatewayName)
 	if errID != nil {
-		log.Printf("%s: error: %v", me, errID)
+		logf(ctx, "%s: error: %v", me, errID)
 		return true
 	}
 

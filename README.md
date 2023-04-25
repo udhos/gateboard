@@ -39,7 +39,7 @@
 - [X] Discovery service
 - [X] Metrics
 - [X] Repository S3
-- [ ] Tracing
+- [X] Tracing
 - [ ] Benchmark
 - [ ] User guide
 - [ ] Zap logging
@@ -326,6 +326,26 @@ Example: http_server_requests_seconds_bucket{method="GET",status="200",uri="/gat
 
 Example: repository_requests_seconds_bucket{method="get",status="success",le="0.00025"} 4
 ```
+
+## Test Jaeger Tracing
+
+```
+# start jaeger
+./run-jaeger-local.sh
+
+# start gateboard
+export REPO=mem
+export JAEGER_URL=http://localhost:14268/api/traces
+export OTEL_TRACES_SAMPLER=parentbased_always_on
+gateboard
+
+# open jaeger UI http://localhost:16686/
+```
+
+Jaeger: https://www.jaegertracing.io/docs/1.44/getting-started/
+
+Open Telemetry Go: https://opentelemetry.io/docs/instrumentation/go/getting-started/
+
 
 ## Docker
 

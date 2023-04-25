@@ -135,9 +135,14 @@ func sqsListener(app *application) {
 			//
 
 			if app.config.writeToken {
-				if invalidToken(app, put.GatewayName, put.Token) {
+				if invalidToken(context.TODO(), app, put.GatewayName, put.Token) {
 					log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid token='%s'",
 						me, put.GatewayName, put.GatewayID, msg.id(), put.Token)
+
+					if app.config.sqsConsumeInvalidToken {
+						deleteMessage(app.sqsClient, msg, put.GatewayName, put.GatewayID)
+					}
+
 					continue
 				}
 			}
@@ -149,8 +154,18 @@ func sqsListener(app *application) {
 				continue
 			}
 
-			app.sqsClient.deleteMessage(msg)
+			deleteMessage(app.sqsClient, msg, put.GatewayName, put.GatewayID)
 		}
+	}
+}
+
+// deleteMessage consumes a message from SQS queue.
+func deleteMessage(sqsClient queue, msg queueMessage, gatewayName, gatewayID string) {
+	const me = "deleteMessage"
+	err := sqsClient.deleteMessage(msg)
+	if err != nil {
+		log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
+			me, gatewayName, gatewayID, msg.id(), err)
 	}
 }
 

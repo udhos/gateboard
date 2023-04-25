@@ -171,7 +171,7 @@ func main() {
 
 		tracing.TracePropagation()
 
-		app.tracer = tp.Tracer("component-main")
+		app.tracer = tp.Tracer(fmt.Sprintf("%s-main", me))
 	}
 
 	//
