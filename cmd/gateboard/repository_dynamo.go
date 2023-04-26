@@ -295,37 +295,27 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
 	}
 
-	//
-	// get previous items since we need to increase the changes counter
-	//
+	input := &dynamodb.UpdateItemInput{
+		TableName: aws.String(r.options.table),
 
-	body, errGet := r.get(gatewayName)
-	switch errGet {
-	case nil:
-	case errRepositoryGatewayNotFound:
-		body.GatewayName = gatewayName
-	default:
-		return errGet
+		Key: map[string]types.AttributeValue{
+			"gateway_name": &types.AttributeValueMemberS{Value: gatewayName},
+		},
+
+		UpdateExpression: aws.String("set gateway_id = :id, last_update = :now add changes :inc"),
+
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":id":  &types.AttributeValueMemberS{Value: gatewayID},
+			":inc": &types.AttributeValueMemberN{Value: "1"},
+			":now": &types.AttributeValueMemberS{Value: time.Now().Format(time.RFC3339Nano)},
+		},
+
+		ReturnValues: types.ReturnValueNone,
 	}
 
-	//
-	// update and save item
-	//
+	_, errUpdate := r.dynamo.UpdateItem(context.TODO(), input)
 
-	body.GatewayID = gatewayID
-	body.LastUpdate = time.Now()
-	body.Changes++
-
-	item, errMarshal := attributevalue.MarshalMap(&body)
-	if errMarshal != nil {
-		return errMarshal
-	}
-
-	_, errPut := r.dynamo.PutItem(context.TODO(), &dynamodb.PutItemInput{
-		TableName: aws.String(r.options.table), Item: item,
-	})
-
-	return errPut
+	return errUpdate
 }
 
 func (r *repoDynamo) putToken(gatewayName, token string) error {

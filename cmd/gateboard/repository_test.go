@@ -152,6 +152,7 @@ func TestRepository(t *testing.T) {
 func testRepo(t *testing.T, r repository, table string) {
 	testRepoGw(t, r, table, "gw1", "gw2")
 	testRepoGw(t, r, table, "123:us-east-1:gw1", "123:us-east-1:gw2")
+	testRepoGw(t, r, table, "gw1:123:us-east-1", "gw2:123:us-east-1")
 }
 
 func testRepoGw(t *testing.T, r repository, table, gw1, gw2 string) {
@@ -173,8 +174,10 @@ func testRepoGw(t *testing.T, r repository, table, gw1, gw2 string) {
 	save(t, r, table, gw1, "id2", expectOk)   // update key
 	queryExpectID(t, r, "query2", gw1, "id2") // should find updated key
 
-	save(t, r, table, gw2, "id2", expectOk)   // update key
-	queryExpectID(t, r, "query3", gw2, "id2") // should find updated key
+	save(t, r, table, gw2, "id3", expectOk)   // update key
+	queryExpectID(t, r, "query3", gw2, "id3") // should find updated key
+
+	queryExpectID(t, r, "query4", gw1, "id2") // should find inserted key
 
 	tokenSaveAndQuery(t, r, table, gw1, "token1", "token1")
 	tokenSaveAndQuery(t, r, table, gw1, "token1", "token1")
