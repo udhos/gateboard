@@ -1,10 +1,15 @@
 package main
 
-import "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+import (
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+)
 
 type queue interface {
 	receive() ([]queueMessage, error)
 	deleteMessage(m queueMessage) error
+	errorCooldown() time.Duration
 }
 
 type queueMessage interface {

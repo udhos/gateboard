@@ -71,14 +71,14 @@ func TestQueueSimple(t *testing.T) {
 func TestQueue(t *testing.T) {
 	app := newTestApp(false)
 
-	q := &mockQueue{}
+	q := &mockQueue{cooldown: 100 * time.Millisecond}
 	app.sqsClient = q
 	go sqsListener(app)
 
 	for _, data := range queueTestTable {
 
-		q.send(data.body)                  // add message to queue
-		time.Sleep(100 * time.Millisecond) // give time to receive from queue
+		q.send(data.body)          // add message to queue
+		time.Sleep(2 * q.cooldown) // give time to receive from queue
 
 		req, _ := http.NewRequest("GET", data.path, strings.NewReader(data.body))
 		w := httptest.NewRecorder()
@@ -119,6 +119,11 @@ func TestQueue(t *testing.T) {
 type mockQueue struct {
 	messages []queueMessage
 	lock     sync.Mutex
+	cooldown time.Duration
+}
+
+func (q *mockQueue) errorCooldown() time.Duration {
+	return q.cooldown
 }
 
 func (q *mockQueue) countVisible() int {

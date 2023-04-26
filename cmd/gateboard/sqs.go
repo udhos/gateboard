@@ -17,6 +17,11 @@ import (
 type clientConfig struct {
 	sqs      *sqs.Client
 	queueURL string
+	cooldown time.Duration
+}
+
+func (q *clientConfig) errorCooldown() time.Duration {
+	return q.cooldown
 }
 
 func (q *clientConfig) receive() ([]queueMessage, error) {
@@ -75,6 +80,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 	c := clientConfig{
 		sqs:      sqs.NewFromConfig(cfg.AwsConfig),
 		queueURL: queueURL,
+		cooldown: 10 * time.Second,
 	}
 
 	return &c
@@ -93,16 +99,25 @@ func getRegion(queueURL string) (string, error) {
 
 func sqsListener(app *application) {
 	const me = "sqsListener"
-	const errorCooldown = time.Second * 10
+
+	errorCooldown := app.sqsClient.errorCooldown()
 
 	for {
 		messages, errRecv := app.sqsClient.receive()
 		if errRecv != nil {
-			log.Printf("%s: receive: error: %v", me, errRecv)
+			log.Printf("%s: receive: error: %v, sleeping %v", me, errRecv, errorCooldown)
 			time.Sleep(errorCooldown)
 			continue
 		}
 		count := len(messages)
+
+		if count == 0 {
+			// guard against hammering api on empty receives.
+			// it should not happen on live aws api, but it might happen on simulated apis.
+			log.Printf("%s: empty receive, sleeping %v", me, errorCooldown)
+			time.Sleep(errorCooldown)
+			continue
+		}
 
 		for i, msg := range messages {
 			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, msg.id(), msg.body())
