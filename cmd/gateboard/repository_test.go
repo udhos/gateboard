@@ -119,7 +119,7 @@ func TestRepository(t *testing.T) {
 			r, err := newRepoS3(repoS3Options{
 				bucket:       testS3Bucket,
 				region:       "us-east-1",
-				prefix:       "gateboard",
+				prefix:       table,
 				debug:        debug,
 				manualCreate: true, // do not create bucket
 			})
@@ -138,7 +138,7 @@ func TestRepository(t *testing.T) {
 		r, err := newRepoS3(repoS3Options{
 			bucket: testS3Bucket,
 			region: "us-east-1",
-			prefix: "gateboard",
+			prefix: table,
 			debug:  debug,
 		})
 		if err != nil {
