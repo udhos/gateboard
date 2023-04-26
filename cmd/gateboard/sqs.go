@@ -128,6 +128,11 @@ func sqsListener(app *application) {
 			if errYaml != nil {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s yaml error: %v",
 					me, put.GatewayName, put.GatewayID, msg.id(), errYaml)
+
+				if app.config.sqsConsumeBadMessage {
+					deleteMessage(app.sqsClient, msg, put.GatewayName, put.GatewayID)
+				}
+
 				continue
 			}
 
@@ -135,6 +140,11 @@ func sqsListener(app *application) {
 			if put.GatewayName == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name",
 					me, put.GatewayName, put.GatewayID, msg.id())
+
+				if app.config.sqsConsumeBadMessage {
+					deleteMessage(app.sqsClient, msg, put.GatewayName, put.GatewayID)
+				}
+
 				continue
 			}
 
@@ -142,6 +152,11 @@ func sqsListener(app *application) {
 			if put.GatewayID == "" {
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
 					me, put.GatewayName, put.GatewayID, msg.id())
+
+				if app.config.sqsConsumeBadMessage {
+					deleteMessage(app.sqsClient, msg, put.GatewayName, put.GatewayID)
+				}
+
 				continue
 			}
 

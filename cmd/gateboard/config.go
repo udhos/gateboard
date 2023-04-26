@@ -10,6 +10,7 @@ type appConfig struct {
 	debug                  bool
 	queueURL               string
 	sqsRoleARN             string
+	sqsConsumeBadMessage   bool
 	sqsConsumeInvalidToken bool
 	TTL                    int
 	repoType               string
@@ -51,6 +52,7 @@ func newConfig(roleSessionName string) appConfig {
 		debug:                  env.Bool("DEBUG", true),
 		queueURL:               env.String("QUEUE_URL", ""),
 		sqsRoleARN:             env.String("SQS_ROLE_ARN", ""),
+		sqsConsumeBadMessage:   env.Bool("SQS_CONSUME_BAD_MESSAGE", false),
 		sqsConsumeInvalidToken: env.Bool("SQS_CONSUME_INVALID_TOKEN", true),
 		TTL:                    env.Int("TTL", 300), // seconds
 		repoType:               env.String("REPO", "mongo"),
