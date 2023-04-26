@@ -20,6 +20,7 @@
 package gateboard
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -30,6 +31,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
 
 	yaml "gopkg.in/yaml.v3"
@@ -63,6 +66,7 @@ type ClientOptions struct {
 	TTLMax     time.Duration // optional, if unspecified defaults to CacheTTLMax
 	TTLDefault time.Duration // optional, if unspecified defaults to CacheTTLDefault
 	Debug      bool          // optional, log debug information
+	Tracer     trace.Tracer
 }
 
 // NewClient creates a new gateboard client.
@@ -137,8 +141,13 @@ func (c *Client) cachePut(gatewayName, gatewayID string) {
 
 // GatewayID retrieves the gateway ID for a 'gatewayName' from local fast cache.
 // If the ID is not found in the local fast cache, it will use 'singleflight' to fetch up-to-date data.
-func (c *Client) GatewayID(gatewayName string) string {
+func (c *Client) GatewayID(ctx context.Context, gatewayName string) string {
 	const me = "gateboard.Client.GatewayID"
+
+	ctxNew, span := newSpan(ctx, me, c.options.Tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	begin := time.Now()
 
@@ -154,7 +163,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 
 	var list string
 
-	list, fromCache = c.getID(gatewayName)
+	list, fromCache = c.getID(ctxNew, gatewayName)
 	if list == "" {
 		return ""
 	}
@@ -168,7 +177,7 @@ func (c *Client) GatewayID(gatewayName string) string {
 	return id
 }
 
-func (c *Client) getID(gatewayName string) (string, bool) {
+func (c *Client) getID(ctx context.Context, gatewayName string) (string, bool) {
 	const me = "gateboard.Client.getID"
 
 	// 1: local cache with TTL
@@ -190,7 +199,7 @@ func (c *Client) getID(gatewayName string) (string, bool) {
 	// 2: fetch from server
 
 	result, err, shared := c.flightGroup.Do(gatewayName, func() (interface{}, error) {
-		return c.refresh(gatewayName)
+		return c.refresh(ctx, gatewayName)
 	})
 
 	id := result.(string)
@@ -252,7 +261,7 @@ func pickRandom(list idList, random int) string {
 
 // refresh fetches up-to-date data from server.
 // Whenever new data is found, the local cache is updated.
-func (c *Client) refresh(gatewayName string) (string, error) {
+func (c *Client) refresh(ctx context.Context, gatewayName string) (string, error) {
 	const me = "refresh"
 
 	if c.options.Debug {
@@ -260,7 +269,7 @@ func (c *Client) refresh(gatewayName string) (string, error) {
 	}
 
 	{
-		gatewayID, TTL := c.queryServer(c.options.ServerURL, gatewayName)
+		gatewayID, TTL := c.queryServer(ctx, c.options.ServerURL, gatewayName)
 		c.updateTTL(TTL)
 		if gatewayID != "" {
 			c.cachePut(gatewayName, gatewayID)
@@ -294,25 +303,38 @@ var refreshing uint32
 
 // Refresh spawns only one refreshJob() goroutine at a time.
 // The async refresh job will attempt to update the local fast cache entry for gatewayName with information retrieved from server.
-func (c *Client) Refresh(gatewayName string) {
+func (c *Client) Refresh(ctx context.Context, gatewayName string) {
+
+	const me = "gateboard.Client.Refresh"
+
+	ctxNew, span := newSpan(ctx, me, c.options.Tracer)
+	if span != nil {
+		defer span.End()
+	}
+
 	if atomic.CompareAndSwapUint32(&refreshing, 0, 1) {
 		go func() {
-			c.refreshJob(gatewayName)
+			c.refreshJob(ctxNew, gatewayName)
 			atomic.StoreUint32(&refreshing, 0)
 		}()
 	}
 }
 
-func (c *Client) refreshJob(gatewayName string) {
+func (c *Client) refreshJob(ctx context.Context, gatewayName string) {
 	const me = "refreshJob"
-	_, err := c.refresh(gatewayName)
+	_, err := c.refresh(ctx, gatewayName)
 	if err != nil {
 		log.Printf("%s: %v", me, err)
 	}
 }
 
-func (c *Client) queryServer(URL, gatewayName string) (string, int) {
+func (c *Client) queryServer(ctx context.Context, URL, gatewayName string) (string, int) {
 	const me = "gateboard.Client.queryServer"
+
+	ctxNew, span := newSpan(ctx, me, c.options.Tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	path, errPath := url.JoinPath(URL, gatewayName)
 	if errPath != nil {
@@ -320,7 +342,15 @@ func (c *Client) queryServer(URL, gatewayName string) (string, int) {
 		return "", 0
 	}
 
-	resp, errGet := http.Get(path)
+	req, errReq := http.NewRequestWithContext(ctxNew, "GET", path, nil)
+	if errReq != nil {
+		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
+		return "", 0
+	}
+
+	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
+	resp, errGet := client.Do(req)
 	if errGet != nil {
 		log.Printf("%s: URL=%s server error: %v", me, path, errGet)
 		return "", 0

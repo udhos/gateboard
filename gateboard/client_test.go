@@ -1,6 +1,7 @@
 package gateboard
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -111,7 +112,7 @@ func TestClient(t *testing.T) {
 	for _, data := range testTable {
 		switch data.operation {
 		case operationQuery:
-			id := client.GatewayID(data.gatewayName)
+			id := client.GatewayID(context.TODO(), data.gatewayName)
 			if id != data.expectedID {
 				t.Errorf("%s: query error: gateway=%s expectedID=[%s] foundID=[%s]",
 					data.name, data.gatewayName, data.expectedID, id)
@@ -119,7 +120,7 @@ func TestClient(t *testing.T) {
 		case operationPut:
 			dbMain[data.gatewayName] = data.expectedID
 		case operationRefresh:
-			client.Refresh(data.gatewayName)
+			client.Refresh(context.TODO(), data.gatewayName)
 		case operationSleep100ms:
 			time.Sleep(100 * time.Millisecond)
 		case operationDeleteFromMain:
