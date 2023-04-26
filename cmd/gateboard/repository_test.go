@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/udhos/boilerplate/envconfig"
+	"github.com/udhos/gateboard/gateboard"
 )
 
 // go test -run TestRepository ./cmd/gateboard
@@ -24,7 +24,7 @@ func TestRepository(t *testing.T) {
 	// optionally test repo redis
 	//
 
-	env := envconfig.New(envconfig.Options{})
+	env := gateboard.NewEnv("TestRepository")
 
 	testRedis := env.Bool("TEST_REPO_REDIS", false)
 	t.Logf("testing repo redis: %t", testRedis)
@@ -150,28 +150,35 @@ func TestRepository(t *testing.T) {
 }
 
 func testRepo(t *testing.T, r repository, table string) {
+	testRepoGw(t, r, table, "gw1", "gw2")
+	testRepoGw(t, r, table, "123:us-east-1:gw1", "123:us-east-1:gw2")
+}
+
+func testRepoGw(t *testing.T, r repository, table, gw1, gw2 string) {
+	t.Logf("testRepoGw: table=%s gw1='%s' gw2='%s'", table, gw1, gw2)
+
 	const expectError = true
 	const expectOk = false
 
 	queryExpectError(t, r, "")                // should not find empty key
 	queryExpectError(t, r, "XXX")             // should not find non-existing key
 	save(t, r, table, "", "XXX", expectError) // should not insert empty key
-	save(t, r, table, "gw1", "", expectError) // should not insert empty value
+	save(t, r, table, gw1, "", expectError)   // should not insert empty value
 	save(t, r, table, "", "", expectError)    // should not insert all empty
 
-	queryExpectError(t, r, "gw1")               // gw1 does not exist yet
-	save(t, r, table, "gw1", "id1", expectOk)   // insert key
-	queryExpectID(t, r, "query1", "gw1", "id1") // should find inserted key
+	queryExpectError(t, r, gw1)               // gw1 does not exist yet
+	save(t, r, table, gw1, "id1", expectOk)   // insert key
+	queryExpectID(t, r, "query1", gw1, "id1") // should find inserted key
 
-	save(t, r, table, "gw1", "id2", expectOk)   // update key
-	queryExpectID(t, r, "query2", "gw1", "id2") // should find updated key
+	save(t, r, table, gw1, "id2", expectOk)   // update key
+	queryExpectID(t, r, "query2", gw1, "id2") // should find updated key
 
-	save(t, r, table, "gw2", "id2", expectOk)   // update key
-	queryExpectID(t, r, "query3", "gw2", "id2") // should find updated key
+	save(t, r, table, gw2, "id2", expectOk)   // update key
+	queryExpectID(t, r, "query3", gw2, "id2") // should find updated key
 
-	tokenSaveAndQuery(t, r, table, "gw1", "token1", "token1")
-	tokenSaveAndQuery(t, r, table, "gw1", "token1", "token1")
-	tokenSaveAndQuery(t, r, table, "gw2", "token2", "token2")
+	tokenSaveAndQuery(t, r, table, gw1, "token1", "token1")
+	tokenSaveAndQuery(t, r, table, gw1, "token1", "token1")
+	tokenSaveAndQuery(t, r, table, gw2, "token2", "token2")
 }
 
 func tokenSaveAndQuery(t *testing.T, r repository, table, gatewayName, token, expectedToken string) {
