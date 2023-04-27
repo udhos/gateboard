@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
 	"github.com/udhos/boilerplate/awsconfig"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var awsConfigCache = map[string]cacheEntry{}
@@ -52,13 +53,20 @@ type scannerAWS struct {
 	roleARN          string
 }
 
-func newScannerAWS(region, roleArn, roleExternalID, roleSessionName string) (*scannerAWS, string) {
+func newScannerAWS(ctx context.Context, tracer trace.Tracer, region, roleArn, roleExternalID, roleSessionName string) (*scannerAWS, string) {
 
 	const me = "newScannerAWS"
 
+	_, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
 	cfg, accountID, errConfig := awsConfig(region, roleArn, roleExternalID, roleSessionName)
 	if errConfig != nil {
-		log.Fatalf("%s: region=%s role=%s: %v", me, region, roleArn, errConfig)
+		msg := fmt.Sprintf("%s: region=%s role=%s: %v", me, region, roleArn, errConfig)
+		traceError(span, msg)
+		return nil, ""
 	}
 
 	s := scannerAWS{
@@ -73,9 +81,14 @@ func newScannerAWS(region, roleArn, roleExternalID, roleSessionName string) (*sc
 	return &s, accountID
 }
 
-func (s *scannerAWS) list() []item {
+func (s *scannerAWS) list(ctx context.Context, tracer trace.Tracer) []item {
 
 	const me = "scannerAWS.list"
+
+	_, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	var limit int32 = 500 // max number of results per page. default=25, max=500
 
@@ -100,8 +113,10 @@ func (s *scannerAWS) list() []item {
 			o.Region = s.region
 		})
 		if errOut != nil {
-			log.Printf("%s: region=%s role=%s accountId=%s page=%d: error: %v",
+			msg := fmt.Sprintf("%s: region=%s role=%s accountId=%s page=%d: error: %v",
 				me, s.region, s.roleARN, s.accountID, page, errOut)
+			log.Print(msg)
+			traceError(span, msg)
 			continue
 		}
 

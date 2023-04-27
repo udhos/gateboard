@@ -15,6 +15,7 @@ import (
 
 	"github.com/udhos/gateboard/tracing"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -50,7 +51,6 @@ func main() {
 	//
 
 	var tracer trace.Tracer
-	//var tracerProvider *sdktrace.TracerProvider
 
 	{
 		tp, errTracer := tracing.TracerProvider(me, config.jaegerURL)
@@ -71,9 +71,6 @@ func main() {
 			// Do not make the application hang when it is shutdown.
 			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
 			defer cancel()
-			if err := tp.ForceFlush(ctx); err != nil {
-				log.Print(err)
-			}
 			if err := tp.Shutdown(ctx); err != nil {
 				log.Print(err)
 			}
@@ -82,7 +79,6 @@ func main() {
 		tracing.TracePropagation()
 
 		tracer = tp.Tracer(fmt.Sprintf("%s-main", me))
-		//tracerProvider = tp
 	}
 
 	creds, errCreds := loadCredentials(config.accountsFile)
@@ -111,7 +107,7 @@ func main() {
 	// run only once otherwise
 	//
 	for {
-		scan(me, tracer, creds, config, save)
+		scanOnce(me, tracer, creds, config, save)
 
 		if config.interval == 0 {
 			log.Printf("interval is %v, exiting after single run", config.interval)
@@ -123,9 +119,9 @@ func main() {
 	}
 }
 
-func scan(sessionName string, tracer trace.Tracer, creds []credential, config appConfig, save saver) {
+func scanOnce(sessionName string, tracer trace.Tracer, creds []credential, config appConfig, save saver) {
 
-	const me = "scan"
+	const me = "scanOnce"
 
 	ctx, span := newSpan(context.TODO(), me, tracer)
 	if span != nil {
@@ -140,7 +136,7 @@ func scan(sessionName string, tracer trace.Tracer, creds []credential, config ap
 	for i, c := range creds {
 		log.Printf("---------- main account %d/%d", i+1, len(creds))
 
-		scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
+		scan, accountID := newScannerAWS(ctx, tracer, c.Region, c.RoleArn, c.RoleExternalID, sessionName)
 
 		if accountID == "" {
 			log.Printf("ERROR missing accountId=[%s] %d/%d: region=%s role_arn=%s",
@@ -160,12 +156,13 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 	ctxNew, span := newSpan(ctx, me, tracer)
 	if span != nil {
+		span.SetAttributes(attribute.String("region", cred.Region), attribute.String("roleArn", cred.RoleArn))
 		defer span.End()
 	}
 
 	log.Printf("%s: region=%s role=%s", me, cred.Region, cred.RoleArn)
 
-	items := scan.list()
+	items := scan.list(ctxNew, tracer)
 
 	type gateway struct {
 		count int
@@ -234,7 +231,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 		for attempt := 1; attempt <= retry; attempt++ {
 
-			errSave := save.save(ctxNew, tracer, full, i.id, debug)
+			errSave := callSave(ctxNew, tracer, save, full, i.id, debug)
 			if errSave == nil {
 				saved++
 				break
@@ -254,4 +251,17 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_saved: %d (dry=%t)",
 		me, cred.Region, cred.RoleArn, accountID, saved, dryRun)
+}
+
+func callSave(ctx context.Context, tracer trace.Tracer, save saver, name, id string, debug bool) error {
+
+	const me = "callSave"
+
+	ctxNew, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		span.SetAttributes(attribute.String("gateway_name", name), attribute.String("gateway_id", id))
+		defer span.End()
+	}
+
+	return save.save(ctxNew, tracer, name, id, debug)
 }

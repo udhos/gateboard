@@ -92,7 +92,7 @@ type bogusScanner struct {
 	items []item
 }
 
-func (s *bogusScanner) list() []item {
+func (s *bogusScanner) list(ctx context.Context, tracer trace.Tracer) []item {
 	return s.items
 }
 
