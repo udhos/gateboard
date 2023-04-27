@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"strings"
 	"testing"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // go test -v -count=1 -run TestDiscovery ./cmd/gateboard-discovery
@@ -49,8 +52,10 @@ func TestDiscovery(t *testing.T) {
 		t.Errorf("error loading credentials: %v", errCred)
 	}
 
+	ctx := context.TODO()
+
 	for _, c := range creds {
-		findGateways(c, scan, save, accountID, debug, dryRun, retry, retryInterval)
+		findGateways(ctx, nil, c, scan, save, accountID, debug, dryRun, retry, retryInterval)
 	}
 
 	for i, g := range save.items {
@@ -97,7 +102,7 @@ type bogusSaver struct {
 	saves      int
 }
 
-func (s *bogusSaver) save(name, id string, debug bool) error {
+func (s *bogusSaver) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 	s.saves++
 	log.Printf("bogusSaver.save: saveErrors=%d saves=%d", s.saveErrors, s.saves)
 	if s.saveErrors > 0 {
@@ -145,8 +150,10 @@ func TestSaveRetry(t *testing.T) {
 		t.Errorf("error loading credentials: %v", errCred)
 	}
 
+	ctx := context.TODO()
+
 	for _, c := range creds {
-		findGateways(c, scan, save, accountID, debug, dryRun, retry, retryInterval)
+		findGateways(ctx, nil, c, scan, save, accountID, debug, dryRun, retry, retryInterval)
 	}
 
 	for i, g := range save.items {

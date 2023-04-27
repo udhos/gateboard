@@ -14,13 +14,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/yaml.v2"
 
 	"github.com/udhos/gateboard/gateboard"
 )
 
 type saver interface {
-	save(name, id string, debug bool) error
+	save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error
 }
 
 //
@@ -36,28 +37,38 @@ func newSaverServer(serverURL string) *saverServer {
 	return &s
 }
 
-func (s *saverServer) save(name, id string, debug bool) error {
+func (s *saverServer) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 	const me = "saverServer.save"
+
+	ctxNew, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	path, errPath := url.JoinPath(s.serverURL, name)
 	if errPath != nil {
+		traceError(span, errPath.Error())
 		return errPath
 	}
 
 	requestBody := gateboard.BodyPutRequest{GatewayID: id}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
+		traceError(span, errJSON.Error())
 		return errJSON
 	}
 
-	req, errReq := http.NewRequest("PUT", path, bytes.NewBuffer(requestBytes))
+	req, errReq := http.NewRequestWithContext(ctxNew, "PUT", path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
+		traceError(span, errReq.Error())
 		return errReq
 	}
 
-	client := http.DefaultClient
+	client := httpClient()
+
 	resp, errDo := client.Do(req)
 	if errDo != nil {
+		traceError(span, errDo.Error())
 		return errDo
 	}
 
@@ -68,6 +79,7 @@ func (s *saverServer) save(name, id string, debug bool) error {
 	dec := yaml.NewDecoder(resp.Body)
 	errYaml := dec.Decode(&reply)
 	if errYaml != nil {
+		traceError(span, errYaml.Error())
 		return errYaml
 	}
 
@@ -77,8 +89,10 @@ func (s *saverServer) save(name, id string, debug bool) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: gateboard URL=%s bad status=%d: %v",
+		errStatus := fmt.Errorf("%s: gateboard URL=%s bad status=%d: %v",
 			me, path, resp.StatusCode, toJSON(reply))
+		traceError(span, errStatus.Error())
+		return errStatus
 	}
 
 	return nil
@@ -120,28 +134,37 @@ func newSaverWebhook(serverURL, token, method string) *saverWebhook {
 	return &s
 }
 
-func (s *saverWebhook) save(name, id string, debug bool) error {
+func (s *saverWebhook) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 
 	const me = "saverWebhook.save"
+
+	ctxNew, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	path := s.serverURL
 
 	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
+		traceError(span, errJSON.Error())
 		return errJSON
 	}
 
-	req, errReq := http.NewRequest(s.method, path, bytes.NewBuffer(requestBytes))
+	req, errReq := http.NewRequestWithContext(ctxNew, s.method, path, bytes.NewBuffer(requestBytes))
 	if errReq != nil {
+		traceError(span, errReq.Error())
 		return errReq
 	}
 
 	req.Header.Set("Authorization", "Bearer "+s.token)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := http.DefaultClient
+	client := httpClient()
+
 	resp, errDo := client.Do(req)
 	if errDo != nil {
+		traceError(span, errDo.Error())
 		return errDo
 	}
 
@@ -149,6 +172,7 @@ func (s *saverWebhook) save(name, id string, debug bool) error {
 
 	body, errRead := io.ReadAll(resp.Body)
 	if errRead != nil {
+		traceError(span, errRead.Error())
 		return errRead
 	}
 
@@ -158,8 +182,10 @@ func (s *saverWebhook) save(name, id string, debug bool) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: webhook URL=%s bad status=%d: %v",
+		errStatus := fmt.Errorf("%s: webhook URL=%s bad status=%d: %v",
 			me, path, resp.StatusCode, string(body))
+		traceError(span, errStatus.Error())
+		return errStatus
 	}
 
 	return nil
@@ -198,22 +224,30 @@ func getRegion(queueURL string) (string, error) {
 	return region, nil
 }
 
-func (s *saverSQS) save(name, id string, debug bool) error {
+func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 
 	const me = "saverSQS.save"
 
+	_, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
 	region, errRegion := getRegion(s.queueURL)
 	if errRegion != nil {
-		return fmt.Errorf("%s: region error: %v", me, errRegion)
+		traceError(span, errRegion.Error())
+		return errRegion
 	}
 
 	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
 	if errConfig != nil {
-		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
+		traceError(span, errConfig.Error())
+		return errConfig
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
+		traceError(span, errJSON.Error())
 		return errJSON
 	}
 
@@ -229,7 +263,8 @@ func (s *saverSQS) save(name, id string, debug bool) error {
 
 	resp, errSend := clientSQS.SendMessage(context.TODO(), input)
 	if errSend != nil {
-		return fmt.Errorf("%s: SendMessage error: %v", me, errSend)
+		traceError(span, errSend.Error())
+		return errSend
 	}
 
 	if debug {
@@ -285,12 +320,18 @@ func getARNFunctionName(arn string) (string, error) {
 	return funcName, nil
 }
 
-func (s *saverSNS) save(name, id string, debug bool) error {
+func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 
 	const me = "saverSNS.save"
 
+	_, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
 	region, errRegion := getARNRegion(s.topicARN)
 	if errRegion != nil {
+		traceError(span, errRegion.Error())
 		return errRegion
 	}
 
@@ -301,11 +342,13 @@ func (s *saverSNS) save(name, id string, debug bool) error {
 
 	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
 	if errConfig != nil {
-		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
+		traceError(span, errConfig.Error())
+		return errConfig
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
+		traceError(span, errJSON.Error())
 		return errJSON
 	}
 
@@ -320,7 +363,8 @@ func (s *saverSNS) save(name, id string, debug bool) error {
 
 	resp, errPublish := clientSNS.Publish(context.TODO(), input)
 	if errPublish != nil {
-		return fmt.Errorf("%s: Publish error: %v", me, errPublish)
+		traceError(span, errPublish.Error())
+		return errPublish
 	}
 
 	if debug {
@@ -351,17 +395,24 @@ func newSaverLambda(lambdaARN, roleARN, roleExternalID, roleSessionName string) 
 	return &s
 }
 
-func (s *saverLambda) save(name, id string, debug bool) error {
+func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
 
 	const me = "saverLambda.save"
 
+	_, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
 	region, errRegion := getARNRegion(s.lambdaARN)
 	if errRegion != nil {
+		traceError(span, errRegion.Error())
 		return errRegion
 	}
 
 	functionName, errFuncName := getARNFunctionName(s.lambdaARN)
 	if errFuncName != nil {
+		traceError(span, errFuncName.Error())
 		return errFuncName
 	}
 
@@ -372,11 +423,13 @@ func (s *saverLambda) save(name, id string, debug bool) error {
 
 	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
 	if errConfig != nil {
-		return fmt.Errorf("%s: aws config error: %v", me, errConfig)
+		traceError(span, errConfig.Error())
+		return errConfig
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id)
 	if errJSON != nil {
+		traceError(span, errJSON.Error())
 		return errJSON
 	}
 
@@ -389,12 +442,15 @@ func (s *saverLambda) save(name, id string, debug bool) error {
 
 	resp, errInvoke := clientLambda.Invoke(context.TODO(), input)
 	if errInvoke != nil {
-		return fmt.Errorf("%s: Invoke error: %v", me, errInvoke)
+		traceError(span, errInvoke.Error())
+		return errInvoke
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: Invoke ARN=%s bad status=%d payload: %s",
+		errStatus := fmt.Errorf("%s: Invoke ARN=%s bad status=%d payload: %s",
 			me, s.lambdaARN, resp.StatusCode, resp.Payload)
+		traceError(span, errStatus.Error())
+		return errStatus
 	}
 
 	var funcError string
@@ -402,8 +458,10 @@ func (s *saverLambda) save(name, id string, debug bool) error {
 		funcError = *resp.FunctionError
 	}
 	if funcError != "" {
-		return fmt.Errorf("%s: Invoke ARN=%s function_error='%s' payload: %s",
+		errFunc := fmt.Errorf("%s: Invoke ARN=%s function_error='%s' payload: %s",
 			me, s.lambdaARN, funcError, resp.Payload)
+		traceError(span, errFunc.Error())
+		return errFunc
 	}
 
 	if debug {

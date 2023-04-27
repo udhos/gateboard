@@ -4,6 +4,7 @@ This is the main package for gateboard-discovery service.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -11,9 +12,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/udhos/gateboard/tracing"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -40,6 +45,46 @@ func main() {
 
 	config := newConfig(me)
 
+	//
+	// initialize tracing
+	//
+
+	var tracer trace.Tracer
+	//var tracerProvider *sdktrace.TracerProvider
+
+	{
+		tp, errTracer := tracing.TracerProvider(me, config.jaegerURL)
+		if errTracer != nil {
+			log.Fatal(errTracer)
+		}
+
+		// Register our TracerProvider as the global so any imported
+		// instrumentation in the future will default to using it.
+		otel.SetTracerProvider(tp)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// Cleanly shutdown and flush telemetry when the application exits.
+		defer func(ctx context.Context) {
+			log.Printf("shutting down trace provider")
+			// Do not make the application hang when it is shutdown.
+			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
+			defer cancel()
+			if err := tp.ForceFlush(ctx); err != nil {
+				log.Print(err)
+			}
+			if err := tp.Shutdown(ctx); err != nil {
+				log.Print(err)
+			}
+		}(ctx)
+
+		tracing.TracePropagation()
+
+		tracer = tp.Tracer(fmt.Sprintf("%s-main", me))
+		//tracerProvider = tp
+	}
+
 	creds, errCreds := loadCredentials(config.accountsFile)
 	if errCreds != nil {
 		log.Fatalf("loading credentials: %v", errCreds)
@@ -61,33 +106,12 @@ func main() {
 		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns, lambda", config.save)
 	}
 
-	sessionName := me
-
 	//
 	// loop forever if interval greater than 0,
 	// run only once otherwise
 	//
 	for {
-		begin := time.Now()
-
-		//
-		// scan all accounts
-		//
-		for i, c := range creds {
-			log.Printf("---------- main account %d/%d", i+1, len(creds))
-
-			scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
-
-			if accountID == "" {
-				log.Printf("ERROR missing accountId=[%s] %d/%d: region=%s role_arn=%s",
-					accountID, i+1, len(creds), c.Region, c.RoleArn)
-				continue
-			}
-
-			findGateways(c, scan, save, accountID, config.debug, config.dryRun, config.saveRetry, config.saveRetryInterval)
-		}
-
-		log.Printf("total scan time: %v", time.Since(begin))
+		scan(me, tracer, creds, config, save)
 
 		if config.interval == 0 {
 			log.Printf("interval is %v, exiting after single run", config.interval)
@@ -99,9 +123,45 @@ func main() {
 	}
 }
 
-func findGateways(cred credential, scan scanner, save saver, accountID string, debug, dryRun bool, retry int, retryInterval time.Duration) {
+func scan(sessionName string, tracer trace.Tracer, creds []credential, config appConfig, save saver) {
+
+	const me = "scan"
+
+	ctx, span := newSpan(context.TODO(), me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
+	begin := time.Now()
+
+	//
+	// scan all accounts
+	//
+	for i, c := range creds {
+		log.Printf("---------- main account %d/%d", i+1, len(creds))
+
+		scan, accountID := newScannerAWS(c.Region, c.RoleArn, c.RoleExternalID, sessionName)
+
+		if accountID == "" {
+			log.Printf("ERROR missing accountId=[%s] %d/%d: region=%s role_arn=%s",
+				accountID, i+1, len(creds), c.Region, c.RoleArn)
+			continue
+		}
+
+		findGateways(ctx, tracer, c, scan, save, accountID, config.debug, config.dryRun, config.saveRetry, config.saveRetryInterval)
+	}
+
+	log.Printf("total scan time: %v", time.Since(begin))
+}
+
+func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, scan scanner, save saver, accountID string, debug, dryRun bool, retry int, retryInterval time.Duration) {
 
 	const me = "findGateways"
+
+	ctxNew, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
 
 	log.Printf("%s: region=%s role=%s", me, cred.Region, cred.RoleArn)
 
@@ -174,7 +234,7 @@ func findGateways(cred credential, scan scanner, save saver, accountID string, d
 
 		for attempt := 1; attempt <= retry; attempt++ {
 
-			errSave := save.save(full, i.id, debug)
+			errSave := save.save(ctxNew, tracer, full, i.id, debug)
 			if errSave == nil {
 				saved++
 				break
