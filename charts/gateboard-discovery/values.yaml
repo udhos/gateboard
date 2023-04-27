@@ -77,6 +77,8 @@ configMapProperties:
   #TOPIC_ROLE_ARN: ""
   #TOPIC_ROLE_EXTERNAL_ID: ""
   #LAMBDA_ROLE_EXTERNAL_ID: ""
+  #JAEGER_URL: http://jaeger-collector:14268/api/traces
+  OTEL_TRACES_SAMPLER: parentbased_always_on
 
 configMapAccounts:
   - role_arn: "" # empty role_arn means use current credentials
