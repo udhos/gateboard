@@ -66,10 +66,10 @@ var testWriteTokenWithToken = []testCase{
 	{"empty token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":""}`, 401, "id2"},
 	{"empty token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":""}`, 401, "id1"},
 
-	{"bad token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
-	{"bad token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
-	{"bad token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
-	{"bad token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
+	{"good token 1: PUT gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
+	{"good token 2: PUT update gateway", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
+	{"good token 3: PUT update gateway 2", "PUT", "/gateway/gw1", `{"gateway_id":"id2","token":"good_token"}`, 200, "id2"},
+	{"good token 4: PUT gateway url-like", "PUT", "/gateway/http://a:5555/b/c", `{"gateway_id":"id1","token":"good_token"}`, 200, "id1"},
 }
 
 // go test -v -run TestController ./cmd/gateboard

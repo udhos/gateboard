@@ -15,13 +15,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"go.opentelemetry.io/otel/trace"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/gateboard/gateboard"
 )
 
 type saver interface {
-	save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error
+	save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error
 }
 
 //
@@ -37,7 +37,7 @@ func newSaverServer(serverURL string) *saverServer {
 	return &s
 }
 
-func (s *saverServer) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *saverServer) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 	const me = "saverServer.save"
 
 	ctxNew, span := newSpan(ctx, me, tracer)
@@ -51,7 +51,7 @@ func (s *saverServer) save(ctx context.Context, tracer trace.Tracer, name, id st
 		return errPath
 	}
 
-	requestBody := gateboard.BodyPutRequest{GatewayID: id}
+	requestBody := gateboard.BodyPutRequest{GatewayID: id, Token: writeToken}
 	requestBytes, errJSON := json.Marshal(&requestBody)
 	if errJSON != nil {
 		traceError(span, errJSON.Error())
@@ -109,12 +109,14 @@ func toJSON(v interface{}) string {
 type saveBody struct {
 	GatewayName string `json:"gateway_name"`
 	GatewayID   string `json:"gateway_id"`
+	WriteToken  string `json:"token,omitempty"`
 }
 
-func bodyJSON(name, id string) ([]byte, error) {
+func bodyJSON(name, id, writeToken string) ([]byte, error) {
 	requestBody := saveBody{
 		GatewayName: name,
 		GatewayID:   id,
+		WriteToken:  writeToken,
 	}
 	return json.Marshal(&requestBody)
 }
@@ -134,7 +136,7 @@ func newSaverWebhook(serverURL, token, method string) *saverWebhook {
 	return &s
 }
 
-func (s *saverWebhook) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *saverWebhook) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 
 	const me = "saverWebhook.save"
 
@@ -145,7 +147,7 @@ func (s *saverWebhook) save(ctx context.Context, tracer trace.Tracer, name, id s
 
 	path := s.serverURL
 
-	requestBytes, errJSON := bodyJSON(name, id)
+	requestBytes, errJSON := bodyJSON(name, id, writeToken)
 	if errJSON != nil {
 		traceError(span, errJSON.Error())
 		return errJSON
@@ -224,7 +226,7 @@ func getRegion(queueURL string) (string, error) {
 	return region, nil
 }
 
-func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 
 	const me = "saverSQS.save"
 
@@ -245,7 +247,7 @@ func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id strin
 		return errConfig
 	}
 
-	requestBytes, errJSON := bodyJSON(name, id)
+	requestBytes, errJSON := bodyJSON(name, id, writeToken)
 	if errJSON != nil {
 		traceError(span, errJSON.Error())
 		return errJSON
@@ -320,7 +322,7 @@ func getARNFunctionName(arn string) (string, error) {
 	return funcName, nil
 }
 
-func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 
 	const me = "saverSNS.save"
 
@@ -346,7 +348,7 @@ func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id strin
 		return errConfig
 	}
 
-	requestBytes, errJSON := bodyJSON(name, id)
+	requestBytes, errJSON := bodyJSON(name, id, writeToken)
 	if errJSON != nil {
 		traceError(span, errJSON.Error())
 		return errJSON
@@ -395,7 +397,7 @@ func newSaverLambda(lambdaARN, roleARN, roleExternalID, roleSessionName string) 
 	return &s
 }
 
-func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 
 	const me = "saverLambda.save"
 
@@ -427,7 +429,7 @@ func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id st
 		return errConfig
 	}
 
-	requestBytes, errJSON := bodyJSON(name, id)
+	requestBytes, errJSON := bodyJSON(name, id, writeToken)
 	if errJSON != nil {
 		traceError(span, errJSON.Error())
 		return errJSON

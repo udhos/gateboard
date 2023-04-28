@@ -384,8 +384,8 @@ func toJSON(v interface{}) string {
 
 // BodyPutRequest defines the payload format for a PUT request.
 type BodyPutRequest struct {
-	GatewayID string `json:"gateway_id" yaml:"gateway_id"`
-	Token     string `json:"token"      yaml:"token"`
+	GatewayID string `json:"gateway_id"      yaml:"gateway_id"`
+	Token     string `json:"token,omitempty" yaml:"token,omitempty"`
 }
 
 // BodyPutReply defines the payload format for a PUT response.

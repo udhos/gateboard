@@ -102,14 +102,14 @@ type bogusSaver struct {
 	saves      int
 }
 
-func (s *bogusSaver) save(ctx context.Context, tracer trace.Tracer, name, id string, debug bool) error {
+func (s *bogusSaver) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 	s.saves++
 	log.Printf("bogusSaver.save: saveErrors=%d saves=%d", s.saveErrors, s.saves)
 	if s.saveErrors > 0 {
 		s.saveErrors--
 		return errors.New("saveErrors active")
 	}
-	s.items = append(s.items, item{name: name, id: id})
+	s.items = append(s.items, item{name: name, id: id, writeToken: writeToken})
 	return nil
 }
 

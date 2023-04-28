@@ -1,0 +1,3 @@
+# gateway_name: write_token
+123456789012:us-east-1:gw2: secret2
+123456789012:us-east-1:eraseme3: secret3

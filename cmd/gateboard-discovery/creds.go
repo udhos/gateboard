@@ -13,10 +13,12 @@ type credential struct {
 	RoleExternalID string                 `yaml:"role_external_id"`
 	Region         string                 `yaml:"region"`
 	Only           map[string]credGateway `yaml:"only"`
+	DefaultToken   string                 `yaml:"default_token"` // default write token, if required by server
 }
 
 type credGateway struct {
 	Rename string `yaml:"rename"`
+	Token  string `yaml:"token"` // per-gateway write token, if required by server
 }
 
 func loadCredentials(input string) ([]credential, error) {

@@ -24,7 +24,6 @@ func main() {
 	//
 
 	var tracer trace.Tracer
-	//var tracerProvider *sdktrace.TracerProvider
 
 	{
 		tp, errTracer := tracing.TracerProvider(me, jaegerURL)
@@ -45,9 +44,6 @@ func main() {
 			// Do not make the application hang when it is shutdown.
 			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
 			defer cancel()
-			if err := tp.ForceFlush(ctx); err != nil {
-				log.Print(err)
-			}
 			if err := tp.Shutdown(ctx); err != nil {
 				log.Print(err)
 			}
@@ -56,7 +52,6 @@ func main() {
 		tracing.TracePropagation()
 
 		tracer = tp.Tracer(fmt.Sprintf("%s-main", me))
-		//tracerProvider = tp
 	}
 
 	for i := 0; i < 5; i++ {

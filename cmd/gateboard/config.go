@@ -32,7 +32,6 @@ type appConfig struct {
 	dynamoDBTable          string
 	dynamoDBRegion         string
 	dynamoDBRoleARN        string
-	writeToken             bool
 	redisAddr              string
 	redisPassword          string
 	redisKey               string
@@ -42,6 +41,8 @@ type appConfig struct {
 	s3BucketRegion         string
 	s3Prefix               string
 	s3RoleArn              string
+	writeToken             bool
+	tokens                 string
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -74,7 +75,6 @@ func newConfig(roleSessionName string) appConfig {
 		dynamoDBTable:          env.String("DYNAMODB_TABLE", "gateboard"),
 		dynamoDBRegion:         env.String("DYNAMODB_REGION", "us-east-1"),
 		dynamoDBRoleARN:        env.String("DYNAMODB_ROLE_ARN", ""),
-		writeToken:             env.Bool("WRITE_TOKEN", false),
 		redisAddr:              env.String("REDIS_ADDR", "localhost:6379"),
 		redisPassword:          env.String("REDIS_PASSWORD", ""),
 		redisKey:               env.String("REDIS_KEY", "gateboard"),
@@ -84,5 +84,7 @@ func newConfig(roleSessionName string) appConfig {
 		s3BucketRegion:         env.String("S3_BUCKET_REGION", "us-east-1"),
 		s3Prefix:               env.String("S3_PREFIX", "gateboard"),
 		s3RoleArn:              env.String("S3_ROLE_ARN", ""),
+		writeToken:             env.Bool("WRITE_TOKEN", false), // require write token in PUT payload
+		tokens:                 env.String("TOKENS", ""),       // "tokens.yaml"
 	}
 }

@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const version = "0.2.0"
+const version = "1.0.0"
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -184,7 +184,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 	for k, g := range tableDedup {
 		if g.count != 1 {
-			log.Printf("%s: region=%s role=%s accountId=%s IGNORING dup gateway=%s count=%d",
+			log.Printf("%s: region=%s role=%s accountId=%s ignoring DUP gateway=%s count=%d",
 				me, cred.Region, cred.RoleArn, accountID, k, g.count)
 			continue
 		}
@@ -201,6 +201,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 		gatewayName := i.name
 		gatewayID := i.id
 		rename := gatewayName
+		writeToken := cred.DefaultToken
 
 		if len(cred.Only) != 0 {
 			//
@@ -211,9 +212,12 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 				if gw.Rename != "" {
 					rename = gw.Rename
 				}
+				if gw.Token != "" {
+					writeToken = gw.Token
+				}
 			} else {
 				if debug {
-					log.Printf("%s: region=%s role=%s accountId=%s skipping filtered gateway=%s id=%s",
+					log.Printf("%s: region=%s role=%s accountId=%s skipping FILTERED OUT gateway=%s id=%s",
 						me, cred.Region, cred.RoleArn, accountID, gatewayName, gatewayID)
 				}
 				continue
@@ -231,7 +235,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 		for attempt := 1; attempt <= retry; attempt++ {
 
-			errSave := callSave(ctxNew, tracer, save, full, i.id, debug)
+			errSave := callSave(ctxNew, tracer, save, full, gatewayID, writeToken, debug)
 			if errSave == nil {
 				saved++
 				break
@@ -253,7 +257,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 		me, cred.Region, cred.RoleArn, accountID, saved, dryRun)
 }
 
-func callSave(ctx context.Context, tracer trace.Tracer, save saver, name, id string, debug bool) error {
+func callSave(ctx context.Context, tracer trace.Tracer, save saver, name, id, writeToken string, debug bool) error {
 
 	const me = "callSave"
 
@@ -263,5 +267,5 @@ func callSave(ctx context.Context, tracer trace.Tracer, save saver, name, id str
 		defer span.End()
 	}
 
-	return save.save(ctxNew, tracer, name, id, debug)
+	return save.save(ctxNew, tracer, name, id, writeToken, debug)
 }

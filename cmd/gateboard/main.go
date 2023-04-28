@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -21,11 +22,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.6.0"
+const version = "0.7.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -131,6 +133,25 @@ func main() {
 		default:
 			log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", app.config.repoType)
 		}
+	}
+
+	//
+	// preload write tokens
+	//
+
+	if app.config.tokens != "" {
+		tokens, errTokens := loadTokens(app.config.tokens)
+		if errTokens != nil {
+			log.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
+		}
+		for gw, id := range tokens {
+			errPut := app.repo.putToken(gw, id)
+			if errPut != nil {
+				log.Fatalf("error preloading token for gateway '%s' into repo: %v",
+					gw, errPut)
+			}
+		}
+		log.Printf("preloaded %d tokens from file: %s", len(tokens), app.config.tokens)
 	}
 
 	//
@@ -262,4 +283,28 @@ func shutdown(app *application) {
 	app.serverMain.shutdown(timeout)
 
 	log.Print("exiting")
+}
+
+func loadTokens(input string) (map[string]string, error) {
+
+	const me = "loadTokens"
+
+	reader, errOpen := os.Open(input)
+	if errOpen != nil {
+		return nil, fmt.Errorf("%s: open file: %s: %v", me, input, errOpen)
+	}
+
+	buf, errRead := io.ReadAll(reader)
+	if errRead != nil {
+		return nil, fmt.Errorf("%s: read file: %s: %v", me, input, errRead)
+	}
+
+	tokens := map[string]string{}
+
+	errYaml := yaml.Unmarshal(buf, tokens)
+	if errYaml != nil {
+		return tokens, fmt.Errorf("%s: parse yaml: %s: %v", me, input, errYaml)
+	}
+
+	return tokens, nil
 }
