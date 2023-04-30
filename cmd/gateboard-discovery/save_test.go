@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v2"
 )
@@ -231,13 +233,7 @@ func testSaverWebhook(t *testing.T, data testCaseSaverWebhook) {
 			return
 		}
 
-		type BodyReq struct {
-			GatewayName string `json:"gateway_name" yaml:"gateway_name"`
-			GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
-			Token       string `json:"token"        yaml:"token"`
-		}
-
-		var body BodyReq
+		var body bodyReq
 
 		errYaml := yaml.Unmarshal(buf, &body)
 		if errYaml != nil {
@@ -310,4 +306,60 @@ func testSaverWebhook(t *testing.T, data testCaseSaverWebhook) {
 		t.Errorf("%s: %s: expecting sucess=%t got=%t error=%v",
 			me, data.name, data.expectResult, ok, errSave)
 	}
+}
+
+type bodyReq struct {
+	GatewayName string `json:"gateway_name" yaml:"gateway_name"`
+	GatewayID   string `json:"gateway_id"   yaml:"gateway_id"`
+	Token       string `json:"token"        yaml:"token"`
+}
+
+// go test -v -run TestSaverSQS ./cmd/gateboard-discovery
+func TestSaverSQS(t *testing.T) {
+	const me = "TestSaverSQS"
+
+	const queueURL = "bogus_queueURL"
+	const queueRoleArn = "bogus_queueRoleArn"
+	const queueRoleExternalID = "bogus_queueRoleExternalID"
+
+	mock := &mockSqs{}
+
+	newSqsClientMock := func(queueURL, roleArn, roleSessionName, roleExternalID string) (sqsClient, error) {
+		return mock, nil
+	}
+
+	saver := newSaverSQS(queueURL, queueRoleArn, queueRoleExternalID, me, newSqsClientMock)
+
+	const debug = true
+
+	errSave := saver.save(context.TODO(), nil, "gate1", "id1", "", debug)
+	if errSave != nil {
+		t.Errorf("%s: save error: %v", me, errSave)
+	}
+
+	var body bodyReq
+
+	errYaml := yaml.Unmarshal([]byte(mock.body), &body)
+	if errYaml != nil {
+		t.Errorf("%s: body yaml error: %s", me, errYaml)
+	}
+
+	if body.GatewayName != "gate1" {
+		t.Errorf("%s: wrong gateway name: expect=gate1 got=%s", me, body.GatewayName)
+	}
+
+	if body.GatewayID != "id1" {
+		t.Errorf("%s: wrong gateway id: expect=id1 got=%s", me, body.GatewayID)
+	}
+}
+
+type mockSqs struct {
+	body string
+}
+
+func (s *mockSqs) SendMessage(ctx context.Context, params *sqs.SendMessageInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageOutput, error) {
+	s.body = *params.MessageBody
+	messageID := "mockSqs.fake-message-id"
+	out := &sqs.SendMessageOutput{MessageId: aws.String(messageID)}
+	return out, nil
 }

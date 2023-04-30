@@ -202,14 +202,16 @@ type saverSQS struct {
 	roleARN         string
 	roleExternalID  string
 	roleSessionName string
+	createSqsClient newSqsClientFunc
 }
 
-func newSaverSQS(queueURL, roleARN, roleExternalID, roleSessionName string) *saverSQS {
+func newSaverSQS(queueURL, roleARN, roleExternalID, roleSessionName string, createSqsClient newSqsClientFunc) *saverSQS {
 	s := saverSQS{
 		queueURL:        queueURL,
 		roleARN:         roleARN,
 		roleExternalID:  roleExternalID,
 		roleSessionName: roleSessionName,
+		createSqsClient: createSqsClient,
 	}
 	return &s
 }
@@ -235,16 +237,10 @@ func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id, writ
 		defer span.End()
 	}
 
-	region, errRegion := getRegion(s.queueURL)
-	if errRegion != nil {
-		traceError(span, errRegion.Error())
-		return errRegion
-	}
-
-	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
-	if errConfig != nil {
-		traceError(span, errConfig.Error())
-		return errConfig
+	clientSQS, errClientSqs := s.createSqsClient(s.queueURL, s.roleARN, s.roleSessionName, s.roleExternalID)
+	if errClientSqs != nil {
+		traceError(span, errClientSqs.Error())
+		return errClientSqs
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id, writeToken)
@@ -260,8 +256,6 @@ func (s *saverSQS) save(ctx context.Context, tracer trace.Tracer, name, id, writ
 		DelaySeconds: 0, // 0..900
 		MessageBody:  &message,
 	}
-
-	clientSQS := sqs.NewFromConfig(cfg)
 
 	resp, errSend := clientSQS.SendMessage(context.TODO(), input)
 	if errSend != nil {
@@ -285,14 +279,16 @@ type saverSNS struct {
 	roleARN         string
 	roleExternalID  string
 	roleSessionName string
+	createSnsClient newSnsClientFunc
 }
 
-func newSaverSNS(topicARN, roleARN, roleExternalID, roleSessionName string) *saverSNS {
+func newSaverSNS(topicARN, roleARN, roleExternalID, roleSessionName string, createSnsClient newSnsClientFunc) *saverSNS {
 	s := saverSNS{
 		topicARN:        topicARN,
 		roleARN:         roleARN,
 		roleExternalID:  roleExternalID,
 		roleSessionName: roleSessionName,
+		createSnsClient: createSnsClient,
 	}
 	return &s
 }
@@ -331,21 +327,10 @@ func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id, writ
 		defer span.End()
 	}
 
-	region, errRegion := getARNRegion(s.topicARN)
-	if errRegion != nil {
-		traceError(span, errRegion.Error())
-		return errRegion
-	}
-
-	if debug {
-		log.Printf("%s: region=%s topicARN=%s roleARN=%s",
-			me, region, s.topicARN, s.roleARN)
-	}
-
-	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
-	if errConfig != nil {
-		traceError(span, errConfig.Error())
-		return errConfig
+	clientSNS, errClientSns := s.createSnsClient(s.topicARN, s.roleARN, s.roleSessionName, s.roleExternalID)
+	if errClientSns != nil {
+		traceError(span, errClientSns.Error())
+		return errClientSns
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id, writeToken)
@@ -360,8 +345,6 @@ func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id, writ
 		Message:  &message,
 		TopicArn: &s.topicARN,
 	}
-
-	clientSNS := sns.NewFromConfig(cfg)
 
 	resp, errPublish := clientSNS.Publish(context.TODO(), input)
 	if errPublish != nil {

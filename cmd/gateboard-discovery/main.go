@@ -93,9 +93,9 @@ func main() {
 	case "webhook":
 		save = newSaverWebhook(config.webhookURL, config.webhookToken, config.webhookMethod)
 	case "sqs":
-		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me)
+		save = newSaverSQS(config.queueURL, config.queueRoleARN, config.queueRoleExternalID, me, newSqsClient)
 	case "sns":
-		save = newSaverSNS(config.topicARN, config.topicRoleARN, config.topicRoleExternalID, me)
+		save = newSaverSNS(config.topicARN, config.topicRoleARN, config.topicRoleExternalID, me, newSnsClient)
 	case "lambda":
 		save = newSaverLambda(config.lambdaARN, config.lambdaRoleARN, config.lambdaRoleExternalID, me)
 	default:
