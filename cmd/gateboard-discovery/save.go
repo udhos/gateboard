@@ -126,13 +126,13 @@ func bodyJSON(name, id, writeToken string) ([]byte, error) {
 //
 
 type saverWebhook struct {
-	serverURL string
-	token     string
-	method    string
+	serverURL   string
+	bearerToken string
+	method      string
 }
 
 func newSaverWebhook(serverURL, token, method string) *saverWebhook {
-	s := saverWebhook{serverURL: serverURL, token: token, method: method}
+	s := saverWebhook{serverURL: serverURL, bearerToken: token, method: method}
 	return &s
 }
 
@@ -159,7 +159,7 @@ func (s *saverWebhook) save(ctx context.Context, tracer trace.Tracer, name, id, 
 		return errReq
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("Authorization", "Bearer "+s.bearerToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := httpClient()
