@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/udhos/gateboard/gateboard"
 	"gopkg.in/yaml.v2"
@@ -361,5 +363,104 @@ func (s *mockSqs) SendMessage(ctx context.Context, params *sqs.SendMessageInput,
 	s.body = *params.MessageBody
 	messageID := "mockSqs.fake-message-id"
 	out := &sqs.SendMessageOutput{MessageId: aws.String(messageID)}
+	return out, nil
+}
+
+// go test -v -run TestSaverSNS ./cmd/gateboard-discovery
+func TestSaverSNS(t *testing.T) {
+	const me = "TestSaverSNS"
+
+	const topicArn = "bogus_topicArn"
+	const roleArn = "bogus_roleArn"
+	const roleExternalID = "bogus_roleExternalID"
+
+	mock := &mockSns{}
+
+	newSnsClientMock := func(topicArn, roleArn, roleSessionName, roleExternalID string) (snsClient, error) {
+		return mock, nil
+	}
+
+	saver := newSaverSNS(topicArn, roleArn, roleExternalID, me, newSnsClientMock)
+
+	const debug = true
+
+	errSave := saver.save(context.TODO(), nil, "gate1", "id1", "", debug)
+	if errSave != nil {
+		t.Errorf("%s: save error: %v", me, errSave)
+	}
+
+	var body bodyReq
+
+	errYaml := yaml.Unmarshal([]byte(mock.message), &body)
+	if errYaml != nil {
+		t.Errorf("%s: body yaml error: %s", me, errYaml)
+	}
+
+	if body.GatewayName != "gate1" {
+		t.Errorf("%s: wrong gateway name: expect=gate1 got=%s", me, body.GatewayName)
+	}
+
+	if body.GatewayID != "id1" {
+		t.Errorf("%s: wrong gateway id: expect=id1 got=%s", me, body.GatewayID)
+	}
+}
+
+type mockSns struct {
+	message string
+}
+
+func (s *mockSns) Publish(ctx context.Context, params *sns.PublishInput, optFns ...func(*sns.Options)) (*sns.PublishOutput, error) {
+	s.message = *params.Message
+	messageID := "mockSns.fake-message-id"
+	out := &sns.PublishOutput{MessageId: aws.String(messageID)}
+	return out, nil
+}
+
+// go test -v -run TestSaverLambda ./cmd/gateboard-discovery
+func TestSaverLambda(t *testing.T) {
+	const me = "TestSaverLambda"
+
+	const lambdaArn = "arn:aws:lambda:us-east-1:123456789012:function:bogus_function_name"
+	const roleArn = "bogus_roleArn"
+	const roleExternalID = "bogus_roleExternalID"
+
+	mock := &mockLambda{}
+
+	newLambdaClientMock := func(lambdaArn, roleArn, roleSessionName, roleExternalID string) (lambdaClient, error) {
+		return mock, nil
+	}
+
+	saver := newSaverLambda(lambdaArn, roleArn, roleExternalID, me, newLambdaClientMock)
+
+	const debug = true
+
+	errSave := saver.save(context.TODO(), nil, "gate1", "id1", "", debug)
+	if errSave != nil {
+		t.Errorf("%s: save error: %v", me, errSave)
+	}
+
+	var body bodyReq
+
+	errYaml := yaml.Unmarshal(mock.message, &body)
+	if errYaml != nil {
+		t.Errorf("%s: body yaml error: %s", me, errYaml)
+	}
+
+	if body.GatewayName != "gate1" {
+		t.Errorf("%s: wrong gateway name: expect=gate1 got=%s", me, body.GatewayName)
+	}
+
+	if body.GatewayID != "id1" {
+		t.Errorf("%s: wrong gateway id: expect=id1 got=%s", me, body.GatewayID)
+	}
+}
+
+type mockLambda struct {
+	message []byte
+}
+
+func (m *mockLambda) Invoke(ctx context.Context, params *lambda.InvokeInput, optFns ...func(*lambda.Options)) (*lambda.InvokeOutput, error) {
+	m.message = params.Payload
+	out := &lambda.InvokeOutput{StatusCode: 200}
 	return out, nil
 }

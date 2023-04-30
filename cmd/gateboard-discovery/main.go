@@ -97,7 +97,7 @@ func main() {
 	case "sns":
 		save = newSaverSNS(config.topicARN, config.topicRoleARN, config.topicRoleExternalID, me, newSnsClient)
 	case "lambda":
-		save = newSaverLambda(config.lambdaARN, config.lambdaRoleARN, config.lambdaRoleExternalID, me)
+		save = newSaverLambda(config.lambdaARN, config.lambdaRoleARN, config.lambdaRoleExternalID, me, newLambdaClient)
 	default:
 		log.Fatalf("ERROR: unexpected value for SAVE='%s', valid values: server, webhook, sqs, sns, lambda", config.save)
 	}

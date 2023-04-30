@@ -364,18 +364,20 @@ func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id, writ
 //
 
 type saverLambda struct {
-	lambdaARN       string
-	roleARN         string
-	roleExternalID  string
-	roleSessionName string
+	lambdaARN          string
+	roleARN            string
+	roleExternalID     string
+	roleSessionName    string
+	createLambdaClient newLambdaClientFunc
 }
 
-func newSaverLambda(lambdaARN, roleARN, roleExternalID, roleSessionName string) *saverLambda {
+func newSaverLambda(lambdaARN, roleARN, roleExternalID, roleSessionName string, createLambdaClient newLambdaClientFunc) *saverLambda {
 	s := saverLambda{
-		lambdaARN:       lambdaARN,
-		roleARN:         roleARN,
-		roleExternalID:  roleExternalID,
-		roleSessionName: roleSessionName,
+		lambdaARN:          lambdaARN,
+		roleARN:            roleARN,
+		roleExternalID:     roleExternalID,
+		roleSessionName:    roleSessionName,
+		createLambdaClient: createLambdaClient,
 	}
 	return &s
 }
@@ -389,27 +391,16 @@ func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id, w
 		defer span.End()
 	}
 
-	region, errRegion := getARNRegion(s.lambdaARN)
-	if errRegion != nil {
-		traceError(span, errRegion.Error())
-		return errRegion
-	}
-
 	functionName, errFuncName := getARNFunctionName(s.lambdaARN)
 	if errFuncName != nil {
 		traceError(span, errFuncName.Error())
 		return errFuncName
 	}
 
-	if debug {
-		log.Printf("%s: region=%s lambdaARN=%s roleARN=%s",
-			me, region, s.lambdaARN, s.roleARN)
-	}
-
-	cfg, _, errConfig := awsConfig(region, s.roleARN, s.roleExternalID, s.roleSessionName)
-	if errConfig != nil {
-		traceError(span, errConfig.Error())
-		return errConfig
+	clientLambda, errClientLambda := s.createLambdaClient(s.lambdaARN, s.roleARN, s.roleSessionName, s.roleExternalID)
+	if errClientLambda != nil {
+		traceError(span, errClientLambda.Error())
+		return errClientLambda
 	}
 
 	requestBytes, errJSON := bodyJSON(name, id, writeToken)
@@ -422,8 +413,6 @@ func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id, w
 		FunctionName: &functionName,
 		Payload:      requestBytes,
 	}
-
-	clientLambda := lambda.NewFromConfig(cfg)
 
 	resp, errInvoke := clientLambda.Invoke(context.TODO(), input)
 	if errInvoke != nil {
