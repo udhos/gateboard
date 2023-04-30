@@ -11,7 +11,6 @@ type scanner interface {
 }
 
 type item struct {
-	name       string
-	id         string
-	writeToken string
+	name string
+	id   string
 }

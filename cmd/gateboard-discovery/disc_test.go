@@ -109,7 +109,7 @@ func (s *bogusSaver) save(ctx context.Context, tracer trace.Tracer, name, id, wr
 		s.saveErrors--
 		return errors.New("saveErrors active")
 	}
-	s.items = append(s.items, item{name: name, id: id, writeToken: writeToken})
+	s.items = append(s.items, item{name: name, id: id})
 	return nil
 }
 
