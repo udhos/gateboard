@@ -155,7 +155,7 @@ func testSaverServer(t *testing.T, data testCaseSaverServer) {
 	ok := errSave == nil
 
 	if ok != data.expectResult {
-		t.Errorf("%s: %s: expecting sucess=%t got=%t error=%v",
+		t.Errorf("%s: %s: expecting success=%t got=%t error=%v",
 			me, data.name, data.expectResult, ok, errSave)
 	}
 }
@@ -305,7 +305,7 @@ func testSaverWebhook(t *testing.T, data testCaseSaverWebhook) {
 	ok := errSave == nil
 
 	if ok != data.expectResult {
-		t.Errorf("%s: %s: expecting sucess=%t got=%t error=%v",
+		t.Errorf("%s: %s: expecting success=%t got=%t error=%v",
 			me, data.name, data.expectResult, ok, errSave)
 	}
 }

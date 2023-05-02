@@ -27,7 +27,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.8.1"
+const version = "0.9.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -74,66 +74,7 @@ func main() {
 	// pick repo type
 	//
 
-	{
-		switch app.config.repoType {
-		case "mongo":
-			repo, errMongo := newRepoMongo(repoMongoOptions{
-				debug:      app.config.debug,
-				URI:        app.config.mongoURI,
-				database:   app.config.mongoDatabase,
-				collection: app.config.mongoCollection,
-				username:   app.config.mongoUsername,
-				password:   app.config.mongoPassword,
-				tlsCAFile:  app.config.mongoTLSCaFile,
-				minPool:    app.config.mongoMinPool,
-				timeout:    time.Second * 10,
-			})
-			if errMongo != nil {
-				log.Fatalf("repo mongo: %v", errMongo)
-			}
-			app.repo = repo
-		case "dynamodb":
-			repo, errDynamo := newRepoDynamo(repoDynamoOptions{
-				debug:       app.config.debug,
-				table:       app.config.dynamoDBTable,
-				region:      app.config.dynamoDBRegion,
-				roleArn:     app.config.dynamoDBRoleARN,
-				sessionName: me,
-			})
-			if errDynamo != nil {
-				log.Fatalf("repo dynamodb: %v", errDynamo)
-			}
-			app.repo = repo
-		case "redis":
-			repo, errRedis := newRepoRedis(repoRedisOptions{
-				debug:    app.config.debug,
-				addr:     app.config.redisAddr,
-				password: app.config.redisPassword,
-				key:      app.config.redisKey,
-			})
-			if errRedis != nil {
-				log.Fatalf("repo redis: %v", errRedis)
-			}
-			app.repo = repo
-		case "mem":
-			app.repo = newRepoMem()
-		case "s3":
-			repo, errS3 := newRepoS3(repoS3Options{
-				debug:       app.config.debug,
-				bucket:      app.config.s3BucketName,
-				region:      app.config.s3BucketRegion,
-				prefix:      app.config.s3Prefix,
-				roleArn:     app.config.s3RoleArn,
-				sessionName: me,
-			})
-			if errS3 != nil {
-				log.Fatalf("repo s3: %v", errS3)
-			}
-			app.repo = repo
-		default:
-			log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", app.config.repoType)
-		}
-	}
+	app.repo = pickRepo(me, app.config)
 
 	//
 	// preload write tokens
@@ -248,6 +189,70 @@ func main() {
 	//
 
 	shutdown(app)
+}
+
+func pickRepo(sessionName string, config appConfig) repository {
+
+	switch config.repoType {
+	case "mongo":
+		repo, errMongo := newRepoMongo(repoMongoOptions{
+			debug:      config.debug,
+			URI:        config.mongoURI,
+			database:   config.mongoDatabase,
+			collection: config.mongoCollection,
+			username:   config.mongoUsername,
+			password:   config.mongoPassword,
+			tlsCAFile:  config.mongoTLSCaFile,
+			minPool:    config.mongoMinPool,
+			timeout:    time.Second * 10,
+		})
+		if errMongo != nil {
+			log.Fatalf("repo mongo: %v", errMongo)
+		}
+		return repo
+	case "dynamodb":
+		repo, errDynamo := newRepoDynamo(repoDynamoOptions{
+			debug:       config.debug,
+			table:       config.dynamoDBTable,
+			region:      config.dynamoDBRegion,
+			roleArn:     config.dynamoDBRoleARN,
+			sessionName: sessionName,
+		})
+		if errDynamo != nil {
+			log.Fatalf("repo dynamodb: %v", errDynamo)
+		}
+		return repo
+	case "redis":
+		repo, errRedis := newRepoRedis(repoRedisOptions{
+			debug:    config.debug,
+			addr:     config.redisAddr,
+			password: config.redisPassword,
+			key:      config.redisKey,
+		})
+		if errRedis != nil {
+			log.Fatalf("repo redis: %v", errRedis)
+		}
+		return repo
+	case "mem":
+		return newRepoMem()
+	case "s3":
+		repo, errS3 := newRepoS3(repoS3Options{
+			debug:       config.debug,
+			bucket:      config.s3BucketName,
+			region:      config.s3BucketRegion,
+			prefix:      config.s3Prefix,
+			roleArn:     config.s3RoleArn,
+			sessionName: sessionName,
+		})
+		if errS3 != nil {
+			log.Fatalf("repo s3: %v", errS3)
+		}
+		return repo
+	}
+
+	log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", config.repoType)
+
+	return nil
 }
 
 func initApplication(app *application, addr string) {

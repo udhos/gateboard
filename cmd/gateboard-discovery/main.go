@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const version = "1.2.1"
+const version = "1.3.0"
 
 func getVersion(me string) string {
 	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
@@ -150,6 +150,40 @@ func scanOnce(sessionName string, tracer trace.Tracer, creds []credential, confi
 	log.Printf("total scan time: %v", time.Since(begin))
 }
 
+func dedup(items []item, region, roleArn, accountID string) []item {
+
+	const me = "dedup"
+
+	type dedupGateway struct {
+		count int
+		id    string
+	}
+
+	tableDedup := map[string]dedupGateway{}
+
+	for _, i := range items {
+		gw, found := tableDedup[i.name]
+		if !found {
+			gw = dedupGateway{id: i.id}
+		}
+		gw.count++
+		tableDedup[i.name] = gw
+	}
+
+	var unique []item
+
+	for k, g := range tableDedup {
+		if g.count != 1 {
+			log.Printf("%s: region=%s role=%s accountId=%s ignoring DUP gateway=%s count=%d",
+				me, region, roleArn, accountID, k, g.count)
+			continue
+		}
+		unique = append(unique, item{name: k, id: g.id})
+	}
+
+	return unique
+}
+
 func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, scan scanner, save saver, accountID string, debug, dryRun bool, retry int, retryInterval time.Duration) {
 
 	const me = "findGateways"
@@ -164,32 +198,7 @@ func findGateways(ctx context.Context, tracer trace.Tracer, cred credential, sca
 
 	items := scan.list(ctxNew, tracer)
 
-	type gateway struct {
-		count int
-		id    string
-	}
-
-	tableDedup := map[string]gateway{}
-
-	for _, i := range items {
-		gw, found := tableDedup[i.name]
-		if !found {
-			gw = gateway{id: i.id}
-		}
-		gw.count++
-		tableDedup[i.name] = gw
-	}
-
-	var unique []item
-
-	for k, g := range tableDedup {
-		if g.count != 1 {
-			log.Printf("%s: region=%s role=%s accountId=%s ignoring DUP gateway=%s count=%d",
-				me, cred.Region, cred.RoleArn, accountID, k, g.count)
-			continue
-		}
-		unique = append(unique, item{name: k, id: g.id})
-	}
+	unique := dedup(items, cred.Region, cred.RoleArn, accountID)
 
 	log.Printf("%s: region=%s role=%s accountId=%s gateways_unique: %d",
 		me, cred.Region, cred.RoleArn, accountID, len(unique))

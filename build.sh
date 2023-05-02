@@ -6,6 +6,8 @@ gofmt -s -w .
 
 revive ./...
 
+gocyclo -over 15 .
+
 go mod tidy
 
 govulncheck ./...
