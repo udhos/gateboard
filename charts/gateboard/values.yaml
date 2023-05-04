@@ -115,6 +115,7 @@ configMapProperties:
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"
+  LOG_DRIVER: zap # anything other than "zap" enables gin default logger
 
 secrets:
   # set base64encoded to false to specify secrets in plain text

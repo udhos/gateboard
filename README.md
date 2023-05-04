@@ -42,7 +42,7 @@
 - [X] Tracing
 - [ ] Benchmark
 - [ ] User guide
-- [ ] Zap logging
+- [X] Zap logging
 
 ## Build
 

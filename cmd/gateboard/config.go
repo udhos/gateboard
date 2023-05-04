@@ -7,6 +7,7 @@ import (
 )
 
 type appConfig struct {
+	logDriver              string
 	debug                  bool
 	queueURL               string
 	sqsRoleARN             string
@@ -50,6 +51,7 @@ func newConfig(roleSessionName string) appConfig {
 	env := gateboard.NewEnv(roleSessionName)
 
 	return appConfig{
+		logDriver:              env.String("LOG_DRIVER", ""), // anything other than "zap" enables gin default logger
 		debug:                  env.Bool("DEBUG", true),
 		queueURL:               env.String("QUEUE_URL", ""),
 		sqsRoleARN:             env.String("SQS_ROLE_ARN", ""),

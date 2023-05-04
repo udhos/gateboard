@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -24,10 +25,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/yaml.v3"
 
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "0.9.0"
+const version = "0.10.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -265,8 +267,18 @@ func initApplication(app *application, addr string) {
 
 	app.serverMain = newServerGin(addr)
 	app.serverMain.router.Use(middlewareMetrics(app.config.metricsMaskPath))
-	app.serverMain.router.Use(gin.Logger())
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
+
+	// anything other than "zap" enables gin default logger
+	if app.config.logDriver == "zap" {
+		app.serverMain.router.Use(ginzap.GinzapWithConfig(zlog.Logger, &ginzap.Config{
+			UTC:        true,
+			TimeFormat: time.RFC3339,
+			Context:    zlog.GinContext,
+		}))
+	} else {
+		app.serverMain.router.Use(gin.Logger())
+	}
 
 	const pathGateway = "/gateway/*gateway_name"
 	log.Printf("registering route: %s %s", addr, pathGateway)

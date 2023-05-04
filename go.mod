@@ -13,6 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.19.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.19.15
 	github.com/aws/smithy-go v1.13.5
+	github.com/gin-contrib/zap v0.1.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/goccy/go-json v0.9.7
@@ -28,6 +29,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
 	go.opentelemetry.io/otel/sdk v1.7.0
 	go.opentelemetry.io/otel/trace v1.14.0
+	go.uber.org/zap v1.24.0
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -85,6 +87,8 @@ require (
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
