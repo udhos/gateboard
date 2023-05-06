@@ -147,8 +147,6 @@ func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
-	//filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
-	//
 	// Literal value queries return the same value as the $eq comparison operator.
 	// For example, the following query filters produce the same result:
 	// filter := bson.D{{"type", "Oolong"}}
@@ -156,7 +154,7 @@ func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	//
 	// https://www.mongodb.com/docs/drivers/go/current/fundamentals/crud/read-operations/query-document/
 	//
-	filter := bson.D{{"gateway_name", gatewayName}}
+	filter := bson.D{{Key: "gateway_name", Value: gatewayName}}
 
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 	defer cancel()
