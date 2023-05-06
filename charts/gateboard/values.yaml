@@ -87,14 +87,20 @@ podHealthCheck:
 # See: https://stackoverflow.com/questions/72816925/helm-templating-in-configmap-for-values-yaml
 #
 configMapProperties:
+  LOG_DRIVER: zap # anything other than "zap" enables gin default logger
   #DEBUG: true
   #QUEUE_URL: ""
   #SQS_ROLE_ARN: ""
-  #TTL: "120"
+  #SQS_CONSUME_BAD_MESSAGE: "false"
+  #SQS_CONSUME_INVALID_TOKEN: "true"
+  #TTL: "300"
   #REPO: server
   REPO: mem
+  #MONGO_URL: mongodb://localhost:27017
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
+  #MONGO_USERNAME: ""
+  #MONGO_PASSWORD: ""
   #MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
   #MONGO_MIN_POOL: "1"
   #LISTEN_ADDR: ":8080"
@@ -102,20 +108,26 @@ configMapProperties:
   #HEALTH_PATH: /health
   #METRICS_ADDR: "":3000"
   #METRICS_PATH: /metrics
+  #METRICS_MASK_PATH: "true"
+  #METRICS_NAMESPACE: ""
+  #JAEGER_URL: http://jaeger-collector:14268/api/traces
   #DYNAMODB_TABLE: gateboard
   #DYNAMODB_REGION: us-east-1
   #DYNAMODB_ROLE_ARN: ""
-  #WRITE_TOKEN: false
   #REDIS_ADDR: localhost:6379
   #REDIS_PASSWORD: ""
   #REDIS_KEY: gateboard
   #WRITE_RETRY: "3"
   #WRITE_RETRY_INTERVAL: 1s
+  #S3_BUCKET_NAME: ""
+  #S3_BUCKET_REGION: us-east-1
+  #S3_PREFIX: gateboard
+  #S3_ROLE_ARN: ""
+  #WRITE_TOKEN: "false" # require write token in PUT payload
+  #TOKENS: "" # preload write tokens from this file "tokens.yaml"
   #GIN_MODE: release
-  #JAEGER_URL: http://jaeger-collector:14268/api/traces
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"
-  LOG_DRIVER: zap # anything other than "zap" enables gin default logger
 
 secrets:
   # set base64encoded to false to specify secrets in plain text

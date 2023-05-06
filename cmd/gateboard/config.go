@@ -87,6 +87,6 @@ func newConfig(roleSessionName string) appConfig {
 		s3Prefix:               env.String("S3_PREFIX", "gateboard"),
 		s3RoleArn:              env.String("S3_ROLE_ARN", ""),
 		writeToken:             env.Bool("WRITE_TOKEN", false), // require write token in PUT payload
-		tokens:                 env.String("TOKENS", ""),       // "tokens.yaml"
+		tokens:                 env.String("TOKENS", ""),       // preload write tokens from this file "tokens.yaml"
 	}
 }
