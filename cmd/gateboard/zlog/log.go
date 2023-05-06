@@ -35,8 +35,8 @@ func initLogger() *zap.Logger {
 	return l
 }
 
-// GinContext provides a log context for ginzap log middleware.
-func GinContext(c *gin.Context) []zapcore.Field {
+// GinzapFields provides fields for ginzap log middleware.
+func GinzapFields(c *gin.Context) []zapcore.Field {
 	fields := []zapcore.Field{}
 
 	// log request ID

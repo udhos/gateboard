@@ -274,7 +274,7 @@ func initApplication(app *application, addr string) {
 		app.serverMain.router.Use(ginzap.GinzapWithConfig(zlog.Logger, &ginzap.Config{
 			UTC:        true,
 			TimeFormat: time.RFC3339,
-			Context:    zlog.GinContext,
+			Context:    zlog.GinzapFields,
 		}))
 	} else {
 		app.serverMain.router.Use(gin.Logger())
