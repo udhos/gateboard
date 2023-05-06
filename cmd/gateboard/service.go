@@ -121,11 +121,11 @@ func gatewayGet(c *gin.Context, app *application) {
 	logf(ctx, "%s: gateway_name=%s", me, gatewayName)
 
 	var out gateboard.BodyGetReply
+	out.GatewayName = gatewayName
 
-	if strings.TrimSpace(gatewayName) == "" {
-		out.GatewayName = gatewayName
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		out.TTL = app.config.TTL
-		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
+		out.Error = errVal.Error()
 		traceError(span, out.Error)
 		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
@@ -189,8 +189,8 @@ func gatewayPut(c *gin.Context, app *application) {
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
 
-	if strings.TrimSpace(gatewayName) == "" {
-		out.Error = fmt.Sprintf("%s: empty gateway name is invalid", me)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		out.Error = errVal.Error()
 		traceError(span, out.Error)
 		logf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
@@ -311,4 +311,17 @@ func invalidToken(ctx context.Context, app *application, gatewayName, token stri
 	}
 
 	return result.Token != token
+}
+
+// validateInputGatewayName checks that gatewayName is valid.
+func validateInputGatewayName(gatewayName string) error {
+	const me = "validateGatewayName"
+	if strings.TrimSpace(gatewayName) == "" {
+		return fmt.Errorf("%s: invalid blank gateway name: '%s'", me, gatewayName)
+	}
+	if index := strings.IndexAny(gatewayName, " ${}"); index >= 0 {
+		return fmt.Errorf("%s: invalid character '%c' in gateway name: '%s'",
+			me, gatewayName[index], gatewayName)
+	}
+	return nil
 }
