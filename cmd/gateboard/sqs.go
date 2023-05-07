@@ -136,8 +136,6 @@ func sqsListener(app *application) {
 				continue
 			}
 
-			put.GatewayName = strings.TrimSpace(put.GatewayName)
-
 			if errVal := validateInputGatewayName(put.GatewayName); errVal != nil {
 
 				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name: %v",

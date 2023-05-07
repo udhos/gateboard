@@ -50,9 +50,11 @@ func (r *repoMem) dump() (repoDump, error) {
 
 func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	var result gateboard.BodyGetReply
-	if strings.TrimSpace(gatewayName) == "" {
-		return result, fmt.Errorf("repoMem.get: bad gateway name: '%s'", gatewayName)
+
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return result, errVal
 	}
+
 	r.lock.Lock()
 	e, found := r.tab[gatewayName]
 	r.lock.Unlock()
@@ -68,9 +70,11 @@ func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
 }
 
 func (r *repoMem) put(gatewayName, gatewayID string) error {
-	if strings.TrimSpace(gatewayName) == "" {
-		return fmt.Errorf("repoMem.put: bad gateway name: '%s'", gatewayName)
+
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return errVal
 	}
+
 	if strings.TrimSpace(gatewayID) == "" {
 		return fmt.Errorf("repoMem.put: bad gateway id: '%s'", gatewayID)
 	}

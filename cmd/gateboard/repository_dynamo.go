@@ -257,8 +257,8 @@ func (r *repoDynamo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	var body gateboard.BodyGetReply
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return body, fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return body, errVal
 	}
 
 	av, errMarshal := attributevalue.Marshal(gatewayName)
@@ -288,9 +288,10 @@ func (r *repoDynamo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 	const me = "repoDynamo.put"
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return errVal
 	}
+
 	if strings.TrimSpace(gatewayID) == "" {
 		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
 	}

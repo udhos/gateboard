@@ -184,8 +184,8 @@ func (r *repoS3) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	var body gateboard.BodyGetReply
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return body, fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return body, errVal
 	}
 
 	key := r.s3key(gatewayName)
@@ -224,9 +224,10 @@ func (r *repoS3) get(gatewayName string) (gateboard.BodyGetReply, error) {
 func (r *repoS3) put(gatewayName, gatewayID string) error {
 	const me = "repoS3.put"
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return errVal
 	}
+
 	if strings.TrimSpace(gatewayID) == "" {
 		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
 	}

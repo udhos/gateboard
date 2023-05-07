@@ -105,8 +105,8 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	body := gateboard.BodyGetReply{GatewayName: gatewayName}
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return body, fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return body, errVal
 	}
 
 	fieldID := field(gatewayName, "gateway_id")
@@ -164,9 +164,10 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 func (r *repoRedis) put(gatewayName, gatewayID string) error {
 	const me = "repoRedis.put"
 
-	if strings.TrimSpace(gatewayName) == "" {
-		return fmt.Errorf("%s: bad gateway name: '%s'", me, gatewayName)
+	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
+		return errVal
 	}
+
 	if strings.TrimSpace(gatewayID) == "" {
 		return fmt.Errorf("%s: bad gateway id: '%s'", me, gatewayID)
 	}
