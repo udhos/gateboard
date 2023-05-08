@@ -12,22 +12,14 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Logger exposes the zap logger.
-var Logger = initLogger(true)
+var Logger = initLogger()   // Logger exposes the zap logger
+var LoggerConfig zap.Config // LoggerConfig can be used to SetLevel: LoggerConfig.Level.SetLevel(zap.DebugLevel)
 
-// Init initializes the zap logger.
-func Init(debug bool) {
-	Logger = initLogger(debug)
-}
+func initLogger() *zap.Logger {
+	LoggerConfig = zap.NewProductionConfig()
 
-func initLogger(debug bool) *zap.Logger {
-	logConfig := zap.NewProductionConfig()
-
-	logConfig.Encoding = "json"
-	if debug {
-		logConfig.Level.SetLevel(zap.DebugLevel)
-	}
-	logConfig.EncoderConfig = zapcore.EncoderConfig{
+	LoggerConfig.Encoding = "json"
+	LoggerConfig.EncoderConfig = zapcore.EncoderConfig{
 		LevelKey:     "level",
 		TimeKey:      "zap_time", // gin logs a "time" field already
 		MessageKey:   "message",
@@ -36,7 +28,7 @@ func initLogger(debug bool) *zap.Logger {
 		EncodeCaller: zapcore.ShortCallerEncoder,
 	}
 
-	l, err := logConfig.Build()
+	l, err := LoggerConfig.Build()
 	if err != nil {
 		log.Fatalf("initLogger: %v", err)
 	}

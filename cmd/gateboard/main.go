@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/boilerplate/boilerplate"
@@ -65,7 +66,9 @@ func main() {
 		config: newConfig(me),
 	}
 
-	zlog.Init(app.config.debug)
+	if app.config.debug {
+		zlog.LoggerConfig.Level.SetLevel(zap.DebugLevel)
+	}
 
 	queueURL := app.config.queueURL
 
