@@ -2,6 +2,8 @@
 package zlog
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -11,13 +13,20 @@ import (
 )
 
 // Logger exposes the zap logger.
-var Logger = initLogger()
+var Logger = initLogger(true)
 
-func initLogger() *zap.Logger {
+// Init initializes the zap logger.
+func Init(debug bool) {
+	Logger = initLogger(debug)
+}
+
+func initLogger(debug bool) *zap.Logger {
 	logConfig := zap.NewProductionConfig()
 
 	logConfig.Encoding = "json"
-
+	if debug {
+		logConfig.Level.SetLevel(zap.DebugLevel)
+	}
 	logConfig.EncoderConfig = zapcore.EncoderConfig{
 		LevelKey:     "level",
 		TimeKey:      "zap_time", // gin logs a "time" field already
@@ -63,4 +72,49 @@ func GinzapFields(c *gin.Context) []zapcore.Field {
 	*/
 
 	return fields
+}
+
+// Infof logs at info level with Printf-like formatting.
+func Infof(format string, v ...any) {
+	Logger.Info(fmt.Sprintf(format, v...))
+}
+
+// Errorf logs at error level with Printf-like formatting.
+func Errorf(format string, v ...any) {
+	Logger.Error(fmt.Sprintf(format, v...))
+}
+
+// CtxDebugf logs at debug level with trace context and Printf-like formatting.
+func CtxDebugf(ctx context.Context, debug bool, format string, v ...any) {
+	if debug {
+		Logger.Debug(fmt.Sprintf(format, v...), zap.String("traceId", traceIDFromContext(ctx)))
+	}
+}
+
+// CtxInfof logs at info level with trace context and Printf-like formatting.
+func CtxInfof(ctx context.Context, format string, v ...any) {
+	Logger.Info(fmt.Sprintf(format, v...), zap.String("traceId", traceIDFromContext(ctx)))
+}
+
+// CtxErrorf logs at error level with trace context and Printf-like formatting.
+func CtxErrorf(ctx context.Context, format string, v ...any) {
+	Logger.Error(fmt.Sprintf(format, v...), zap.String("traceId", traceIDFromContext(ctx)))
+}
+
+// GinInfof logs at info level with gin trace context and Printf-like formatting.
+func GinInfof(c *gin.Context, format string, v ...any) {
+	CtxInfof(c.Request.Context(), fmt.Sprintf(format, v...))
+}
+
+// GinErrorf logs at error level with gin trace context and Printf-like formatting.
+func GinErrorf(c *gin.Context, format string, v ...any) {
+	CtxErrorf(c.Request.Context(), fmt.Sprintf(format, v...))
+}
+
+func traceIDFromContext(ctx context.Context) string {
+	span := trace.SpanFromContext(ctx)
+	if span == nil {
+		return "<nil-span>"
+	}
+	return span.SpanContext().TraceID().String()
 }

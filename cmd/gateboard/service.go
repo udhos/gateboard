@@ -4,20 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 	yaml "gopkg.in/yaml.v3"
-)
-
-const (
-	repoStatusOK       = "success"
-	repoStatusError    = "error"
-	repoStatusNotFound = "not-found"
 )
 
 func gatewayDump(c *gin.Context, app *application) {
@@ -28,7 +22,7 @@ func gatewayDump(c *gin.Context, app *application) {
 		defer span.End()
 	}
 
-	logf(ctx, "%s", me)
+	zlog.CtxInfof(ctx, "%s", me)
 
 	//
 	// dump gateways
@@ -45,10 +39,9 @@ func gatewayDump(c *gin.Context, app *application) {
 	dump, errDump := app.repo.dump()
 
 	elap := time.Since(begin)
-	if app.config.debug {
-		logf(ctx, "%s: repo_dump_latency: elapsed=%v (error:%v)",
-			me, elap, errDump)
-	}
+
+	zlog.CtxDebugf(ctx, app.config.debug, "%s: repo_dump_latency: elapsed=%v (error:%v)",
+		me, elap, errDump)
 
 	const repoMethod = "dump"
 
@@ -212,7 +205,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		return
 	}
 
-	logf(ctx, "%s: gateway_name=%s body:%v", me, gatewayName, toJSON(in))
+	logf(ctx, "%s: gateway_name=%s body:%v", me, gatewayName, toJSON(ctx, in))
 
 	out.GatewayID = in.GatewayID
 
@@ -289,10 +282,10 @@ func gatewayPut(c *gin.Context, app *application) {
 	c.JSON(http.StatusInternalServerError, out)
 }
 
-func toJSON(v interface{}) string {
+func toJSON(ctx context.Context, v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Printf("toJSON: %v", err)
+		zlog.CtxErrorf(ctx, "toJSON: %v", err)
 	}
 	return string(b)
 }

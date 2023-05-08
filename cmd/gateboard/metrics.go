@@ -9,6 +9,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const (
+	repoStatusOK       = "success"
+	repoStatusError    = "error"
+	repoStatusNotFound = "not-found"
+)
+
 type metrics struct {
 	latencySpring *prometheus.HistogramVec
 	latencyRepo   *prometheus.HistogramVec

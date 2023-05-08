@@ -65,6 +65,8 @@ func main() {
 		config: newConfig(me),
 	}
 
+	zlog.Init(app.config.debug)
+
 	queueURL := app.config.queueURL
 
 	//
