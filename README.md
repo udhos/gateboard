@@ -32,10 +32,9 @@
 - [X] Repository DynamoDB
 - [X] Optional authentication
 - [X] AWS Secrets Manager
-- [ ] Generate token for optional authentication
+- [X] Preload token for optional authentication
 - [X] Gateway load sharing
 - [X] Repository redis
-- [ ] Cache service
 - [X] Discovery service
 - [X] Metrics
 - [X] Repository S3
@@ -43,6 +42,7 @@
 - [ ] Benchmark
 - [ ] User guide
 - [X] Zap logging
+- [ ] Cache service
 
 ## Build
 
