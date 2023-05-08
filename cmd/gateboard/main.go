@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -25,6 +24,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/yaml.v3"
 
+	"github.com/udhos/boilerplate/boilerplate"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/tracing"
 )
@@ -42,11 +42,6 @@ type application struct {
 	config        appConfig
 }
 
-func getVersion(me string) string {
-	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
-		me, version, runtime.Version(), runtime.GOOS, runtime.GOARCH, runtime.GOMAXPROCS(0))
-}
-
 func main() {
 
 	var showVersion bool
@@ -56,7 +51,7 @@ func main() {
 	me := filepath.Base(os.Args[0])
 
 	{
-		v := getVersion(me)
+		v := boilerplate.LongVersion(me + " version=" + version)
 		if showVersion {
 			fmt.Print(v)
 			fmt.Println()

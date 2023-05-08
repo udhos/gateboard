@@ -12,10 +12,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
+	"github.com/udhos/boilerplate/boilerplate"
 	"github.com/udhos/gateboard/gateboard"
 	"github.com/udhos/gateboard/tracing"
 	"go.opentelemetry.io/otel"
@@ -27,11 +27,6 @@ const version = "0.0.0"
 
 const tryAgain = http.StatusServiceUnavailable
 const internalError = http.StatusInternalServerError
-
-func getVersion(me string) string {
-	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
-		me, version, runtime.Version(), runtime.GOOS, runtime.GOARCH, runtime.GOMAXPROCS(0))
-}
 
 type application struct {
 	jaegerURL string
@@ -48,7 +43,7 @@ func main() {
 	me := filepath.Base(os.Args[0])
 
 	{
-		v := getVersion(me)
+		v := boilerplate.LongVersion(me + " version=" + version)
 		if showVersion {
 			fmt.Print(v)
 			fmt.Println()

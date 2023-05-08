@@ -10,21 +10,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
+	"github.com/udhos/boilerplate/boilerplate"
 	"github.com/udhos/gateboard/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const version = "1.3.0"
-
-func getVersion(me string) string {
-	return fmt.Sprintf("%s version=%s runtime=%s GOOS=%s GOARCH=%s GOMAXPROCS=%d",
-		me, version, runtime.Version(), runtime.GOOS, runtime.GOARCH, runtime.GOMAXPROCS(0))
-}
+const version = "1.4.0"
 
 func main() {
 
@@ -35,7 +30,7 @@ func main() {
 	me := filepath.Base(os.Args[0])
 
 	{
-		v := getVersion(me)
+		v := boilerplate.LongVersion(me + " version=" + version)
 		if showVersion {
 			fmt.Print(v)
 			fmt.Println()
