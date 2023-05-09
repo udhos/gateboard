@@ -19,7 +19,7 @@ require (
 	github.com/goccy/go-json v0.10.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/udhos/boilerplate v0.12.0
+	github.com/udhos/boilerplate v1.0.0
 	github.com/udhos/mongodbclient v1.0.0
 	go.mongodb.org/mongo-driver v1.11.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.36.4
@@ -99,5 +99,4 @@ require (
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
