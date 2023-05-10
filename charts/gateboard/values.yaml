@@ -55,11 +55,11 @@ ingress:
 resources:
   requests:
     cpu: 300m
-    memory: 20Mi
+    memory: 50Mi # increase if there is istio sidecar
     ephemeral-storage: 100Mi
   limits:
     cpu: 2000m
-    memory: 30Mi
+    memory: 50Mi # increase if there is istio sidecar
     ephemeral-storage: 200Mi
 
 autoscaling:
