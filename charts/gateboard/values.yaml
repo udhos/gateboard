@@ -52,14 +52,18 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# add custom labels to deployment pods
+customLabels:
+  app: gateboard
+
 resources:
   requests:
     cpu: 300m
-    memory: 50Mi
+    memory: 100Mi
     ephemeral-storage: 100Mi
   limits:
     cpu: 2000m
-    memory: 50Mi
+    memory: 100Mi
     ephemeral-storage: 200Mi
 
 autoscaling:
