@@ -48,8 +48,8 @@ func GinzapFields(c *gin.Context) []zapcore.Field {
 	*/
 
 	// log trace and span ID
-	if trace.SpanFromContext(c.Request.Context()).SpanContext().IsValid() {
-		fields = append(fields, zap.String("traceId", trace.SpanFromContext(c.Request.Context()).SpanContext().TraceID().String()))
+	if spanCtx := trace.SpanFromContext(c.Request.Context()).SpanContext(); spanCtx.IsValid() {
+		fields = append(fields, zap.String("traceId", spanCtx.TraceID().String()))
 		//fields = append(fields, zap.String("span_id", trace.SpanFromContext(c.Request.Context()).SpanContext().SpanID().String()))
 	}
 
