@@ -76,6 +76,11 @@ func Errorf(format string, v ...any) {
 	Logger.Error(fmt.Sprintf(format, v...))
 }
 
+// Fatalf logs at fatal level with Printf-like formatting, then exits.
+func Fatalf(format string, v ...any) {
+	Logger.Fatal(fmt.Sprintf(format, v...))
+}
+
 // CtxDebugf logs at debug level with trace context and Printf-like formatting.
 func CtxDebugf(ctx context.Context, debug bool, format string, v ...any) {
 	if debug {

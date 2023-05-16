@@ -85,16 +85,16 @@ func main() {
 	if app.config.tokens != "" {
 		tokens, errTokens := loadTokens(app.config.tokens)
 		if errTokens != nil {
-			log.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
+			zlog.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
 		}
 		for gw, id := range tokens {
 			errPut := app.repo.putToken(gw, id)
 			if errPut != nil {
-				log.Fatalf("error preloading token for gateway '%s' into repo: %v",
+				zlog.Fatalf("error preloading token for gateway '%s' into repo: %v",
 					gw, errPut)
 			}
 		}
-		log.Printf("preloaded %d tokens from file: %s", len(tokens), app.config.tokens)
+		zlog.Infof("preloaded %d tokens from file: %s", len(tokens), app.config.tokens)
 	}
 
 	//
@@ -113,7 +113,7 @@ func main() {
 	{
 		tp, errTracer := tracing.TracerProvider(app.me, app.config.jaegerURL)
 		if errTracer != nil {
-			log.Fatal(errTracer)
+			zlog.Fatalf("tracer provider: %v", errTracer)
 		}
 
 		// Register our TracerProvider as the global so any imported
@@ -129,7 +129,7 @@ func main() {
 			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
 			defer cancel()
 			if err := tp.Shutdown(ctx); err != nil {
-				log.Fatal(err)
+				zlog.Fatalf("trace shutdown: %v", err)
 			}
 		}(ctx)
 
@@ -148,9 +148,9 @@ func main() {
 	//
 
 	go func() {
-		log.Printf("application server: listening on %s", app.config.applicationAddr)
+		zlog.Infof("application server: listening on %s", app.config.applicationAddr)
 		err := app.serverMain.server.ListenAndServe()
-		log.Printf("application server: exited: %v", err)
+		zlog.Infof("application server: exited: %v", err)
 	}()
 
 	//
@@ -159,15 +159,15 @@ func main() {
 
 	app.serverHealth = newServerGin(app.config.healthAddr)
 
-	log.Printf("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
+	zlog.Infof("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
 	app.serverHealth.router.GET(app.config.healthPath, func(c *gin.Context) {
 		c.String(http.StatusOK, "health ok")
 	})
 
 	go func() {
-		log.Printf("health server: listening on %s", app.config.healthAddr)
+		zlog.Infof("health server: listening on %s", app.config.healthAddr)
 		err := app.serverHealth.server.ListenAndServe()
-		log.Printf("health server: exited: %v", err)
+		zlog.Infof("health server: exited: %v", err)
 	}()
 
 	//
@@ -181,9 +181,9 @@ func main() {
 		app.serverMetrics.router.GET(app.config.metricsPath, func(c *gin.Context) {
 			prom.ServeHTTP(c.Writer, c.Request)
 		})
-		log.Printf("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
+		zlog.Infof("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
 		err := app.serverMetrics.server.ListenAndServe()
-		log.Printf("metrics server: exited: %v", err)
+		zlog.Infof("metrics server: exited: %v", err)
 	}()
 
 	//
@@ -209,7 +209,7 @@ func pickRepo(sessionName string, config appConfig) repository {
 			timeout:    time.Second * 10,
 		})
 		if errMongo != nil {
-			log.Fatalf("repo mongo: %v", errMongo)
+			zlog.Fatalf("repo mongo: %v", errMongo)
 		}
 		return repo
 	case "dynamodb":
@@ -221,7 +221,7 @@ func pickRepo(sessionName string, config appConfig) repository {
 			sessionName: sessionName,
 		})
 		if errDynamo != nil {
-			log.Fatalf("repo dynamodb: %v", errDynamo)
+			zlog.Fatalf("repo dynamodb: %v", errDynamo)
 		}
 		return repo
 	case "redis":
@@ -232,7 +232,7 @@ func pickRepo(sessionName string, config appConfig) repository {
 			key:      config.redisKey,
 		})
 		if errRedis != nil {
-			log.Fatalf("repo redis: %v", errRedis)
+			zlog.Fatalf("repo redis: %v", errRedis)
 		}
 		return repo
 	case "mem":
@@ -247,12 +247,12 @@ func pickRepo(sessionName string, config appConfig) repository {
 			sessionName: sessionName,
 		})
 		if errS3 != nil {
-			log.Fatalf("repo s3: %v", errS3)
+			zlog.Fatalf("repo s3: %v", errS3)
 		}
 		return repo
 	}
 
-	log.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", config.repoType)
+	zlog.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", config.repoType)
 
 	return nil
 }
@@ -281,7 +281,7 @@ func initApplication(app *application, addr string) {
 	}
 
 	const pathGateway = "/gateway/*gateway_name"
-	log.Printf("registering route: %s %s", addr, pathGateway)
+	zlog.Infof("registering route: %s %s", addr, pathGateway)
 	app.serverMain.router.GET(pathGateway, func(c *gin.Context) { gatewayGet(c, app) })
 	app.serverMain.router.PUT(pathGateway, func(c *gin.Context) { gatewayPut(c, app) })
 	app.serverMain.router.GET("/dump", func(c *gin.Context) { gatewayDump(c, app) })
@@ -292,14 +292,14 @@ func shutdown(app *application) {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
 
-	log.Printf("received signal '%v', initiating shutdown", sig)
+	zlog.Infof("received signal '%v', initiating shutdown", sig)
 
 	const timeout = 5 * time.Second
 	app.serverHealth.shutdown(timeout)
 	app.serverMetrics.shutdown(timeout)
 	app.serverMain.shutdown(timeout)
 
-	log.Print("exiting")
+	zlog.Infof("exiting")
 }
 
 func loadTokens(input string) (map[string]string, error) {
