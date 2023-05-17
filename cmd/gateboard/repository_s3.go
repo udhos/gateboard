@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"path"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/boilerplate/awsconfig"
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 )
 
@@ -80,13 +80,11 @@ func (r *repoS3) createBucket() {
 	_, errCreate := r.s3Client.CreateBucket(context.TODO(), input)
 
 	if errCreate != nil {
-		log.Printf("%s: error: %v", me, errCreate)
+		zlog.Errorf("%s: error: %v", me, errCreate)
 		return
 	}
 
-	if r.options.debug {
-		log.Printf("%s: bucket created: %s", me, r.options.bucket)
-	}
+	zlog.Debugf(r.options.debug, "%s: bucket created: %s", me, r.options.bucket)
 }
 
 func (r *repoS3) dropDatabase() error {
@@ -111,7 +109,7 @@ func (r *repoS3) dropDatabase() error {
 	return err
 }
 
-func (r *repoS3) dump() (repoDump, error) {
+func (r *repoS3) dump(ctx context.Context) (repoDump, error) {
 	const me = "repoS3.dump"
 
 	list := repoDump{}
@@ -128,7 +126,7 @@ func (r *repoS3) dump() (repoDump, error) {
 			continue // skip zero-size folder
 		}
 
-		body, errGet := r.get(gatewayName)
+		body, errGet := r.get(ctx, gatewayName)
 		if errGet != nil {
 			return list, errGet
 		}
@@ -179,7 +177,7 @@ func (r *repoS3) listKeys() ([]string, error) {
 	return list, nil
 }
 
-func (r *repoS3) get(gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoS3) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoS3.get"
 
 	var body gateboard.BodyGetReply
@@ -221,7 +219,7 @@ func (r *repoS3) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	return body, errYaml
 }
 
-func (r *repoS3) put(gatewayName, gatewayID string) error {
+func (r *repoS3) put(ctx context.Context, gatewayName, gatewayID string) error {
 	const me = "repoS3.put"
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
@@ -236,7 +234,7 @@ func (r *repoS3) put(gatewayName, gatewayID string) error {
 	// get previous object since we need to increase the changes counter
 	//
 
-	body, errGet := r.get(gatewayName)
+	body, errGet := r.get(ctx, gatewayName)
 	switch errGet {
 	case nil:
 	case errRepositoryGatewayNotFound:
@@ -281,14 +279,14 @@ func (r *repoS3) s3put(gatewayName string, body gateboard.BodyGetReply) error {
 	return errS3
 }
 
-func (r *repoS3) putToken(gatewayName, token string) error {
+func (r *repoS3) putToken(ctx context.Context, gatewayName, token string) error {
 	const me = "repoS3.putToken"
 
 	//
 	// get previous object since we need to update the token field
 	//
 
-	body, errGet := r.get(gatewayName)
+	body, errGet := r.get(ctx, gatewayName)
 	switch errGet {
 	case nil:
 	case errRepositoryGatewayNotFound:

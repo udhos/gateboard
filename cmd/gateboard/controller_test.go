@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -77,8 +78,8 @@ func TestController(t *testing.T) {
 	testController(t, newTestApp(false), testTable)
 	testController(t, newTestApp(true), testWriteTokenNoToken)
 	app := newTestApp(true)
-	app.repo.putToken("gw1", "good_token")
-	app.repo.putToken("http://a:5555/b/c", "good_token")
+	app.repo.putToken(context.TODO(), "gw1", "good_token")
+	app.repo.putToken(context.TODO(), "http://a:5555/b/c", "good_token")
 	testController(t, app, testWriteTokenWithToken)
 }
 

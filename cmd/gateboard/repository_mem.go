@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -29,7 +30,7 @@ func newRepoMem() *repoMem {
 	return &repoMem{tab: map[string]memEntry{}}
 }
 
-func (r *repoMem) dump() (repoDump, error) {
+func (r *repoMem) dump(ctx context.Context) (repoDump, error) {
 	list := make(repoDump, 0, len(r.tab))
 	r.lock.Lock()
 
@@ -48,7 +49,7 @@ func (r *repoMem) dump() (repoDump, error) {
 	return list, nil
 }
 
-func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoMem) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	var result gateboard.BodyGetReply
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
@@ -69,7 +70,7 @@ func (r *repoMem) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	return result, errRepositoryGatewayNotFound
 }
 
-func (r *repoMem) put(gatewayName, gatewayID string) error {
+func (r *repoMem) put(ctx context.Context, gatewayName, gatewayID string) error {
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		return errVal
@@ -89,7 +90,7 @@ func (r *repoMem) put(gatewayName, gatewayID string) error {
 	return nil
 }
 
-func (r *repoMem) putToken(gatewayName, token string) error {
+func (r *repoMem) putToken(ctx context.Context, gatewayName, token string) error {
 	r.lock.Lock()
 	e, _ := r.tab[gatewayName]
 	e.token = token

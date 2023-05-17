@@ -88,7 +88,7 @@ func main() {
 			zlog.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
 		}
 		for gw, id := range tokens {
-			errPut := app.repo.putToken(gw, id)
+			errPut := app.repo.putToken(context.TODO(), gw, id)
 			if errPut != nil {
 				zlog.Fatalf("error preloading token for gateway '%s' into repo: %v",
 					gw, errPut)

@@ -66,6 +66,13 @@ func GinzapFields(c *gin.Context) []zapcore.Field {
 	return fields
 }
 
+// Debugf logs at debug level with Printf-like formatting.
+func Debugf(debug bool, format string, v ...any) {
+	if debug {
+		Logger.Debug(fmt.Sprintf(format, v...))
+	}
+}
+
 // Infof logs at info level with Printf-like formatting.
 func Infof(format string, v ...any) {
 	Logger.Info(fmt.Sprintf(format, v...))

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/udhos/boilerplate/awsconfig"
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -44,7 +44,7 @@ func (q *clientConfig) receive() ([]queueMessage, error) {
 
 	resp, errRecv := q.sqs.ReceiveMessage(context.TODO(), input)
 	if errRecv != nil {
-		log.Printf("%s: ReceiveMessage: error: %v", me, errRecv)
+		zlog.Errorf("%s: ReceiveMessage: error: %v", me, errRecv)
 		return nil, errRecv
 	}
 
@@ -60,7 +60,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 
 	region, errRegion := getRegion(queueURL)
 	if errRegion != nil {
-		log.Fatalf("%s initClient: error: %v", caller, errRegion)
+		zlog.Fatalf("%s initClient: error: %v", caller, errRegion)
 		os.Exit(1)
 		return nil
 	}
@@ -73,7 +73,7 @@ func initClient(caller, queueURL, roleArn, roleSessionName string) *clientConfig
 
 	cfg, errAwsConfig := awsconfig.AwsConfig(awsConfOptions)
 	if errAwsConfig != nil {
-		log.Fatalf("%s initClient: aws config error: %v", caller, errRegion)
+		zlog.Fatalf("%s initClient: aws config error: %v", caller, errRegion)
 		return nil
 	}
 
@@ -93,7 +93,7 @@ func getRegion(queueURL string) (string, error) {
 		return "", fmt.Errorf("queueRegion: bad queue url=[%s]", queueURL)
 	}
 	region := fields[1]
-	log.Printf("queueRegion=[%s]", region)
+	zlog.Infof("queueRegion=[%s]", region)
 	return region, nil
 }
 
@@ -105,7 +105,7 @@ func sqsListener(app *application) {
 	for {
 		messages, errRecv := app.sqsClient.receive()
 		if errRecv != nil {
-			log.Printf("%s: receive: error: %v, sleeping %v", me, errRecv, errorCooldown)
+			zlog.Errorf("%s: receive: error: %v, sleeping %v", me, errRecv, errorCooldown)
 			time.Sleep(errorCooldown)
 			continue
 		}
@@ -114,19 +114,20 @@ func sqsListener(app *application) {
 		if count == 0 {
 			// guard against hammering api on empty receives.
 			// it should not happen on live aws api, but it might happen on simulated apis.
-			log.Printf("%s: empty receive, sleeping %v", me, errorCooldown)
+			zlog.Infof("%s: empty receive, sleeping %v", me, errorCooldown)
 			time.Sleep(errorCooldown)
 			continue
 		}
 
 		for i, msg := range messages {
-			log.Printf("%s: %d/%d MessageId=%s body:%s", me, i+1, count, msg.id(), msg.body())
+			zlog.Debugf(app.config.debug, "%s: %d/%d MessageId=%s body:%s",
+				me, i+1, count, msg.id(), msg.body())
 
 			var put sqsPut
 
 			errYaml := yaml.Unmarshal([]byte(msg.body()), &put)
 			if errYaml != nil {
-				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s yaml error: %v",
+				zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s yaml error: %v",
 					me, put.GatewayName, put.GatewayID, msg.id(), errYaml)
 
 				if app.config.sqsConsumeBadMessage {
@@ -138,7 +139,7 @@ func sqsListener(app *application) {
 
 			if errVal := validateInputGatewayName(put.GatewayName); errVal != nil {
 
-				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name: %v",
+				zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_name: %v",
 					me, put.GatewayName, put.GatewayID, msg.id(), errVal)
 
 				if app.config.sqsConsumeBadMessage {
@@ -150,7 +151,7 @@ func sqsListener(app *application) {
 
 			put.GatewayID = strings.TrimSpace(put.GatewayID)
 			if put.GatewayID == "" {
-				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
+				zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid gateway_id",
 					me, put.GatewayName, put.GatewayID, msg.id())
 
 				if app.config.sqsConsumeBadMessage {
@@ -166,7 +167,7 @@ func sqsListener(app *application) {
 
 			if app.config.writeToken {
 				if invalidToken(context.TODO(), app, put.GatewayName, put.Token) {
-					log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid token='%s'",
+					zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s invalid token='%s'",
 						me, put.GatewayName, put.GatewayID, msg.id(), put.Token)
 
 					if app.config.sqsConsumeInvalidToken {
@@ -177,9 +178,9 @@ func sqsListener(app *application) {
 				}
 			}
 
-			errPut := app.repo.put(put.GatewayName, put.GatewayID)
+			errPut := app.repo.put(context.TODO(), put.GatewayName, put.GatewayID)
 			if errPut != nil {
-				log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
+				zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
 					me, put.GatewayName, put.GatewayID, msg.id(), errPut)
 				continue
 			}
@@ -194,7 +195,7 @@ func deleteMessage(sqsClient queue, msg queueMessage, gatewayName, gatewayID str
 	const me = "deleteMessage"
 	err := sqsClient.deleteMessage(msg)
 	if err != nil {
-		log.Printf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
+		zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
 			me, gatewayName, gatewayID, msg.id(), err)
 	}
 }
@@ -217,7 +218,7 @@ func (q *clientConfig) deleteMessage(m queueMessage) error {
 
 	_, errDelete := q.sqs.DeleteMessage(context.TODO(), inputDelete)
 	if errDelete != nil {
-		log.Printf("%s: MessageId: %s - DeleteMessage: error: %v", me, m.id(), errDelete)
+		zlog.Errorf("%s: MessageId: %s - DeleteMessage: error: %v", me, m.id(), errDelete)
 	}
 
 	return errDelete

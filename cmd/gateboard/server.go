@@ -2,32 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 )
-
-/*
-type serverHTTP struct {
-	server *http.Server
-}
-
-func newServerHTTP(addr string, handler http.Handler) *serverHTTP {
-	return &serverHTTP{
-		server: &http.Server{Addr: addr, Handler: handler},
-	}
-}
-
-func (s *serverHTTP) shutdown(timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	if err := s.server.Shutdown(ctx); err != nil {
-		log.Printf("shutdown error: %v", err)
-	}
-}
-*/
 
 type serverGin struct {
 	server *http.Server
@@ -46,6 +26,6 @@ func (s *serverGin) shutdown(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	if err := s.server.Shutdown(ctx); err != nil {
-		log.Printf("shutdown error: %v", err)
+		zlog.Infof("shutdown error: %v", err)
 	}
 }

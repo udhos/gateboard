@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/codes"
@@ -34,14 +32,4 @@ func traceError(span trace.Span, description string) {
 	if span != nil {
 		span.SetStatus(codes.Error, description)
 	}
-}
-
-// logf logs with traceId.
-func logf(ctx context.Context, format string, v ...any) {
-	prefix := fmt.Sprintf("traceId=%s ", traceIDFromContext(ctx))
-	log.Printf(prefix+format, v...)
-}
-
-func traceIDFromContext(ctx context.Context) trace.TraceID {
-	return trace.SpanFromContext(ctx).SpanContext().TraceID()
 }

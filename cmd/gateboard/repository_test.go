@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -186,13 +187,13 @@ func testRepoGw(t *testing.T, r repository, table, gw1, gw2 string) {
 
 func tokenSaveAndQuery(t *testing.T, r repository, table, gatewayName, token, expectedToken string) {
 
-	errPut := r.putToken(gatewayName, token)
+	errPut := r.putToken(context.TODO(), gatewayName, token)
 	if errPut != nil {
 		t.Errorf("tokenSaveAndQuery: putToken: table=%s gatewayName=%s token=%s unexpected error: %v",
 			table, gatewayName, token, errPut)
 	}
 
-	body, err := r.get(gatewayName)
+	body, err := r.get(context.TODO(), gatewayName)
 	if err != nil {
 		t.Errorf("tokenSaveAndQuery: get: table=%s gatewayName=%s token=%s unexpected error: %v",
 			table, gatewayName, token, err)
@@ -205,7 +206,7 @@ func tokenSaveAndQuery(t *testing.T, r repository, table, gatewayName, token, ex
 }
 
 func queryExpectError(t *testing.T, r repository, gatewayName string) {
-	_, err := r.get(gatewayName)
+	_, err := r.get(context.TODO(), gatewayName)
 	if err == nil {
 		t.Errorf("queryExpectError: gatewayName=%s expecting error",
 			gatewayName)
@@ -213,7 +214,7 @@ func queryExpectError(t *testing.T, r repository, gatewayName string) {
 }
 
 func queryExpectID(t *testing.T, r repository, name, gatewayName, expectedGatewayID string) {
-	body, err := r.get(gatewayName)
+	body, err := r.get(context.TODO(), gatewayName)
 	if err != nil {
 		t.Errorf("queryExpectID: %s: gatewayName=%s expectedGatewayID=%s unexpected error:%v",
 			name, gatewayName, expectedGatewayID, err)
@@ -226,7 +227,7 @@ func queryExpectID(t *testing.T, r repository, name, gatewayName, expectedGatewa
 }
 
 func save(t *testing.T, r repository, table, gatewayName, gatewayID string, expectError bool) {
-	err := r.put(gatewayName, gatewayID)
+	err := r.put(context.TODO(), gatewayName, gatewayID)
 	gotError := err != nil
 	if gotError != expectError {
 		if expectError {

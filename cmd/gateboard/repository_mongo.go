@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/udhos/mongodbclient/mongodbclient"
 
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 )
 
@@ -82,12 +82,12 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 			defer cancel()
 			indexName, errCreate := collection.Indexes().CreateOne(ctxTimeout, model)
 			if errCreate != nil {
-				log.Printf("%s: attempt=%d/%d create index for field=%s: index=%s: error: %v, sleeping %v",
+				zlog.Errorf("%s: attempt=%d/%d create index for field=%s: index=%s: error: %v, sleeping %v",
 					me, i, retry, field, indexName, errCreate, cooldown)
 				time.Sleep(cooldown)
 				continue
 			}
-			log.Printf("%s: attempt=%d/%d create index for field=%s: index=%s: success",
+			zlog.Infof("%s: attempt=%d/%d create index for field=%s: index=%s: success",
 				me, i, retry, field, indexName)
 			break
 		}
@@ -102,7 +102,7 @@ func (r *repoMongo) dropDatabase() error {
 	return r.client.Database(r.options.database).Drop(ctxTimeout)
 }
 
-func (r *repoMongo) dump() (repoDump, error) {
+func (r *repoMongo) dump(ctx context.Context) (repoDump, error) {
 	list := repoDump{}
 
 	const me = "repoMongo.dump"
@@ -116,7 +116,7 @@ func (r *repoMongo) dump() (repoDump, error) {
 	cursor, errFind := collection.Find(ctxTimeout, filter, findOptions)
 
 	if errFind != nil {
-		log.Printf("%s: dump find error: %v", me, errFind)
+		zlog.CtxErrorf(ctx, "%s: dump find error: %v", me, errFind)
 		return list, errFind
 	}
 
@@ -131,11 +131,12 @@ func (r *repoMongo) dump() (repoDump, error) {
 		return list, nil
 	}
 
-	log.Printf("%s: dump cursor error: %v", me, errAll)
+	zlog.CtxErrorf(ctx, "%s: dump cursor error: %v", me, errAll)
+
 	return list, errAll
 }
 
-func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoMongo) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 
 	const me = "repoMongo.get"
 
@@ -167,13 +168,13 @@ func (r *repoMongo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 		return body, nil
 	}
 
-	log.Printf("%s: gatewayName=%s find error: %v",
+	zlog.CtxErrorf(ctx, "%s: gatewayName=%s find error: %v",
 		me, gatewayName, errFind)
 
 	return body, errFind
 }
 
-func (r *repoMongo) put(gatewayName, gatewayID string) error {
+func (r *repoMongo) put(ctx context.Context, gatewayName, gatewayID string) error {
 
 	const me = "repoMongo.put"
 
@@ -199,7 +200,7 @@ func (r *repoMongo) put(gatewayName, gatewayID string) error {
 	response, errUpdate := collection.UpdateOne(ctxTimeout, filter, update, opts)
 
 	if errUpdate != nil {
-		log.Printf("%s: gatewayName=%s gatewayID=%s update error:%v response:%v",
+		zlog.CtxErrorf(ctx, "%s: gatewayName=%s gatewayID=%s update error:%v response:%v",
 			me, gatewayName, gatewayID, errUpdate, mongoResultString(response))
 		return errUpdate
 	}
@@ -207,7 +208,7 @@ func (r *repoMongo) put(gatewayName, gatewayID string) error {
 	return nil
 }
 
-func (r *repoMongo) putToken(gatewayName, token string) error {
+func (r *repoMongo) putToken(ctx context.Context, gatewayName, token string) error {
 
 	const me = "repoMongo.putToken"
 
@@ -223,7 +224,7 @@ func (r *repoMongo) putToken(gatewayName, token string) error {
 	response, errUpdate := collection.UpdateOne(ctxTimeout, filter, update, opts)
 
 	if errUpdate != nil {
-		log.Printf("%s: gatewayName=%s token update error:%v response:%v",
+		zlog.CtxErrorf(ctx, "%s: gatewayName=%s token update error:%v response:%v",
 			me, gatewayName, errUpdate, mongoResultString(response))
 		return errUpdate
 	}

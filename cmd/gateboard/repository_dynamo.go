@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/udhos/boilerplate/awsconfig"
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 )
 
@@ -94,27 +94,27 @@ func (r *repoDynamo) createTable() {
 
 	output, errCreate := r.dynamo.CreateTable(context.TODO(), input)
 	if errCreate != nil {
-		log.Printf("%s: creating table '%s': error: %v", me, r.options.table, errCreate)
+		zlog.Errorf("%s: creating table '%s': error: %v", me, r.options.table, errCreate)
 		return
 	}
 
-	log.Printf("%s: creating table: '%s': arn=%s status=%s", me, r.options.table, *output.TableDescription.TableArn, output.TableDescription.TableStatus)
+	zlog.Infof("%s: creating table: '%s': arn=%s status=%s", me, r.options.table, *output.TableDescription.TableArn, output.TableDescription.TableStatus)
 
 	//
 	// Waiting for table
 	//
 
-	log.Printf("%s: waiting for table '%s'", me, r.options.table)
+	zlog.Infof("%s: waiting for table '%s'", me, r.options.table)
 
 	waiter := dynamodb.NewTableExistsWaiter(r.dynamo)
 	errWait := waiter.Wait(context.TODO(), &dynamodb.DescribeTableInput{
 		TableName: aws.String(r.options.table)}, 5*time.Minute)
 	if errWait != nil {
-		log.Printf("%s: waiting for table '%s': error: %v", me, r.options.table, errWait)
+		zlog.Errorf("%s: waiting for table '%s': error: %v", me, r.options.table, errWait)
 		return
 	}
 
-	log.Printf("%s: waiting for table '%s': done", me, r.options.table)
+	zlog.Infof("%s: waiting for table '%s': done", me, r.options.table)
 
 	//
 	// Refuse to run without table
@@ -123,17 +123,17 @@ func (r *repoDynamo) createTable() {
 	const cooldown = 5 * time.Second
 	const max = 10
 	for i := 1; i <= max; i++ {
-		log.Printf("%s: %d/%d table active? '%s'", me, i, max, r.options.table)
+		zlog.Infof("%s: %d/%d table active? '%s'", me, i, max, r.options.table)
 		active := r.tableActive()
-		log.Printf("%s: %d/%d table active? '%s': %t", me, i, max, r.options.table, active)
+		zlog.Infof("%s: %d/%d table active? '%s': %t", me, i, max, r.options.table, active)
 		if active {
-			log.Printf("%s: %d/%d table active? '%s': %t: done", me, i, max, r.options.table, active)
+			zlog.Infof("%s: %d/%d table active? '%s': %t: done", me, i, max, r.options.table, active)
 			return
 		}
-		log.Printf("%s: %d/%d table active? '%s': %t, sleeping for %v", me, i, max, r.options.table, active, cooldown)
+		zlog.Infof("%s: %d/%d table active? '%s': %t, sleeping for %v", me, i, max, r.options.table, active, cooldown)
 		time.Sleep(cooldown)
 	}
-	log.Fatalf("%s: table '%s' is not active, ABORTING", me, r.options.table)
+	zlog.Fatalf("%s: table '%s' is not active, ABORTING", me, r.options.table)
 }
 
 func (r *repoDynamo) tableActive() bool {
@@ -146,16 +146,14 @@ func (r *repoDynamo) tableActive() bool {
 	if err != nil {
 		var notFoundEx *types.ResourceNotFoundException
 		if errors.As(err, &notFoundEx) {
-			log.Printf("%s: table '%s' does not exist", me, r.options.table)
+			zlog.Infof("%s: table '%s' does not exist", me, r.options.table)
 		} else {
-			log.Printf("%s: table '%s': error: %v", me, r.options.table, err)
+			zlog.Errorf("%s: table '%s': error: %v", me, r.options.table, err)
 		}
 		return false
 	}
 
-	if r.options.debug {
-		log.Printf("%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
-	}
+	zlog.Debugf(r.options.debug, "%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
 
 	return t.Table.TableStatus == types.TableStatusActive
 }
@@ -170,16 +168,14 @@ func (r *repoDynamo) tableExists() bool {
 	if err != nil {
 		var notFoundEx *types.ResourceNotFoundException
 		if errors.As(err, &notFoundEx) {
-			log.Printf("%s: table '%s' does not exist", me, r.options.table)
+			zlog.Infof("%s: table '%s' does not exist", me, r.options.table)
 		} else {
-			log.Printf("%s: table '%s': error: %v", me, r.options.table, err)
+			zlog.Errorf("%s: table '%s': error: %v", me, r.options.table, err)
 		}
 		return false
 	}
 
-	if r.options.debug {
-		log.Printf("%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
-	}
+	zlog.Debugf(r.options.debug, "%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
 
 	return true
 }
@@ -200,22 +196,22 @@ func (r *repoDynamo) dropDatabase() error {
 	const cooldown = 5 * time.Second
 	const max = 10
 	for i := 1; i <= max; i++ {
-		log.Printf("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
+		zlog.Infof("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
 		exists := r.tableExists()
-		log.Printf("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
+		zlog.Infof("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
 		if !exists {
-			log.Printf("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
+			zlog.Infof("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
 			return nil
 		}
-		log.Printf("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
+		zlog.Infof("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
 		time.Sleep(cooldown)
 	}
-	log.Fatalf("%s: table '%s' exists, ABORTING", me, r.options.table)
+	zlog.Fatalf("%s: table '%s' exists, ABORTING", me, r.options.table)
 
 	return fmt.Errorf("%s: table '%s' exists, ABORTING", me, r.options.table)
 }
 
-func (r *repoDynamo) dump() (repoDump, error) {
+func (r *repoDynamo) dump(ctx context.Context) (repoDump, error) {
 	const me = "repoDynamo.dump"
 
 	list := repoDump{}
@@ -252,7 +248,7 @@ func (r *repoDynamo) dump() (repoDump, error) {
 	return list, nil
 }
 
-func (r *repoDynamo) get(gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoDynamo) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoDynamo.get"
 
 	var body gateboard.BodyGetReply
@@ -285,7 +281,7 @@ func (r *repoDynamo) get(gatewayName string) (gateboard.BodyGetReply, error) {
 	return body, errUnmarshal
 }
 
-func (r *repoDynamo) put(gatewayName, gatewayID string) error {
+func (r *repoDynamo) put(ctx context.Context, gatewayName, gatewayID string) error {
 	const me = "repoDynamo.put"
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
@@ -319,7 +315,7 @@ func (r *repoDynamo) put(gatewayName, gatewayID string) error {
 	return errUpdate
 }
 
-func (r *repoDynamo) putToken(gatewayName, token string) error {
+func (r *repoDynamo) putToken(ctx context.Context, gatewayName, token string) error {
 	update := expression.Set(expression.Name("token"), expression.Value(token))
 
 	expr, errBuild := expression.NewBuilder().WithUpdate(update).Build()

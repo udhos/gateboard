@@ -1,16 +1,17 @@
 package main
 
 import (
+	"context"
 	"errors"
 
 	"github.com/udhos/gateboard/gateboard"
 )
 
 type repository interface {
-	get(gatewayName string) (gateboard.BodyGetReply, error)
-	put(gatewayName, gatewayID string) error
-	dump() (repoDump, error)
-	putToken(gatewayName, token string) error
+	get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error)
+	put(ctx context.Context, gatewayName, gatewayID string) error
+	dump(ctx context.Context) (repoDump, error)
+	putToken(ctx context.Context, gatewayName, token string) error
 }
 
 type repoDump []map[string]interface{}

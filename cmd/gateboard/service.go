@@ -36,7 +36,7 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	var out output
 
-	dump, errDump := app.repo.dump()
+	dump, errDump := app.repo.dump(ctx)
 
 	elap := time.Since(begin)
 
@@ -52,14 +52,14 @@ func gatewayDump(c *gin.Context, app *application) {
 		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
 		recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -69,12 +69,12 @@ func gatewayDump(c *gin.Context, app *application) {
 
 func repoGet(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
 	// create trace span
-	_, span := newSpan(ctx, "repoGet", app)
+	ctxNew, span := newSpan(ctx, "repoGet", app)
 	if span != nil {
 		defer span.End()
 	}
 
-	body, err := app.repo.get(gatewayName)
+	body, err := app.repo.get(ctxNew, gatewayName)
 
 	// record error in trace span
 	if err != nil {
@@ -86,12 +86,12 @@ func repoGet(ctx context.Context, app *application, gatewayName string) (gateboa
 
 func repoPut(ctx context.Context, app *application, gatewayName, gatewayID string) error {
 	// create trace span
-	_, span := newSpan(ctx, "repoPut", app)
+	ctxNew, span := newSpan(ctx, "repoPut", app)
 	if span != nil {
 		defer span.End()
 	}
 
-	err := app.repo.put(gatewayName, gatewayID)
+	err := app.repo.put(ctxNew, gatewayName, gatewayID)
 
 	// record error in trace span
 	if err != nil {
@@ -111,7 +111,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	logf(ctx, "%s: gateway_name=%s", me, gatewayName)
+	zlog.CtxInfof(ctx, "%s: gateway_name=%s", me, gatewayName)
 
 	var out gateboard.BodyGetReply
 	out.GatewayName = gatewayName
@@ -120,7 +120,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.TTL = app.config.TTL
 		out.Error = errVal.Error()
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -136,10 +136,9 @@ func gatewayGet(c *gin.Context, app *application) {
 	out.TTL = app.config.TTL
 
 	elap := time.Since(begin)
-	if app.config.debug {
-		logf(ctx, "%s: gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
-			me, gatewayName, elap, errID)
-	}
+
+	zlog.CtxDebugf(ctx, app.config.debug, "%s: gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
+		me, gatewayName, elap, errID)
 
 	const repoMethod = "get"
 
@@ -151,7 +150,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
@@ -159,7 +158,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -177,7 +176,7 @@ func gatewayPut(c *gin.Context, app *application) {
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
 
-	logf(ctx, "%s: gateway_name=%s", me, gatewayName)
+	zlog.CtxInfof(ctx, "%s: gateway_name=%s", me, gatewayName)
 
 	var out gateboard.BodyPutReply
 	out.GatewayName = gatewayName
@@ -185,7 +184,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		out.Error = errVal.Error()
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -200,12 +199,12 @@ func gatewayPut(c *gin.Context, app *application) {
 	if errYaml != nil {
 		out.Error = fmt.Sprintf("%s: body yaml: %v", me, errYaml)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
 
-	logf(ctx, "%s: gateway_name=%s body:%v", me, gatewayName, toJSON(ctx, in))
+	zlog.CtxInfof(ctx, "%s: gateway_name=%s body:%v", me, gatewayName, toJSON(ctx, in))
 
 	out.GatewayID = in.GatewayID
 
@@ -217,7 +216,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	if gatewayID == "" {
 		out.Error = "invalid blank gateway_id"
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -232,7 +231,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		if invalidToken(ctx, app, gatewayName, in.Token) {
 			out.Error = "invalid token"
 			traceError(span, out.Error)
-			logf(ctx, out.Error)
+			zlog.CtxErrorf(ctx, out.Error)
 			c.JSON(http.StatusUnauthorized, out)
 			return
 		}
@@ -251,10 +250,9 @@ func gatewayPut(c *gin.Context, app *application) {
 		errPut := repoPut(ctx, app, gatewayName, gatewayID)
 
 		elap := time.Since(begin)
-		if app.config.debug {
-			logf(ctx, "%s: gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
-				me, gatewayName, elap, errPut)
-		}
+
+		zlog.CtxDebugf(ctx, app.config.debug, "%s: gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
+			me, gatewayName, elap, errPut)
 
 		const repoMethod = "put"
 
@@ -270,10 +268,10 @@ func gatewayPut(c *gin.Context, app *application) {
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, max, errPut)
 		traceError(span, out.Error)
-		logf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, out.Error)
 
 		if attempt < max {
-			logf(ctx, "%s: attempt=%d/%d sleeping %v",
+			zlog.CtxInfof(ctx, "%s: attempt=%d/%d sleeping %v",
 				me, attempt, app.config.writeRetry, app.config.writeRetryInterval)
 			time.Sleep(app.config.writeRetryInterval)
 		}
@@ -299,7 +297,7 @@ func invalidToken(ctx context.Context, app *application, gatewayName, token stri
 
 	result, errID := repoGet(ctx, app, gatewayName)
 	if errID != nil {
-		logf(ctx, "%s: error: %v", me, errID)
+		zlog.CtxErrorf(ctx, "%s: error: %v", me, errID)
 		return true
 	}
 

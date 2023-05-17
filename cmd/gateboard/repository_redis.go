@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
 
+	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 )
 
@@ -47,7 +48,7 @@ const (
 	match  = prefix + "*"
 )
 
-func (r *repoRedis) dump() (repoDump, error) {
+func (r *repoRedis) dump(ctx context.Context) (repoDump, error) {
 	const me = "repoRedis.dump"
 
 	list := repoDump{}
@@ -64,9 +65,7 @@ func (r *repoRedis) dump() (repoDump, error) {
 			return list, err
 		}
 		val := iter.Val()
-		if r.options.debug {
-			log.Printf("%s: isKey=%-5v value:%s", me, isKey, val)
-		}
+		zlog.CtxDebugf(ctx, r.options.debug, "%s: isKey=%-5v value:%s", me, isKey, val)
 		if isKey {
 			// found key: gateway:gateway_id:gw1
 			_, after, _ := strings.Cut(val, ":")
@@ -100,7 +99,7 @@ func field(gatewayName, field string) string {
 	return prefix + field + ":" + gatewayName
 }
 
-func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoRedis.get"
 
 	body := gateboard.BodyGetReply{GatewayName: gatewayName}
@@ -130,11 +129,11 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	cmdChanges := r.redisClient.HGet(r.options.key, fieldChanges)
 	if err := cmdChanges.Err(); err != nil {
-		log.Printf("%s: changes retrieve: %v", me, err)
+		zlog.CtxErrorf(ctx, "%s: changes retrieve: %v", me, err)
 	}
 	changes, errInt64 := cmdChanges.Int64()
 	if errInt64 != nil {
-		log.Printf("%s: changes int: %v", me, errInt64)
+		zlog.CtxErrorf(ctx, "%s: changes int: %v", me, errInt64)
 	}
 	body.Changes = changes
 
@@ -142,11 +141,11 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	cmdLastUpdate := r.redisClient.HGet(r.options.key, fieldLastUpdate)
 	if err := cmdLastUpdate.Err(); err != nil {
-		log.Printf("%s: last update retrieve: %v", me, err)
+		zlog.CtxErrorf(ctx, "%s: last update retrieve: %v", me, err)
 	}
 	lastUpdate, errParse := time.Parse(time.RFC3339, cmdLastUpdate.Val())
 	if errParse != nil {
-		log.Printf("%s: last update parse: %v", me, errParse)
+		zlog.CtxErrorf(ctx, "%s: last update parse: %v", me, errParse)
 	}
 	body.LastUpdate = lastUpdate
 
@@ -154,14 +153,14 @@ func (r *repoRedis) get(gatewayName string) (gateboard.BodyGetReply, error) {
 
 	cmdToken := r.redisClient.HGet(r.options.key, fieldToken)
 	if err := cmdToken.Err(); err != nil {
-		log.Printf("%s: token retrieve: %v", me, err)
+		zlog.CtxErrorf(ctx, "%s: token retrieve: %v", me, err)
 	}
 	body.Token = cmdToken.Val()
 
 	return body, nil
 }
 
-func (r *repoRedis) put(gatewayName, gatewayID string) error {
+func (r *repoRedis) put(ctx context.Context, gatewayName, gatewayID string) error {
 	const me = "repoRedis.put"
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
@@ -181,19 +180,19 @@ func (r *repoRedis) put(gatewayName, gatewayID string) error {
 	}
 
 	if errHIncrChanges := r.redisClient.HIncrBy(r.options.key, fieldChanges, 1).Err(); errHIncrChanges != nil {
-		log.Printf("%s: changes: %v", me, errHIncrChanges)
+		zlog.CtxErrorf(ctx, "%s: changes: %v", me, errHIncrChanges)
 	}
 
 	now := time.Now().Format(time.RFC3339)
 
 	if errHSetLastUpdate := r.redisClient.HSet(r.options.key, fieldLastUpdate, now).Err(); errHSetLastUpdate != nil {
-		log.Printf("%s: last update: %v", me, errHSetLastUpdate)
+		zlog.CtxErrorf(ctx, "%s: last update: %v", me, errHSetLastUpdate)
 	}
 
 	return nil
 }
 
-func (r *repoRedis) putToken(gatewayName, token string) error {
+func (r *repoRedis) putToken(ctx context.Context, gatewayName, token string) error {
 	const me = "repoRedis.putToken"
 
 	fieldToken := field(gatewayName, "token")
