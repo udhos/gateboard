@@ -337,6 +337,7 @@ Example: repository_requests_seconds_bucket{method="get",status="success",le="0.
 export REPO=mem
 export JAEGER_URL=http://localhost:14268/api/traces
 export OTEL_TRACES_SAMPLER=parentbased_always_on
+export OTEL_SERVICE_NAME=mynamespace.gateboard
 gateboard
 
 # open jaeger UI http://localhost:16686/

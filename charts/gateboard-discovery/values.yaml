@@ -79,6 +79,9 @@ configMapProperties:
   #LAMBDA_ROLE_EXTERNAL_ID: ""
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
   OTEL_TRACES_SAMPLER: parentbased_always_on
+  # pick one of OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES
+  OTEL_SERVICE_NAME: mynamespace.gateboard
+  #OTEL_RESOURCE_ATTRIBUTES: 'service.name=mynamespace.gateboard,key2=value2'
 
 configMapAccounts:
   - role_arn: "" # empty role_arn means use current credentials

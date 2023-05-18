@@ -58,7 +58,7 @@ func newConfig(roleSessionName string) appConfig {
 		sqsConsumeBadMessage:   env.Bool("SQS_CONSUME_BAD_MESSAGE", false),
 		sqsConsumeInvalidToken: env.Bool("SQS_CONSUME_INVALID_TOKEN", true),
 		TTL:                    env.Int("TTL", 300), // seconds
-		repoType:               env.String("REPO", "mongo"),
+		repoType:               env.String("REPO", "mem"),
 		mongoURI:               env.String("MONGO_URL", "mongodb://localhost:27017"),
 		mongoDatabase:          env.String("MONGO_DATABASE", "gateboard"),
 		mongoCollection:        env.String("MONGO_COLLECTION", "gateboard"),

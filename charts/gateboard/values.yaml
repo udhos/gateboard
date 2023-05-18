@@ -132,6 +132,9 @@ configMapProperties:
   #GIN_MODE: release
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"
+  # pick one of OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES
+  OTEL_SERVICE_NAME: mynamespace.gateboard
+  #OTEL_RESOURCE_ATTRIBUTES: 'service.name=mynamespace.gateboard,key2=value2'
 
 secrets:
   # set base64encoded to false to specify secrets in plain text

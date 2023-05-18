@@ -5,6 +5,8 @@ package tracing
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
@@ -31,26 +33,65 @@ Open Telemetry tracing with Gin:
 */
 
 // TracerProvider creates a trace provider.
-func TracerProvider(service, url string) (*tracesdk.TracerProvider, error) {
-	log.Printf("tracerProvider: service=%s collector=%s", service, url)
+// Service name precedence from higher to lower:
+// 1. OTEL_SERVICE_NAME=mysrv
+// 2. OTEL_RESOURCE_ATTRIBUTES=service.name=mysrv
+// 3. defaultService="mysrv"
+func TracerProvider(defaultService, url string) (*tracesdk.TracerProvider, error) {
+	log.Printf("tracerProvider: service=%s collector=%s", defaultService, url)
 
 	// Create the Jaeger exporter
 	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
 	if err != nil {
 		return nil, err
 	}
+
+	var rsrc *resource.Resource
+
+	if defaultService == "" || hasServiceEnvVar() {
+		rsrc = resource.NewWithAttributes(
+			semconv.SchemaURL,
+			//attribute.String("environment", environment),
+			//attribute.Int64("ID", id),
+		)
+	} else {
+		rsrc = resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(defaultService),
+			//attribute.String("environment", environment),
+			//attribute.Int64("ID", id),
+		)
+	}
+
 	tp := tracesdk.NewTracerProvider(
 		// Always be sure to batch in production.
 		tracesdk.WithBatcher(exp),
 		// Record information about this application in a Resource.
-		tracesdk.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(service),
-			//attribute.String("environment", environment),
-			//attribute.Int64("ID", id),
-		)),
+		tracesdk.WithResource(rsrc),
 	)
 	return tp, nil
+}
+
+func hasServiceEnvVar() bool {
+	const me = "hasServiceEnvVar"
+
+	if strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME")) != "" {
+		log.Printf("%s: found OTEL_SERVICE_NAME", me)
+		return true
+	}
+
+	attrs := os.Getenv("OTEL_RESOURCE_ATTRIBUTES")
+	fields := strings.FieldsFunc(attrs, func(c rune) bool { return c == ',' })
+	for _, f := range fields {
+		key, val, _ := strings.Cut(f, "=")
+		if key == "service.name" {
+			log.Printf("%s: found OTEL_RESOURCE_ATTRIBUTES: %s=%s",
+				me, key, val)
+			return true
+		}
+	}
+
+	return false
 }
 
 // TracePropagation enables trace propagation.
