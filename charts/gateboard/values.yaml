@@ -63,7 +63,7 @@ resources:
     ephemeral-storage: 100Mi
   limits:
     cpu: 2000m
-    memory: 100Mi
+    memory: 300Mi
     ephemeral-storage: 200Mi
 
 autoscaling:
