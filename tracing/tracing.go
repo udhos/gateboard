@@ -75,8 +75,10 @@ func TracerProvider(defaultService, url string) (*tracesdk.TracerProvider, error
 func hasServiceEnvVar() bool {
 	const me = "hasServiceEnvVar"
 
-	if strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME")) != "" {
-		log.Printf("%s: found OTEL_SERVICE_NAME", me)
+	svc := os.Getenv("OTEL_SERVICE_NAME")
+
+	if strings.TrimSpace(svc) != "" {
+		log.Printf("%s: found OTEL_SERVICE_NAME=%s", me, svc)
 		return true
 	}
 
