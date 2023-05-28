@@ -91,7 +91,7 @@ func main() {
 	}
 
 	app.client = gateboard.NewClient(gateboard.ClientOptions{
-		ServerURL: env.String("MAIN_URL", "http://localhost:8080/gateway"),
+		ServerURL: env.String("GATEBOARD_URL", "http://localhost:8080/gateway"),
 		Debug:     env.Bool("DEBUG", true),
 		Tracer:    app.tracer,
 	})
