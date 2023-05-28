@@ -9,15 +9,48 @@
 
 [gateboard](https://github.com/udhos/gateboard) resolves AWS Private API Gateway ID.
 
-## Services
+In order to [invoke an AWS API Gateway private API](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-private-api-test-invoke-url.html), an applications needs its API ID.
 
-| Service  | Description |
-| --- | --- |
-| gateboard | Holds database of key value mappings: gateway_name => gateway_id. You can populate the database as you wish. |
-| gateboard-discovery | Can be used to scan AWS API Gateway APIs and to save the name x ID mappings into gateboard. |
-| gateboard-cache | Can be used as local fast cache to save resources on a centralized main gateboard service. |
+However, whenever API is destroyed and recreated, the API ID will change.
 
-## TODO
+This projects helps in building an autodiscovery mechanism to withstand changes in the API ID.
+
+There are three main componentes:
+
+1\. `gateboard` service provides a simple REST API for saving/retrieving name-to-id mappings:
+
+```bash
+# add api1=>id1 mapping
+curl -X PUT -d '{"gateway_id":"id1"}' localhost:8080/gateway/api1
+
+# retrieve mapping for api1
+curl localhost:8080/gateway/api1
+{"gateway_name":"api1","gateway_id":"id1"}
+```
+
+2\. `gateboard-discovery` provides autodiscovery by periodically scanning AWS API Gateway API and updating `gateboard` with discovered name-to-id mappings.
+
+3\. `gateboard` client is a helper library to assist client application in retrieving current API ID for a given API name. The main benefit from this client is automatic caching for the name-to-id mappings.
+
+`gateboard` client usage would looks this:
+
+```golang
+client := gateboard.NewClient(gateboard.ClientOptions{
+    ServerURL: "http://gateboard:8080/gateway",
+})
+
+apiName := "my-api"
+
+apiID := app.client.GatewayID(ctx, apiName)
+if gatewayID == "" {
+    log.Printf("missing gateway_id for gateway_name=%s", apiName)
+    return
+}
+
+// code to invoke AWS API with apiID follows
+```
+
+# Features
 
 - [X] SQS listener
 - [X] Client with async update
@@ -44,7 +77,15 @@
 - [X] Zap logging
 - [ ] Cache service
 
-## Build
+# Services
+
+| Service  | Description |
+| --- | --- |
+| gateboard | Holds database of key value mappings: gateway_name => gateway_id. You can populate the database as you wish. |
+| gateboard-discovery | Can be used to scan AWS API Gateway APIs and to save the name x ID mappings into gateboard. |
+| gateboard-cache | Can be used as local fast cache to save resources on a centralized main gateboard service. |
+
+# Build
 
 ```bash
 git clone https://github.com/udhos/gateboard
@@ -52,7 +93,7 @@ cd gateboard
 CGO_ENABLED=0 go install ./...
 ```
 
-## Supported Repositories (Persistent Storage)
+# Supported Repositories (Persistent Storage)
 
 ```
 export REPO=mem      ;# testing-only pseudo-storage
@@ -61,6 +102,8 @@ export REPO=redis    ;# redis
 export REPO=dynamodb ;# DynamoDB
 export REPO=s3       ;# S3
 ```
+
+# Testing repositories
 
 ## Testing repository mongo
 
@@ -168,7 +211,7 @@ curl -X PUT -v -d '{"gateway_id":"id2"}' localhost:8080/gateway/gw2
 {"gateway_name":"gw2","gateway_id":"id2","error":"invalid token"}
 ```
 
-## Example
+# Examples
 
 ```bash
 curl localhost:8080/gateway/gate1
@@ -187,9 +230,9 @@ curl localhost:8080/gateway/gate1
 {"gateway_name":"gate1","gateway_id":"id2"}
 ```
 
-## gateway-discovery
+# gateway-discovery
 
-### Save to server
+## Save to server
 
 Discovery writes directly to server.
 
@@ -208,7 +251,7 @@ Dump database.
 
     curl localhost:8080/dump | jq
 
-### Save to webhook
+## Save to webhook
 
 Discovery writes to webhook that forwards to SQS queue.
 
@@ -230,7 +273,7 @@ Dump database.
 
     curl localhost:8080/dump | jq
 
-### Save to SQS
+## Save to SQS
 
 Discovery writes to SQS queue.
 
@@ -251,7 +294,7 @@ Dump database.
 
     curl localhost:8080/dump | jq
 
-### Save to SNS
+## Save to SNS
 
 Discovery writes to SNS topic that forwards to SQS queue.
 
@@ -272,7 +315,7 @@ Dump database.
 
     curl localhost:8080/dump | jq
 
-### Save to lambda
+## Save to lambda
 
 Discovery writes to lambda function that forwards to SQS queue.
 
@@ -293,7 +336,7 @@ Dump database.
 
     curl localhost:8080/dump | jq
 
-## AWS Secrets Manager
+# AWS Secrets Manager
 
 Retrieve config vars from AWS Secrets Manager.
 
@@ -313,7 +356,7 @@ Example with JSON field `uri`:
 
     # The secret `mongo` must store a JSON value like: `{"uri":"mongodb://127.0.0.2:27017"}`
 
-## Metrics
+# Metrics
 
 ```
 # HELP http_server_requests_seconds Spring-like server request duration in seconds.
@@ -327,7 +370,7 @@ Example: http_server_requests_seconds_bucket{method="GET",status="200",uri="/gat
 Example: repository_requests_seconds_bucket{method="get",status="success",le="0.00025"} 4
 ```
 
-## Test Jaeger Tracing
+# Test Jaeger Tracing
 
 ```
 # start jaeger
@@ -348,7 +391,9 @@ Jaeger: https://www.jaegertracing.io/docs/1.44/getting-started/
 Open Telemetry Go: https://opentelemetry.io/docs/instrumentation/go/getting-started/
 
 
-## Docker
+# Docker
+
+## gateboard docker image
 
 Docker hub:
 
@@ -372,7 +417,7 @@ Multiarch build recipe:
 ./docker/build-multiarch.sh
 ```
 
-### gateboard-discovery docker image
+## gateboard-discovery docker image
 
 Docker hub:
 
