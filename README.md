@@ -15,7 +15,7 @@ However, whenever API is destroyed and recreated, the API ID will change.
 
 This projects helps in building an autodiscovery mechanism to withstand changes in the API ID.
 
-There are three main componentes:
+There are three main pieces:
 
 1\. `gateboard` service ([gateboard](./cmd/gateboard)) provides a simple REST API for saving/retrieving name-to-id mappings:
 
