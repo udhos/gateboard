@@ -17,7 +17,7 @@ This projects helps in building an autodiscovery mechanism to withstand changes 
 
 There are three main componentes:
 
-1\. `gateboard` service provides a simple REST API for saving/retrieving name-to-id mappings:
+1\. `gateboard` service ([gateboard](./cmd/gateboard)) provides a simple REST API for saving/retrieving name-to-id mappings:
 
 ```bash
 # add api1=>id1 mapping
@@ -28,9 +28,9 @@ curl localhost:8080/gateway/api1
 {"gateway_name":"api1","gateway_id":"id1"}
 ```
 
-2\. `gateboard-discovery` provides autodiscovery by periodically scanning AWS API Gateway API and updating `gateboard` with discovered name-to-id mappings.
+2\. `gateboard-discovery` service ([gateboard-discovery](./cmd/gateboard-discovery)) provides autodiscovery by periodically scanning AWS API Gateway API and updating `gateboard` with discovered name-to-id mappings.
 
-3\. `gateboard` client is a helper library to assist client application in retrieving current API ID for a given API name. The main benefit from this client is automatic caching for the name-to-id mappings.
+3\. `gateboard` client ([gateboard](./gateboard)) is a helper library to assist client application in retrieving current API ID for a given API name. The main benefit from this client is automatic caching for the name-to-id mappings.
 
 `gateboard` client usage would looks this:
 
@@ -49,6 +49,8 @@ if gatewayID == "" {
 
 // code to invoke AWS API with apiID follows
 ```
+
+Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@main/gateboard
 
 # Features
 
