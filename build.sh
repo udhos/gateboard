@@ -16,6 +16,8 @@ go env -w CGO_ENABLED=1
 
 go test -race ./...
 
+#go test -bench=BenchmarkController ./cmd/gateboard
+
 go env -w CGO_ENABLED=0
 
 go install ./...

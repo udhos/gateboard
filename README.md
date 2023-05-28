@@ -74,7 +74,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [X] Metrics
 - [X] Repository S3
 - [X] Tracing
-- [ ] Benchmark
+- [X] Benchmark
 - [ ] User guide
 - [X] Zap logging
 - [ ] Cache service

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -140,4 +141,53 @@ func newTestApp(writeToken bool) *application {
 	initApplication(app, ":8080")
 
 	return app
+}
+
+// go test -bench=BenchmarkController ./cmd/gateboard
+func BenchmarkController(b *testing.B) {
+
+	//
+	// setup
+	//
+
+	os.Setenv("GIN_MODE", "release")
+
+	const writeToken = false
+
+	app := newTestApp(writeToken)
+
+	// PUT
+
+	reqPut, errReqPut := http.NewRequest("PUT", "/gateway/gw1", strings.NewReader(`{"gateway_id":"id1"}`))
+	if errReqPut != nil {
+		b.Errorf("NewRequest PUT: %v", errReqPut)
+		return
+	}
+	wPut := httptest.NewRecorder()
+	app.serverMain.router.ServeHTTP(wPut, reqPut)
+
+	//
+	// Actual test
+	//
+
+	b.ResetTimer()
+
+	n := 20 // b.N
+
+	for i := 0; i < n; i++ {
+		benchController(b, app)
+	}
+}
+
+func benchController(b *testing.B, app *application) {
+	// GET
+
+	reqGet, errReqGet := http.NewRequest("GET", "/gateway/gw1", nil)
+	if errReqGet != nil {
+		b.Errorf("NewRequest GET: %v", errReqGet)
+		return
+	}
+	wGet := httptest.NewRecorder()
+	app.serverMain.router.ServeHTTP(wGet, reqGet)
+	//b.Logf("body: %s", wGet.Body.String())
 }
