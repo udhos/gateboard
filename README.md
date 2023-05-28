@@ -32,7 +32,7 @@ curl localhost:8080/gateway/api1
 
 3\. `gateboard` client ([gateboard](./gateboard)) is a helper library to assist client application in retrieving current API ID for a given API name. The main benefit from this client is automatic caching for the name-to-id mappings.
 
-`gateboard` client usage would looks this:
+`gateboard` client usage looks like this:
 
 ```golang
 client := gateboard.NewClient(gateboard.ClientOptions{
