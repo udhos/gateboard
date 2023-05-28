@@ -41,7 +41,7 @@ client := gateboard.NewClient(gateboard.ClientOptions{
 
 apiName := "my-api"
 
-apiID := app.client.GatewayID(ctx, apiName)
+apiID := client.GatewayID(ctx, apiName)
 if gatewayID == "" {
     log.Printf("missing gateway_id for gateway_name=%s", apiName)
     return
