@@ -99,7 +99,7 @@ configMapProperties:
   #SQS_CONSUME_INVALID_TOKEN: "true"
   #TTL: "300"
   #REPO: server
-  REPO: mem
+  REPO: mem # options: mem | mongo | dynamodb | redis | s3
   #MONGO_URL: mongodb://localhost:27017
   #MONGO_DATABASE: gateboard
   #MONGO_COLLECTION: gateboard
@@ -114,6 +114,8 @@ configMapProperties:
   #METRICS_PATH: /metrics
   #METRICS_MASK_PATH: "true"
   #METRICS_NAMESPACE: ""
+  #METRICS_BUCKETS_LATENCY_HTTP: "0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5, 10"
+  #METRICS_BUCKETS_LATENCY_REPO: "0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5"
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
   #DYNAMODB_TABLE: gateboard
   #DYNAMODB_REGION: us-east-1

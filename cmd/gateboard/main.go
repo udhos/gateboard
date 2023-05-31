@@ -259,7 +259,7 @@ func pickRepo(sessionName string, config appConfig) repository {
 
 func initApplication(app *application, addr string) {
 
-	initMetrics(app.config.metricsNamespace)
+	initMetrics(app.config.metricsNamespace, app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
 
 	//
 	// register application routes
