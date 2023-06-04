@@ -23,7 +23,11 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: {}
+podAnnotations:
+  "sidecar.istio.io/inject": "true"
+  "prometheus.io/scrape": "true"
+  "prometheus.io/path": /metrics
+  "prometheus.io/port": "3000"
 
 podSecurityContext: {}
   # fsGroup: 2000
