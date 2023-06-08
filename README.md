@@ -442,3 +442,9 @@ Push:
 ```
 docker push -a udhos/gateboard-discovery
 ```
+
+# Helm charts
+
+You can use the provided helm charts to install gateboard in your Kubernetes cluster.
+
+See: https://udhos.github.io/gateboard/
