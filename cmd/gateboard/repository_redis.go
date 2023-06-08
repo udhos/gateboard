@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
@@ -40,7 +40,7 @@ func newRepoRedis(opt repoRedisOptions) (*repoRedis, error) {
 }
 
 func (r *repoRedis) dropDatabase() error {
-	return r.redisClient.Del(r.options.key).Err()
+	return r.redisClient.Del(context.TODO(), r.options.key).Err()
 }
 
 const (
@@ -59,8 +59,8 @@ func (r *repoRedis) dump(ctx context.Context) (repoDump, error) {
 	var gatewayField string
 	var gatewayName string
 
-	iter := r.redisClient.HScan(r.options.key, 0, match, 0).Iterator()
-	for iter.Next() {
+	iter := r.redisClient.HScan(ctx, r.options.key, 0, match, 0).Iterator()
+	for iter.Next(ctx) {
 		if err := iter.Err(); err != nil {
 			return list, err
 		}
@@ -115,7 +115,7 @@ func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.Body
 
 	// id
 
-	cmdID := r.redisClient.HGet(r.options.key, fieldID)
+	cmdID := r.redisClient.HGet(ctx, r.options.key, fieldID)
 	errID := cmdID.Err()
 	if errID == redis.Nil {
 		return body, errRepositoryGatewayNotFound
@@ -127,7 +127,7 @@ func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.Body
 
 	// changes
 
-	cmdChanges := r.redisClient.HGet(r.options.key, fieldChanges)
+	cmdChanges := r.redisClient.HGet(ctx, r.options.key, fieldChanges)
 	if err := cmdChanges.Err(); err != nil {
 		zlog.CtxErrorf(ctx, "%s: changes retrieve: %v", me, err)
 	}
@@ -139,7 +139,7 @@ func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.Body
 
 	// last update
 
-	cmdLastUpdate := r.redisClient.HGet(r.options.key, fieldLastUpdate)
+	cmdLastUpdate := r.redisClient.HGet(ctx, r.options.key, fieldLastUpdate)
 	if err := cmdLastUpdate.Err(); err != nil {
 		zlog.CtxErrorf(ctx, "%s: last update retrieve: %v", me, err)
 	}
@@ -151,7 +151,7 @@ func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.Body
 
 	// token
 
-	cmdToken := r.redisClient.HGet(r.options.key, fieldToken)
+	cmdToken := r.redisClient.HGet(ctx, r.options.key, fieldToken)
 	if err := cmdToken.Err(); err != nil {
 		zlog.CtxErrorf(ctx, "%s: token retrieve: %v", me, err)
 	}
@@ -175,17 +175,17 @@ func (r *repoRedis) put(ctx context.Context, gatewayName, gatewayID string) erro
 	fieldChanges := field(gatewayName, "changes")
 	fieldLastUpdate := field(gatewayName, "last_update")
 
-	if errHSetID := r.redisClient.HSet(r.options.key, fieldID, gatewayID).Err(); errHSetID != nil {
+	if errHSetID := r.redisClient.HSet(ctx, r.options.key, fieldID, gatewayID).Err(); errHSetID != nil {
 		return errHSetID
 	}
 
-	if errHIncrChanges := r.redisClient.HIncrBy(r.options.key, fieldChanges, 1).Err(); errHIncrChanges != nil {
+	if errHIncrChanges := r.redisClient.HIncrBy(ctx, r.options.key, fieldChanges, 1).Err(); errHIncrChanges != nil {
 		zlog.CtxErrorf(ctx, "%s: changes: %v", me, errHIncrChanges)
 	}
 
 	now := time.Now().Format(time.RFC3339)
 
-	if errHSetLastUpdate := r.redisClient.HSet(r.options.key, fieldLastUpdate, now).Err(); errHSetLastUpdate != nil {
+	if errHSetLastUpdate := r.redisClient.HSet(ctx, r.options.key, fieldLastUpdate, now).Err(); errHSetLastUpdate != nil {
 		zlog.CtxErrorf(ctx, "%s: last update: %v", me, errHSetLastUpdate)
 	}
 
@@ -197,7 +197,7 @@ func (r *repoRedis) putToken(ctx context.Context, gatewayName, token string) err
 
 	fieldToken := field(gatewayName, "token")
 
-	if errHSetToken := r.redisClient.HSet(r.options.key, fieldToken, token).Err(); errHSetToken != nil {
+	if errHSetToken := r.redisClient.HSet(ctx, r.options.key, fieldToken, token).Err(); errHSetToken != nil {
 		return errHSetToken
 	}
 
