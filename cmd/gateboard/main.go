@@ -30,7 +30,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "1.0.3"
+const version = "1.1.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -214,11 +214,12 @@ func pickRepo(sessionName string, config appConfig) repository {
 		return repo
 	case "dynamodb":
 		repo, errDynamo := newRepoDynamo(repoDynamoOptions{
-			debug:       config.debug,
-			table:       config.dynamoDBTable,
-			region:      config.dynamoDBRegion,
-			roleArn:     config.dynamoDBRoleARN,
-			sessionName: sessionName,
+			debug:        config.debug,
+			table:        config.dynamoDBTable,
+			region:       config.dynamoDBRegion,
+			roleArn:      config.dynamoDBRoleARN,
+			manualCreate: config.dynamoDBManualCreate,
+			sessionName:  sessionName,
 		})
 		if errDynamo != nil {
 			zlog.Fatalf("repo dynamodb: %v", errDynamo)

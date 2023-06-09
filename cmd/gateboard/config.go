@@ -35,6 +35,7 @@ type appConfig struct {
 	dynamoDBTable             string
 	dynamoDBRegion            string
 	dynamoDBRoleARN           string
+	dynamoDBManualCreate      bool
 	redisAddr                 string
 	redisPassword             string
 	redisKey                  string
@@ -81,6 +82,7 @@ func newConfig(roleSessionName string) appConfig {
 		dynamoDBTable:             env.String("DYNAMODB_TABLE", "gateboard"),
 		dynamoDBRegion:            env.String("DYNAMODB_REGION", "us-east-1"),
 		dynamoDBRoleARN:           env.String("DYNAMODB_ROLE_ARN", ""),
+		dynamoDBManualCreate:      env.Bool("DYNAMODB_MANUAL_CREATE", false),
 		redisAddr:                 env.String("REDIS_ADDR", "localhost:6379"),
 		redisPassword:             env.String("REDIS_PASSWORD", ""),
 		redisKey:                  env.String("REDIS_KEY", "gateboard"),

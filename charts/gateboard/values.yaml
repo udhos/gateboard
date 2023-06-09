@@ -124,6 +124,7 @@ configMapProperties:
   #DYNAMODB_TABLE: gateboard
   #DYNAMODB_REGION: us-east-1
   #DYNAMODB_ROLE_ARN: ""
+  #DYNAMODB_MANUAL_CREATE: "false"
   #REDIS_ADDR: localhost:6379
   #REDIS_PASSWORD: ""
   #REDIS_KEY: gateboard
