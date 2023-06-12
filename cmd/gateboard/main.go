@@ -30,7 +30,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "1.1.0"
+const version = "1.2.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -240,12 +240,13 @@ func pickRepo(sessionName string, config appConfig) repository {
 		return newRepoMem()
 	case "s3":
 		repo, errS3 := newRepoS3(repoS3Options{
-			debug:       config.debug,
-			bucket:      config.s3BucketName,
-			region:      config.s3BucketRegion,
-			prefix:      config.s3Prefix,
-			roleArn:     config.s3RoleArn,
-			sessionName: sessionName,
+			debug:        config.debug,
+			bucket:       config.s3BucketName,
+			region:       config.s3BucketRegion,
+			prefix:       config.s3Prefix,
+			roleArn:      config.s3RoleArn,
+			manualCreate: config.s3ManualCreate,
+			sessionName:  sessionName,
 		})
 		if errS3 != nil {
 			zlog.Fatalf("repo s3: %v", errS3)

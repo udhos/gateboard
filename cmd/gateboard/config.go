@@ -45,6 +45,7 @@ type appConfig struct {
 	s3BucketRegion            string
 	s3Prefix                  string
 	s3RoleArn                 string
+	s3ManualCreate            bool
 	writeToken                bool
 	tokens                    string
 }
@@ -92,6 +93,7 @@ func newConfig(roleSessionName string) appConfig {
 		s3BucketRegion:            env.String("S3_BUCKET_REGION", "us-east-1"),
 		s3Prefix:                  env.String("S3_PREFIX", "gateboard"),
 		s3RoleArn:                 env.String("S3_ROLE_ARN", ""),
+		s3ManualCreate:            env.Bool("S3_MANUAL_CREATE", false),
 		writeToken:                env.Bool("WRITE_TOKEN", false), // require write token in PUT payload
 		tokens:                    env.String("TOKENS", ""),       // preload write tokens from this file "tokens.yaml"
 	}

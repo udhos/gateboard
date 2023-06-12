@@ -134,6 +134,7 @@ configMapProperties:
   #S3_BUCKET_REGION: us-east-1
   #S3_PREFIX: gateboard
   #S3_ROLE_ARN: ""
+  #S3_MANUAL_CREATE: "false"
   #WRITE_TOKEN: "false" # require write token in PUT payload
   #TOKENS: "" # preload write tokens from this file "tokens.yaml"
   #GIN_MODE: release
