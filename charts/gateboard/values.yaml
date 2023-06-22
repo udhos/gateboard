@@ -23,6 +23,18 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# redeploy:
+#
+# 'always': adds a random annotation to Deployment in
+#           order to redeploy the pods whenever the chart is reapplied.
+#
+# 'reconfig': adds annotations with checksums of configurations in
+#             order to redeploy the pods whenever configuration is changed.
+#
+# https://v3.helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
+#
+redeploy: always
+
 podAnnotations:
   "sidecar.istio.io/inject": "true"
   "prometheus.io/scrape": "true"
