@@ -117,7 +117,10 @@ func (s *scannerAWS) list(ctx context.Context, tracer trace.Tracer) []item {
 				me, s.region, s.roleARN, s.accountID, page, errOut)
 			log.Print(msg)
 			traceError(span, msg)
-			continue
+
+			// abort this account/credential,
+			// otherwise we might keep paginating a lot on a broken credential
+			break
 		}
 
 		found += len(output.Items)
