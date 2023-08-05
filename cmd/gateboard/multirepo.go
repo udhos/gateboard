@@ -138,7 +138,7 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 		return repo
 	}
 
-	zlog.Fatalf("%s: unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", me, kind)
+	zlog.Fatalf("%s: unsupported repo type: %s (supported types: mongo, dynamodb, mem, redis, s3)", me, kind)
 
 	return nil
 }
