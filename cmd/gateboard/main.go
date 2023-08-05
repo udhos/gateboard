@@ -30,7 +30,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "1.2.0"
+const version = "1.3.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -41,6 +41,8 @@ type application struct {
 	repo          repository
 	sqsClient     queue
 	config        appConfig
+	repoConf      []repoConfig
+	repoList      []repository
 }
 
 func main() {
@@ -95,6 +97,26 @@ func main() {
 			}
 		}
 		zlog.Infof("preloaded %d tokens from file: %s", len(tokens), app.config.tokens)
+	}
+
+	//
+	// load multirepo config
+	//
+
+	{
+		repoList, errRepo := loadRepoConf(app.config.repoList)
+		if errRepo != nil {
+			zlog.Fatalf("load repo list: %s: %v", app.config.repoList, errRepo)
+		}
+		app.repoConf = repoList
+	}
+
+	log.Printf("repo list: %s: %s", app.config.repoList, toJSON(context.TODO(), app.repoConf))
+
+	for i, conf := range app.repoConf {
+		log.Printf("initializing repository: [%d/%d]: %s", i+1, len(app.repoConf), conf.Kind)
+		r := createRepo(me, conf, app.config.debug)
+		app.repoList = append(app.repoList, r)
 	}
 
 	//

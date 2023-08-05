@@ -14,6 +14,7 @@ type appConfig struct {
 	sqsConsumeBadMessage      bool
 	sqsConsumeInvalidToken    bool
 	TTL                       int
+	repoList                  string
 	repoType                  string
 	mongoURI                  string
 	mongoDatabase             string
@@ -62,6 +63,7 @@ func newConfig(roleSessionName string) appConfig {
 		sqsConsumeBadMessage:      env.Bool("SQS_CONSUME_BAD_MESSAGE", false),
 		sqsConsumeInvalidToken:    env.Bool("SQS_CONSUME_INVALID_TOKEN", true),
 		TTL:                       env.Int("TTL", 300), // seconds
+		repoList:                  env.String("REPO_LIST", "repo.yaml"),
 		repoType:                  env.String("REPO", "mem"),
 		mongoURI:                  env.String("MONGO_URL", "mongodb://localhost:27017"),
 		mongoDatabase:             env.String("MONGO_DATABASE", "gateboard"),

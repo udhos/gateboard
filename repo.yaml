@@ -1,0 +1,28 @@
+- kind: mem
+- kind: mongo
+  mongo:
+    uri: mongodb://localhost:27017/
+    database: gateboard
+    collection: gateboard
+    username: ""
+    password: ""
+    tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
+    min_pool: 1
+- kind: dynamodb
+  dynamodb:
+    table: gateboard
+    region: us-east-1
+    role_arn: ""
+    manual_create: false
+- kind: redis
+  redis:
+    addr: localhost:6379
+    password: ""
+    key: gateboard
+- kind: s3
+  s3:
+    bucket_name: ""
+    bucket_region: us-east-1
+    prefix: gateboard
+    role_arn: ""
+    manual_create: false
