@@ -8,16 +8,16 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func newSpanGin(c *gin.Context, caller string, app *application) (context.Context, trace.Span) {
+func newSpanGin(c *gin.Context, caller string, tracer trace.Tracer) (context.Context, trace.Span) {
 	ctx := c.Request.Context()
-	return newSpan(ctx, caller, app)
+	return newSpan(ctx, caller, tracer)
 }
 
-func newSpan(ctx context.Context, caller string, app *application) (context.Context, trace.Span) {
-	if app.tracer == nil {
+func newSpan(ctx context.Context, caller string, tracer trace.Tracer) (context.Context, trace.Span) {
+	if tracer == nil {
 		return ctx, nil
 	}
-	newCtx, span := app.tracer.Start(ctx, caller)
+	newCtx, span := tracer.Start(ctx, caller)
 	return newCtx, span
 }
 

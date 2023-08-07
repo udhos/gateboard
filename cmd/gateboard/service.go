@@ -11,13 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
+	"go.opentelemetry.io/otel/trace"
 	yaml "gopkg.in/yaml.v3"
 )
 
 func gatewayDump(c *gin.Context, app *application) {
 	const me = "gatewayDump"
 
-	ctx, span := newSpanGin(c, me, app)
+	ctx, span := newSpanGin(c, me, app.tracer)
 	if span != nil {
 		defer span.End()
 	}
@@ -67,14 +68,14 @@ func gatewayDump(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, dump)
 }
 
-func repoGet(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
+func repoGet(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName string) (gateboard.BodyGetReply, error) {
 	// create trace span
-	ctxNew, span := newSpan(ctx, "repoGet", app)
+	ctxNew, span := newSpan(ctx, "repoGet", tracer)
 	if span != nil {
 		defer span.End()
 	}
 
-	body, err := app.repo.get(ctxNew, gatewayName)
+	body, err := repo.get(ctxNew, gatewayName)
 
 	// record error in trace span
 	if err != nil {
@@ -84,14 +85,14 @@ func repoGet(ctx context.Context, app *application, gatewayName string) (gateboa
 	return body, err
 }
 
-func repoPut(ctx context.Context, app *application, gatewayName, gatewayID string) error {
+func repoPut(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName, gatewayID string) error {
 	// create trace span
-	ctxNew, span := newSpan(ctx, "repoPut", app)
+	ctxNew, span := newSpan(ctx, "repoPut", tracer)
 	if span != nil {
 		defer span.End()
 	}
 
-	err := app.repo.put(ctxNew, gatewayName, gatewayID)
+	err := repo.put(ctxNew, gatewayName, gatewayID)
 
 	// record error in trace span
 	if err != nil {
@@ -104,7 +105,7 @@ func repoPut(ctx context.Context, app *application, gatewayName, gatewayID strin
 func gatewayGet(c *gin.Context, app *application) {
 	const me = "gatewayGet"
 
-	ctx, span := newSpanGin(c, me, app)
+	ctx, span := newSpanGin(c, me, app.tracer)
 	if span != nil {
 		defer span.End()
 	}
@@ -131,7 +132,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	begin := time.Now()
 
-	out, errID := repoGet(ctx, app, gatewayName)
+	out, errID := repoGet(ctx, app.tracer, app.repo, gatewayName)
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
@@ -169,7 +170,7 @@ func gatewayGet(c *gin.Context, app *application) {
 func gatewayPut(c *gin.Context, app *application) {
 	const me = "gatewayPut"
 
-	ctx, span := newSpanGin(c, me, app)
+	ctx, span := newSpanGin(c, me, app.tracer)
 	if span != nil {
 		defer span.End()
 	}
@@ -247,7 +248,7 @@ func gatewayPut(c *gin.Context, app *application) {
 
 		begin := time.Now()
 
-		errPut := repoPut(ctx, app, gatewayName, gatewayID)
+		errPut := repoPut(ctx, app.tracer, app.repo, gatewayName, gatewayID)
 
 		elap := time.Since(begin)
 
@@ -295,7 +296,7 @@ func invalidToken(ctx context.Context, app *application, gatewayName, token stri
 		return true // empty token is always invalid
 	}
 
-	result, errID := repoGet(ctx, app, gatewayName)
+	result, errID := repoGet(ctx, app.tracer, app.repo, gatewayName)
 	if errID != nil {
 		zlog.CtxErrorf(ctx, "%s: error: %v", me, errID)
 		return true
