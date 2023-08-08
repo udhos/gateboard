@@ -88,12 +88,6 @@ func main() {
 	queueURL := app.config.queueURL
 
 	//
-	// pick repo type
-	//
-
-	app.repo = pickRepo(me, app.config)
-
-	//
 	// preload write tokens
 	//
 
@@ -206,72 +200,6 @@ func main() {
 	//
 
 	shutdown(app)
-}
-
-func pickRepo(sessionName string, config appConfig) repository {
-
-	switch config.repoType {
-	case "mongo":
-		repo, errMongo := newRepoMongo(repoMongoOptions{
-			debug:      config.debug,
-			URI:        config.mongoURI,
-			database:   config.mongoDatabase,
-			collection: config.mongoCollection,
-			username:   config.mongoUsername,
-			password:   config.mongoPassword,
-			tlsCAFile:  config.mongoTLSCaFile,
-			minPool:    config.mongoMinPool,
-			timeout:    time.Second * 10,
-		})
-		if errMongo != nil {
-			zlog.Fatalf("repo mongo: %v", errMongo)
-		}
-		return repo
-	case "dynamodb":
-		repo, errDynamo := newRepoDynamo(repoDynamoOptions{
-			debug:        config.debug,
-			table:        config.dynamoDBTable,
-			region:       config.dynamoDBRegion,
-			roleArn:      config.dynamoDBRoleARN,
-			manualCreate: config.dynamoDBManualCreate,
-			sessionName:  sessionName,
-		})
-		if errDynamo != nil {
-			zlog.Fatalf("repo dynamodb: %v", errDynamo)
-		}
-		return repo
-	case "redis":
-		repo, errRedis := newRepoRedis(repoRedisOptions{
-			debug:    config.debug,
-			addr:     config.redisAddr,
-			password: config.redisPassword,
-			key:      config.redisKey,
-		})
-		if errRedis != nil {
-			zlog.Fatalf("repo redis: %v", errRedis)
-		}
-		return repo
-	case "mem":
-		return newRepoMem()
-	case "s3":
-		repo, errS3 := newRepoS3(repoS3Options{
-			debug:        config.debug,
-			bucket:       config.s3BucketName,
-			region:       config.s3BucketRegion,
-			prefix:       config.s3Prefix,
-			roleArn:      config.s3RoleArn,
-			manualCreate: config.s3ManualCreate,
-			sessionName:  sessionName,
-		})
-		if errS3 != nil {
-			zlog.Fatalf("repo s3: %v", errS3)
-		}
-		return repo
-	}
-
-	zlog.Fatalf("unsuppported repo type: %s (supported types: mongo, dynamodb, mem)", config.repoType)
-
-	return nil
 }
 
 func initApplication(app *application, addr string) {
