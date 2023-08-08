@@ -14,6 +14,60 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// repoDumpMultiple returns merged contents from all repositories.
+func repoDumpMultiple(ctx context.Context, app *application) (repoDump, error) {
+	const me = "repoDumpMultiple"
+
+	// create trace span
+	ctxNew, span := newSpan(ctx, me, app.tracer)
+	if span != nil {
+		defer span.End()
+	}
+
+	merge := map[string]interface{}{}
+	var errLast error
+
+	for count := 1; count <= len(app.repoList); count++ {
+		r := app.nextRepo()
+		repo := app.repoList[r]
+
+		d, err := repo.dump(ctxNew)
+
+		if err != nil {
+			errLast = err
+			traceError(span, err.Error())
+		}
+
+		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
+			"%s: attempt=%d/%d repo=%d error:%v",
+			me, count, len(app.repoList), r, err)
+
+		// merge dump
+		for _, i := range d {
+			name := i["gateway_name"].(string)
+
+			item := map[string]interface{}{
+				"gateway_name": name,
+				"gateway_id":   i["gateway_id"],
+				"changes":      i["changes"],
+				"last_update":  i["last_update"],
+				"token":        i["token"],
+			}
+
+			merge[name] = item
+		}
+	}
+
+	var dump repoDump
+
+	for _, v := range merge {
+		vv := v.(map[string]interface{})
+		dump = append(dump, vv)
+	}
+
+	return dump, errLast
+}
+
 func gatewayDump(c *gin.Context, app *application) {
 	const me = "gatewayDump"
 
@@ -36,7 +90,7 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	var out output
 
-	dump, errDump := app.repo.dump(ctx)
+	dump, errDump := repoDumpMultiple(ctx, app)
 
 	elap := time.Since(begin)
 
@@ -67,25 +121,6 @@ func gatewayDump(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, dump)
 }
 
-/*
-func repoGet(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName string) (gateboard.BodyGetReply, error) {
-	// create trace span
-	ctxNew, span := newSpan(ctx, "repoGet", tracer)
-	if span != nil {
-		defer span.End()
-	}
-
-	body, err := repo.get(ctxNew, gatewayName)
-
-	// record error in trace span
-	if err != nil {
-		traceError(span, err.Error())
-	}
-
-	return body, err
-}
-*/
-
 // repoGetMultiple returns the first non-errored result from repository list.
 func repoGetMultiple(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoGetMultiple"
@@ -111,7 +146,8 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 
 		body, err = repo.get(ctxNew, gatewayName)
 
-		zlog.CtxDebugf(ctxNew, app.config.debug, "%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
+		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
+			"%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
 			me, count, len(app.repoList), r, gatewayName, err)
 
 		switch err {
@@ -124,25 +160,6 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 
 	return body, err
 }
-
-/*
-func repoPut(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName, gatewayID string) error {
-	// create trace span
-	ctxNew, span := newSpan(ctx, "repoPut", tracer)
-	if span != nil {
-		defer span.End()
-	}
-
-	err := repo.put(ctxNew, gatewayName, gatewayID)
-
-	// record error in trace span
-	if err != nil {
-		traceError(span, err.Error())
-	}
-
-	return err
-}
-*/
 
 // repoPutMultiple saves in all respositories.
 func repoPutMultiple(ctx context.Context, app *application, gatewayName, gatewayID string) error {
@@ -172,7 +189,8 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 			traceError(span, err.Error())
 		}
 
-		zlog.CtxDebugf(ctxNew, app.config.debug, "%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
+		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
+			"%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
 			me, count, len(app.repoList), r, gatewayName, err)
 	}
 

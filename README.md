@@ -79,7 +79,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [X] Zap logging
 - [ ] Cache service
 - [X] Multiple repository - basic tests
-- [ ] Multiple repository - dump
+- [X] Multiple repository - dump
 - [ ] Multiple repository - multirepo tests
 
 # Services
