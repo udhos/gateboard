@@ -197,9 +197,5 @@ func (r *repoRedis) putToken(ctx context.Context, gatewayName, token string) err
 
 	fieldToken := field(gatewayName, "token")
 
-	if errHSetToken := r.redisClient.HSet(ctx, r.options.key, fieldToken, token).Err(); errHSetToken != nil {
-		return errHSetToken
-	}
-
-	return nil
+	return r.redisClient.HSet(ctx, r.options.key, fieldToken, token).Err()
 }
