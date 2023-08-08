@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
@@ -43,6 +44,18 @@ type application struct {
 	config        appConfig
 	repoConf      []repoConfig
 	repoList      []repository
+	repoIndex     int
+	mutex         sync.Mutex
+}
+
+func (app *application) nextRepo() int {
+	var i int
+	app.mutex.Lock()
+	app.repoIndex++
+	app.repoIndex %= len(app.repoList)
+	i = app.repoIndex
+	app.mutex.Unlock()
+	return i
 }
 
 func main() {
@@ -89,34 +102,14 @@ func main() {
 		if errTokens != nil {
 			zlog.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
 		}
-		for gw, id := range tokens {
-			errPut := app.repo.putToken(context.TODO(), gw, id)
+		for gw, tk := range tokens {
+			errPut := repoPutTokenMultiple(context.TODO(), app, gw, tk)
 			if errPut != nil {
 				zlog.Fatalf("error preloading token for gateway '%s' into repo: %v",
 					gw, errPut)
 			}
 		}
 		zlog.Infof("preloaded %d tokens from file: %s", len(tokens), app.config.tokens)
-	}
-
-	//
-	// load multirepo config
-	//
-
-	{
-		repoList, errRepo := loadRepoConf(app.config.repoList)
-		if errRepo != nil {
-			zlog.Fatalf("load repo list: %s: %v", app.config.repoList, errRepo)
-		}
-		app.repoConf = repoList
-	}
-
-	log.Printf("repo list: %s: %s", app.config.repoList, toJSON(context.TODO(), app.repoConf))
-
-	for i, conf := range app.repoConf {
-		log.Printf("initializing repository: [%d/%d]: %s", i+1, len(app.repoConf), conf.Kind)
-		r := createRepo(me, conf, app.config.debug)
-		app.repoList = append(app.repoList, r)
 	}
 
 	//
@@ -283,7 +276,29 @@ func pickRepo(sessionName string, config appConfig) repository {
 
 func initApplication(app *application, addr string) {
 
+	const me = "initApplication"
+
 	initMetrics(app.config.metricsNamespace, app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
+
+	//
+	// load multirepo config
+	//
+
+	{
+		repoList, errRepo := loadRepoConf(app.config.repoList)
+		if errRepo != nil {
+			zlog.Fatalf("load repo list: %s: %v", app.config.repoList, errRepo)
+		}
+		app.repoConf = repoList
+	}
+
+	log.Printf("repo list: %s: %s", app.config.repoList, toJSON(context.TODO(), app.repoConf))
+
+	for i, conf := range app.repoConf {
+		log.Printf("initializing repository: [%d/%d]: %s", i+1, len(app.repoConf), conf.Kind)
+		r := createRepo(me, conf, app.config.debug)
+		app.repoList = append(app.repoList, r)
+	}
 
 	//
 	// register application routes

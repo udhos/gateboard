@@ -178,7 +178,7 @@ func sqsListener(app *application) {
 				}
 			}
 
-			errPut := app.repo.put(context.TODO(), put.GatewayName, put.GatewayID)
+			errPut := repoPutMultiple(context.TODO(), app, put.GatewayName, put.GatewayID)
 			if errPut != nil {
 				zlog.Errorf("%s: gateway_name=[%s] gateway_id=[%s] MessageId=%s repo error: %v",
 					me, put.GatewayName, put.GatewayID, msg.id(), errPut)

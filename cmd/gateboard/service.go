@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
-	"go.opentelemetry.io/otel/trace"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -68,6 +67,7 @@ func gatewayDump(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, dump)
 }
 
+/*
 func repoGet(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName string) (gateboard.BodyGetReply, error) {
 	// create trace span
 	ctxNew, span := newSpan(ctx, "repoGet", tracer)
@@ -84,7 +84,48 @@ func repoGet(ctx context.Context, tracer trace.Tracer, repo repository, gatewayN
 
 	return body, err
 }
+*/
 
+// repoGetMultiple returns the first non-errored result from repository list.
+func repoGetMultiple(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
+	const me = "repoGetMultiple"
+
+	// create trace span
+	ctxNew, span := newSpan(ctx, me, app.tracer)
+	if span != nil {
+		defer span.End()
+	}
+
+	var body gateboard.BodyGetReply
+	var err error
+
+	if len(app.repoList) < 1 {
+		err = fmt.Errorf("%s: empty repo list", me)
+		traceError(span, err.Error())
+		return body, err
+	}
+
+	for count := 1; count <= len(app.repoList); count++ {
+		r := app.nextRepo()
+		repo := app.repoList[r]
+
+		body, err = repo.get(ctxNew, gatewayName)
+
+		zlog.CtxDebugf(ctxNew, app.config.debug, "%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
+			me, count, len(app.repoList), r, gatewayName, err)
+
+		switch err {
+		case nil:
+			return body, nil
+		default:
+			traceError(span, err.Error())
+		}
+	}
+
+	return body, err
+}
+
+/*
 func repoPut(ctx context.Context, tracer trace.Tracer, repo repository, gatewayName, gatewayID string) error {
 	// create trace span
 	ctxNew, span := newSpan(ctx, "repoPut", tracer)
@@ -100,6 +141,64 @@ func repoPut(ctx context.Context, tracer trace.Tracer, repo repository, gatewayN
 	}
 
 	return err
+}
+*/
+
+// repoPutMultiple saves in all respositories.
+func repoPutMultiple(ctx context.Context, app *application, gatewayName, gatewayID string) error {
+	const me = "repoPutMultiple"
+
+	// create trace span
+	ctxNew, span := newSpan(ctx, "repoPut", app.tracer)
+	if span != nil {
+		defer span.End()
+	}
+
+	if len(app.repoList) < 1 {
+		err := fmt.Errorf("%s: empty repo list", me)
+		traceError(span, err.Error())
+		return err
+	}
+
+	var errLast error
+
+	for count := 1; count <= len(app.repoList); count++ {
+		r := app.nextRepo()
+		repo := app.repoList[r]
+
+		err := repo.put(ctxNew, gatewayName, gatewayID)
+		if err != nil {
+			errLast = err
+			traceError(span, err.Error())
+		}
+
+		zlog.CtxDebugf(ctxNew, app.config.debug, "%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
+			me, count, len(app.repoList), r, gatewayName, err)
+	}
+
+	return errLast
+}
+
+// repoPutTokenMultiple saves token in all respositories.
+func repoPutTokenMultiple(ctx context.Context, app *application, gatewayName, token string) error {
+	const me = "repoPutTokenMultiple"
+
+	var errLast error
+
+	for count := 1; count <= len(app.repoList); count++ {
+		r := app.nextRepo()
+		repo := app.repoList[r]
+
+		err := repo.putToken(ctx, gatewayName, token)
+		if err != nil {
+			errLast = err
+		}
+
+		zlog.CtxDebugf(ctx, app.config.debug, "%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
+			me, count, len(app.repoList), r, gatewayName, err)
+	}
+
+	return errLast
 }
 
 func gatewayGet(c *gin.Context, app *application) {
@@ -132,7 +231,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	begin := time.Now()
 
-	out, errID := repoGet(ctx, app.tracer, app.repo, gatewayName)
+	out, errID := repoGetMultiple(ctx, app, gatewayName)
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
@@ -248,7 +347,7 @@ func gatewayPut(c *gin.Context, app *application) {
 
 		begin := time.Now()
 
-		errPut := repoPut(ctx, app.tracer, app.repo, gatewayName, gatewayID)
+		errPut := repoPutMultiple(ctx, app, gatewayName, gatewayID)
 
 		elap := time.Since(begin)
 
@@ -296,7 +395,7 @@ func invalidToken(ctx context.Context, app *application, gatewayName, token stri
 		return true // empty token is always invalid
 	}
 
-	result, errID := repoGet(ctx, app.tracer, app.repo, gatewayName)
+	result, errID := repoGetMultiple(ctx, app, gatewayName)
 	if errID != nil {
 		zlog.CtxErrorf(ctx, "%s: error: %v", me, errID)
 		return true

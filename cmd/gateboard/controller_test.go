@@ -79,8 +79,8 @@ func TestController(t *testing.T) {
 	testController(t, newTestApp(false), testTable)
 	testController(t, newTestApp(true), testWriteTokenNoToken)
 	app := newTestApp(true)
-	app.repo.putToken(context.TODO(), "gw1", "good_token")
-	app.repo.putToken(context.TODO(), "http://a:5555/b/c", "good_token")
+	repoPutTokenMultiple(context.TODO(), app, "gw1", "good_token")
+	repoPutTokenMultiple(context.TODO(), app, "http://a:5555/b/c", "good_token")
 	testController(t, app, testWriteTokenWithToken)
 }
 
@@ -130,11 +130,14 @@ func newTestApp(writeToken bool) *application {
 
 	const me = "gateboard_app_test"
 
+	os.Setenv("REPO_LIST", "testdata/repo_mem.yaml")
+
 	app := &application{
 		me:     me,
-		repo:   newRepoMem(),
 		config: newConfig(me),
 	}
+
+	app.repoConf = []repoConfig{{Kind: "mem"}}
 
 	app.config.writeToken = writeToken
 
