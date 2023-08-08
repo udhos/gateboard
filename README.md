@@ -78,9 +78,13 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [ ] User guide
 - [X] Zap logging
 - [ ] Cache service
-- [X] Multiple repository - basic tests
-- [X] Multiple repository - dump
-- [ ] Multiple repository - multirepo tests
+- [X] Multiple repositories - basic tests
+- [X] Multiple repositories - dump
+- [ ] Multiple repositories - multirepo tests
+- [ ] Multiple repositories - README
+- [ ] Multiple repositories - secrets
+- [ ] Multiple repositories - metrics
+- [ ] Multiple repositories - helm chart
 
 # Services
 
@@ -101,11 +105,45 @@ CGO_ENABLED=0 go install ./...
 # Supported Repositories (Persistent Storage)
 
 ```
-export REPO=mem      ;# testing-only pseudo-storage
-export REPO=mongo    ;# MongoDB
-export REPO=redis    ;# redis
-export REPO=dynamodb ;# DynamoDB
-export REPO=s3       ;# S3
+# Available repo kinds:
+#
+# mem:      testing-only pseudo-storage
+# mongo:    MongoDB
+# redis:    redis
+# dynamodb: DynamoDB
+# s3:       S3
+
+export REPO_LIST=repo.yaml
+
+$ cat repo.yaml
+- kind: mem
+- kind: mongo
+  mongo:
+    uri: mongodb://localhost:27017/
+    database: gateboard
+    collection: gateboard
+    username: ""
+    password: ""
+    tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
+    min_pool: 1
+- kind: dynamodb
+  dynamodb:
+    table: gateboard
+    region: us-east-1
+    role_arn: ""
+    manual_create: false
+- kind: redis
+  redis:
+    addr: localhost:6379
+    password: ""
+    key: gateboard
+- kind: s3
+  s3:
+    bucket_name: ""
+    bucket_region: us-east-1
+    prefix: gateboard
+    role_arn: ""
+    manual_create: false
 ```
 
 # Testing repositories
@@ -243,7 +281,7 @@ Discovery writes directly to server.
 
 Start server.
 
-    export REPO=mem
+    mem
     gateboard
 
 Run discovery.
@@ -263,7 +301,7 @@ Discovery writes to webhook that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    export REPO=mem
+    mem
     gateboard
 
 Run discovery.
@@ -285,7 +323,7 @@ Discovery writes to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    export REPO=mem
+    mem
     gateboard
 
 Run discovery.
@@ -306,7 +344,7 @@ Discovery writes to SNS topic that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    export REPO=mem
+    mem
     gateboard
 
 Run discovery.
@@ -327,7 +365,7 @@ Discovery writes to lambda function that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    export REPO=mem
+    mem
     gateboard
 
 Run discovery.
@@ -382,7 +420,7 @@ Example: repository_requests_seconds_bucket{method="get",status="success",le="0.
 ./run-jaeger-local.sh
 
 # start gateboard
-export REPO=mem
+mem
 export JAEGER_URL=http://localhost:14268/api/traces
 export OTEL_TRACES_SAMPLER=parentbased_always_on
 export OTEL_SERVICE_NAME=mynamespace.gateboard
