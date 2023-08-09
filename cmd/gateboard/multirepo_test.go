@@ -119,7 +119,5 @@ func newTestAppMultirepo(repo string) *application {
 
 	initApplication(app, ":8080")
 
-	//log.Fatalf("################ %v", app.repoConf)
-
 	return app
 }
