@@ -227,7 +227,7 @@ func initApplication(app *application, addr string) {
 
 	for i, conf := range app.repoConf {
 		log.Printf("initializing repository: [%d/%d]: %s", i+1, len(app.repoConf), conf.Kind)
-		r := createRepo(me, conf, app.config.debug)
+		r := createRepo(me, app.config.secretRoleArn, conf, app.config.debug)
 		app.repoList = append(app.repoList, r)
 	}
 

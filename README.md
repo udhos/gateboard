@@ -82,7 +82,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [X] Multiple repositories - dump
 - [X] Multiple repositories - multirepo tests
 - [X] Multiple repositories - README
-- [ ] Multiple repositories - secrets
+- [X] Multiple repositories - secrets
 - [X] Multiple repositories - metrics
 - [ ] Multiple repositories - helm chart
 
@@ -125,7 +125,7 @@ $ cat repo.yaml
     database: gateboard
     collection: gateboard
     username: ""
-    password: ""
+    #password: "aws-parameterstore:us-east-1:/mongo/cluster1/password" # see https://github.com/udhos/boilerplate
     tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
     min_pool: 1
 - kind: dynamodb
@@ -139,7 +139,7 @@ $ cat repo.yaml
   name: redis1
   redis:
     addr: localhost:6379
-    password: ""
+    #password: "aws-parameterstore:us-east-1:/redis/cluster2/password" # see https://github.com/udhos/boilerplate
     key: gateboard
 - kind: s3
   name: s3one

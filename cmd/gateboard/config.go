@@ -1,12 +1,15 @@
 package main
 
 import (
+	"log"
+	"os"
 	"time"
 
 	"github.com/udhos/gateboard/gateboard"
 )
 
 type appConfig struct {
+	secretRoleArn             string
 	logDriver                 string
 	debug                     bool
 	queueURL                  string
@@ -36,6 +39,7 @@ func newConfig(roleSessionName string) appConfig {
 	env := gateboard.NewEnv(roleSessionName)
 
 	return appConfig{
+		secretRoleArn:             envString("SECRET_ROLE_ARN", ""),
 		logDriver:                 env.String("LOG_DRIVER", ""), // anything other than "zap" enables gin default logger
 		debug:                     env.Bool("DEBUG", true),
 		queueURL:                  env.String("QUEUE_URL", ""),
@@ -59,4 +63,17 @@ func newConfig(roleSessionName string) appConfig {
 		writeToken:                env.Bool("WRITE_TOKEN", false), // require write token in PUT payload
 		tokens:                    env.String("TOKENS", ""),       // preload write tokens from this file "tokens.yaml"
 	}
+}
+
+// envString extracts string from env var.
+// It returns the provided defaultValue if the env var is empty.
+// The string returned is also recorded in logs.
+func envString(name string, defaultValue string) string {
+	str := os.Getenv(name)
+	if str != "" {
+		log.Printf("%s=[%s] using %s=%s default=%s", name, str, name, str, defaultValue)
+		return str
+	}
+	log.Printf("%s=[%s] using %s=%s default=%s", name, str, name, defaultValue, defaultValue)
+	return defaultValue
 }

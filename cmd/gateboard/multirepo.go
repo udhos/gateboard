@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/udhos/boilerplate/secret"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"gopkg.in/yaml.v3"
 )
@@ -80,9 +81,14 @@ func loadRepoConf(input string) ([]repoConfig, error) {
 	return conf, nil
 }
 
-func createRepo(sessionName string, config repoConfig, debug bool) repository {
+func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool) repository {
 
 	const me = "createRepo"
+
+	sec := secret.New(secret.Options{
+		RoleSessionName: sessionName,
+		RoleArn:         secretRoleArn,
+	})
 
 	kind := config.Kind
 	metricRepoName := kind + ":" + config.Name
@@ -96,7 +102,7 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 			database:       config.Mongo.Database,
 			collection:     config.Mongo.Collection,
 			username:       config.Mongo.Username,
-			password:       config.Mongo.Password,
+			password:       sec.Retrieve(config.Mongo.Password),
 			tlsCAFile:      config.Mongo.TLSCaFile,
 			minPool:        config.Mongo.MinPool,
 			timeout:        time.Second * 10,
@@ -124,7 +130,7 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 			metricRepoName: metricRepoName,
 			debug:          debug,
 			addr:           config.Redis.Addr,
-			password:       config.Redis.Password,
+			password:       sec.Retrieve(config.Redis.Password),
 			key:            config.Redis.Key,
 		})
 		if errRedis != nil {
