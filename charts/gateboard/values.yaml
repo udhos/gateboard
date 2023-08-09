@@ -107,6 +107,7 @@ podHealthCheck:
 # See: https://stackoverflow.com/questions/72816925/helm-templating-in-configmap-for-values-yaml
 #
 configMapProperties:
+  #SECRET_ROLE_ARN: ""
   LOG_DRIVER: zap # anything other than "zap" enables gin default logger
   #DEBUG: true
   #QUEUE_URL: ""
@@ -114,15 +115,7 @@ configMapProperties:
   #SQS_CONSUME_BAD_MESSAGE: "false"
   #SQS_CONSUME_INVALID_TOKEN: "true"
   #TTL: "300"
-  #REPO: server
-  REPO: mem # options: mem | mongo | dynamodb | redis | s3
-  #MONGO_URL: mongodb://localhost:27017
-  #MONGO_DATABASE: gateboard
-  #MONGO_COLLECTION: gateboard
-  #MONGO_USERNAME: ""
-  #MONGO_PASSWORD: ""
-  #MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
-  #MONGO_MIN_POOL: "1"
+  REPO_LIST: /etc/gateboard/repo.yaml
   #LISTEN_ADDR: ":8080"
   #HEALTH_ADDR: ":8888"
   #HEALTH_PATH: /health
@@ -133,20 +126,8 @@ configMapProperties:
   #METRICS_BUCKETS_LATENCY_HTTP: "0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5, 10"
   #METRICS_BUCKETS_LATENCY_REPO: "0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5"
   #JAEGER_URL: http://jaeger-collector:14268/api/traces
-  #DYNAMODB_TABLE: gateboard
-  #DYNAMODB_REGION: us-east-1
-  #DYNAMODB_ROLE_ARN: ""
-  #DYNAMODB_MANUAL_CREATE: "false"
-  #REDIS_ADDR: localhost:6379
-  #REDIS_PASSWORD: ""
-  #REDIS_KEY: gateboard
   #WRITE_RETRY: "3"
   #WRITE_RETRY_INTERVAL: 1s
-  #S3_BUCKET_NAME: ""
-  #S3_BUCKET_REGION: us-east-1
-  #S3_PREFIX: gateboard
-  #S3_ROLE_ARN: ""
-  #S3_MANUAL_CREATE: "false"
   #WRITE_TOKEN: "false" # require write token in PUT payload
   #TOKENS: "" # preload write tokens from this file "tokens.yaml"
   #GIN_MODE: release
@@ -173,3 +154,57 @@ configDir:
   mongo-tls-ca-bundle.pem: |
     -----BEGIN CERTIFICATE-----
     -----END CERTIFICATE-----
+  repo.yaml: |
+    # Example repo.yaml
+    # Edit this file to suit your use case.
+    # Keep only the repositories you actually need.
+    #
+    # Available repo kinds:
+    #
+    # mem:      testing-only pseudo-storage
+    # mongo:    MongoDB
+    # redis:    redis
+    # dynamodb: DynamoDB
+    # s3:       S3
+    #
+    # Use env var REPO_LIST to set the filename: export REPO_LIST=repo.yaml
+
+    - kind: mem
+      name: mem1 # name is used for metrics
+    - kind: mem
+      name: mem2 # pick distinct names for multiple instances of the same kind
+
+    - kind: mongo
+      name: mongo1 # name is used for metrics
+      mongo:
+        uri: mongodb://localhost:27017/
+        database: gateboard
+        collection: gateboard
+        username: ""
+        #password: "aws-parameterstore:us-east-1:/mongo/cluster1/password" # see https://github.com/udhos/boilerplate
+        #tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
+        min_pool: 1
+
+    - kind: dynamodb
+      name: dynamo1 # name is used for metrics
+      dynamodb:
+        table: gateboard
+        region: us-east-1
+        role_arn: ""
+        manual_create: false # if false, gateboard will create the table automatically
+
+    - kind: redis
+      name: redis1 # name is used for metrics
+      redis:
+        addr: localhost:6379
+        #password: "aws-parameterstore:us-east-1:/redis/cluster3/password" # see https://github.com/udhos/boilerplate
+        key: gateboard
+
+    - kind: s3
+      name: s3one # name is used for metrics
+      s3:
+        bucket_name: ""
+        bucket_region: us-east-1
+        prefix: gateboard
+        role_arn: ""
+        manual_create: false # if false, gateboard will create the bucket automatically
