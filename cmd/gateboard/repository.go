@@ -12,6 +12,7 @@ type repository interface {
 	put(ctx context.Context, gatewayName, gatewayID string) error
 	dump(ctx context.Context) (repoDump, error)
 	putToken(ctx context.Context, gatewayName, token string) error
+	repoName() string
 }
 
 type repoDump []map[string]interface{}

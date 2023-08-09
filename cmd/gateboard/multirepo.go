@@ -12,6 +12,7 @@ import (
 
 type repoConfig struct {
 	Kind     string          `json:"kind"               yaml:"kind"` // mem | mongo | redis | dynamodb | s3
+	Name     string          `json:"name"               yaml:"name"`
 	Mongo    *mongoConfig    `json:"mongo,omitempty"    yaml:"mongo,omitempty"`
 	DynamoDB *dynamoDBConfig `json:"dynamodb,omitempty" yaml:"dynamodb,omitempty"`
 	Redis    *redisConfig    `json:"redis,omitempty"    yaml:"redis,omitempty"`
@@ -78,19 +79,21 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 	const me = "createRepo"
 
 	kind := config.Kind
+	metricRepoName := kind + ":" + config.Name
 
 	switch kind {
 	case "mongo":
 		repo, errMongo := newRepoMongo(repoMongoOptions{
-			debug:      debug,
-			URI:        config.Mongo.URI,
-			database:   config.Mongo.Database,
-			collection: config.Mongo.Collection,
-			username:   config.Mongo.Username,
-			password:   config.Mongo.Password,
-			tlsCAFile:  config.Mongo.TLSCaFile,
-			minPool:    config.Mongo.MinPool,
-			timeout:    time.Second * 10,
+			metricRepoName: metricRepoName,
+			debug:          debug,
+			URI:            config.Mongo.URI,
+			database:       config.Mongo.Database,
+			collection:     config.Mongo.Collection,
+			username:       config.Mongo.Username,
+			password:       config.Mongo.Password,
+			tlsCAFile:      config.Mongo.TLSCaFile,
+			minPool:        config.Mongo.MinPool,
+			timeout:        time.Second * 10,
 		})
 		if errMongo != nil {
 			zlog.Fatalf("%s: repo mongo: %v", me, errMongo)
@@ -98,12 +101,13 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 		return repo
 	case "dynamodb":
 		repo, errDynamo := newRepoDynamo(repoDynamoOptions{
-			debug:        debug,
-			table:        config.DynamoDB.Table,
-			region:       config.DynamoDB.Region,
-			roleArn:      config.DynamoDB.RoleArn,
-			manualCreate: config.DynamoDB.ManualCreate,
-			sessionName:  sessionName,
+			metricRepoName: metricRepoName,
+			debug:          debug,
+			table:          config.DynamoDB.Table,
+			region:         config.DynamoDB.Region,
+			roleArn:        config.DynamoDB.RoleArn,
+			manualCreate:   config.DynamoDB.ManualCreate,
+			sessionName:    sessionName,
 		})
 		if errDynamo != nil {
 			zlog.Fatalf("%s: repo dynamodb: %v", me, errDynamo)
@@ -111,26 +115,30 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 		return repo
 	case "redis":
 		repo, errRedis := newRepoRedis(repoRedisOptions{
-			debug:    debug,
-			addr:     config.Redis.Addr,
-			password: config.Redis.Password,
-			key:      config.Redis.Key,
+			metricRepoName: metricRepoName,
+			debug:          debug,
+			addr:           config.Redis.Addr,
+			password:       config.Redis.Password,
+			key:            config.Redis.Key,
 		})
 		if errRedis != nil {
 			zlog.Fatalf("%s: repo redis: %v", me, errRedis)
 		}
 		return repo
 	case "mem":
-		return newRepoMem()
+		return newRepoMem(repoMemOptions{
+			metricRepoName: metricRepoName,
+		})
 	case "s3":
 		repo, errS3 := newRepoS3(repoS3Options{
-			debug:        debug,
-			bucket:       config.S3.BucketName,
-			region:       config.S3.BucketRegion,
-			prefix:       config.S3.Prefix,
-			roleArn:      config.S3.RoleArn,
-			manualCreate: config.S3.ManualCreate,
-			sessionName:  sessionName,
+			metricRepoName: metricRepoName,
+			debug:          debug,
+			bucket:         config.S3.BucketName,
+			region:         config.S3.BucketRegion,
+			prefix:         config.S3.Prefix,
+			roleArn:        config.S3.RoleArn,
+			manualCreate:   config.S3.ManualCreate,
+			sessionName:    sessionName,
 		})
 		if errS3 != nil {
 			zlog.Fatalf("%s: repo s3: %v", me, errS3)

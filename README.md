@@ -83,7 +83,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [ ] Multiple repositories - multirepo tests
 - [X] Multiple repositories - README
 - [ ] Multiple repositories - secrets
-- [ ] Multiple repositories - metrics
+- [X] Multiple repositories - metrics
 - [ ] Multiple repositories - helm chart
 
 # Services

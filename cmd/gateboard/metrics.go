@@ -20,14 +20,14 @@ type metrics struct {
 	latencyRepo   *prometheus.HistogramVec
 }
 
-func recordRepositoryLatency(method, status string, elapsed time.Duration) {
+func recordRepositoryLatency(method, status, repo string, elapsed time.Duration) {
 	sec := float64(elapsed) / float64(time.Second)
-	metric.latencyRepo.WithLabelValues(method, status).Observe(sec)
+	metric.latencyRepo.WithLabelValues(method, status, repo).Observe(sec)
 }
 
 var (
 	dimensionsSpring     = []string{"method", "status", "uri"}
-	dimensionsRepository = []string{"method", "status"}
+	dimensionsRepository = []string{"method", "status", "repo"}
 	metric               *metrics
 )
 

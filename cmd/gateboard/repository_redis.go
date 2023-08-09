@@ -13,10 +13,11 @@ import (
 )
 
 type repoRedisOptions struct {
-	debug    bool
-	addr     string
-	password string
-	key      string
+	metricRepoName string // kind:name
+	debug          bool
+	addr           string
+	password       string
+	key            string
 }
 
 type repoRedis struct {
@@ -37,6 +38,10 @@ func newRepoRedis(opt repoRedisOptions) (*repoRedis, error) {
 	}
 
 	return r, nil
+}
+
+func (r *repoRedis) repoName() string {
+	return r.options.metricRepoName
 }
 
 func (r *repoRedis) dropDatabase() error {

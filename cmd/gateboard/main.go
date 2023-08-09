@@ -215,7 +215,10 @@ func initApplication(app *application, addr string) {
 	{
 		repoList, errRepo := loadRepoConf(app.config.repoList)
 		if errRepo != nil {
-			zlog.Fatalf("load repo list: %s: %v", app.config.repoList, errRepo)
+			zlog.Fatalf("load repo list: error: %s: %v", app.config.repoList, errRepo)
+		}
+		if len(repoList) < 1 {
+			zlog.Fatalf("load repo list: empty: %s", app.config.repoList)
 		}
 		app.repoConf = repoList
 	}

@@ -22,15 +22,16 @@ import (
 //
 
 type repoMongoOptions struct {
-	debug      bool
-	URI        string
-	database   string
-	collection string
-	username   string
-	password   string
-	tlsCAFile  string
-	minPool    uint64
-	timeout    time.Duration
+	metricRepoName string // kind:name
+	debug          bool
+	URI            string
+	database       string
+	collection     string
+	username       string
+	password       string
+	tlsCAFile      string
+	minPool        uint64
+	timeout        time.Duration
 }
 
 type repoMongo struct {
@@ -94,6 +95,10 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	}
 
 	return r, nil
+}
+
+func (r *repoMongo) repoName() string {
+	return r.options.metricRepoName
 }
 
 func (r *repoMongo) dropDatabase() error {

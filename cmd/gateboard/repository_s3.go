@@ -23,13 +23,14 @@ import (
 )
 
 type repoS3Options struct {
-	bucket       string
-	region       string
-	prefix       string
-	roleArn      string
-	sessionName  string
-	debug        bool
-	manualCreate bool
+	metricRepoName string // kind:name
+	bucket         string
+	region         string
+	prefix         string
+	roleArn        string
+	sessionName    string
+	debug          bool
+	manualCreate   bool
 }
 
 type repoS3 struct {
@@ -85,6 +86,10 @@ func (r *repoS3) createBucket() {
 	}
 
 	zlog.Debugf(r.options.debug, "%s: bucket created: %s", me, r.options.bucket)
+}
+
+func (r *repoS3) repoName() string {
+	return r.options.metricRepoName
 }
 
 func (r *repoS3) dropDatabase() error {

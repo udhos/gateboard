@@ -19,12 +19,13 @@ import (
 )
 
 type repoDynamoOptions struct {
-	table        string
-	region       string
-	roleArn      string
-	sessionName  string
-	debug        bool
-	manualCreate bool
+	metricRepoName string // kind:name
+	table          string
+	region         string
+	roleArn        string
+	sessionName    string
+	debug          bool
+	manualCreate   bool
 }
 
 type repoDynamo struct {
@@ -178,6 +179,10 @@ func (r *repoDynamo) tableExists() bool {
 	zlog.Debugf(r.options.debug, "%s: table '%s' status=%s", me, r.options.table, t.Table.TableStatus)
 
 	return true
+}
+
+func (r *repoDynamo) repoName() string {
+	return r.options.metricRepoName
 }
 
 func (r *repoDynamo) dropDatabase() error {

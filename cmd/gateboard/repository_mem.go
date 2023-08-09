@@ -22,12 +22,24 @@ type memEntry struct {
 }
 
 type repoMem struct {
-	tab  map[string]memEntry // name => id
-	lock sync.Mutex
+	options repoMemOptions
+	tab     map[string]memEntry // name => id
+	lock    sync.Mutex
 }
 
-func newRepoMem() *repoMem {
-	return &repoMem{tab: map[string]memEntry{}}
+type repoMemOptions struct {
+	metricRepoName string // kind:name
+}
+
+func newRepoMem(opt repoMemOptions) *repoMem {
+	return &repoMem{
+		options: opt,
+		tab:     map[string]memEntry{},
+	}
+}
+
+func (r *repoMem) repoName() string {
+	return r.options.metricRepoName
 }
 
 func (r *repoMem) dump(ctx context.Context) (repoDump, error) {

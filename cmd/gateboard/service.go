@@ -31,11 +31,16 @@ func repoDumpMultiple(ctx context.Context, app *application) (repoDump, error) {
 		r := app.nextRepo()
 		repo := app.repoList[r]
 
+		begin := time.Now()
 		d, err := repo.dump(ctxNew)
+		elap := time.Since(begin)
 
-		if err != nil {
+		if err == nil {
+			recordRepositoryLatency("dump", repoStatusOK, repo.repoName(), elap)
+		} else {
 			errLast = err
 			traceError(span, err.Error())
+			recordRepositoryLatency("dump", repoStatusError, repo.repoName(), elap)
 		}
 
 		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
@@ -101,16 +106,16 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	switch errDump {
 	case nil:
-		recordRepositoryLatency(repoMethod, repoStatusOK, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
-		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
 		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
-		recordRepositoryLatency(repoMethod, repoStatusError, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
 		zlog.CtxErrorf(ctx, out.Error)
@@ -144,7 +149,9 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 		r := app.nextRepo()
 		repo := app.repoList[r]
 
+		begin := time.Now()
 		body, err = repo.get(ctxNew, gatewayName)
+		elap := time.Since(begin)
 
 		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
 			"%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
@@ -152,9 +159,14 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 
 		switch err {
 		case nil:
+			recordRepositoryLatency("get", repoStatusOK, repo.repoName(), elap)
 			return body, nil
+		case errRepositoryGatewayNotFound:
+			traceError(span, err.Error())
+			recordRepositoryLatency("get", repoStatusNotFound, repo.repoName(), elap)
 		default:
 			traceError(span, err.Error())
+			recordRepositoryLatency("get", repoStatusError, repo.repoName(), elap)
 		}
 	}
 
@@ -183,10 +195,16 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 		r := app.nextRepo()
 		repo := app.repoList[r]
 
+		begin := time.Now()
 		err := repo.put(ctxNew, gatewayName, gatewayID)
-		if err != nil {
+		elap := time.Since(begin)
+
+		if err == nil {
+			recordRepositoryLatency("put", repoStatusOK, repo.repoName(), elap)
+		} else {
 			errLast = err
 			traceError(span, err.Error())
+			recordRepositoryLatency("put", repoStatusError, repo.repoName(), elap)
 		}
 
 		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
@@ -262,9 +280,9 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	switch errID {
 	case nil:
-		recordRepositoryLatency(repoMethod, repoStatusOK, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
-		recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		traceError(span, out.Error)
@@ -272,7 +290,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
-		recordRepositoryLatency(repoMethod, repoStatusError, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		traceError(span, out.Error)
@@ -375,13 +393,13 @@ func gatewayPut(c *gin.Context, app *application) {
 		const repoMethod = "put"
 
 		if errPut == nil {
-			recordRepositoryLatency(repoMethod, repoStatusOK, elap)
+			//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 			out.Error = ""
 			c.JSON(http.StatusOK, out)
 			return
 		}
 
-		recordRepositoryLatency(repoMethod, repoStatusError, elap)
+		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, max, errPut)

@@ -19,7 +19,7 @@ func TestRepository(t *testing.T) {
 	// test repo mem
 	//
 	t.Logf("testing repo mem")
-	testRepo(t, newRepoMem(), table)
+	testRepo(t, newRepoMem(repoMemOptions{}), table)
 
 	//
 	// optionally test repo redis
