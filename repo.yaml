@@ -1,3 +1,13 @@
+# Available repo kinds:
+#
+# mem:      testing-only pseudo-storage
+# mongo:    MongoDB
+# redis:    redis
+# dynamodb: DynamoDB
+# s3:       S3
+#
+# Use env var REPO_LIST to set the filename: export REPO_LIST=repo.yaml
+
 - kind: mem
   name: mem1 # name is used for metrics
 - kind: mongo
