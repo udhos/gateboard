@@ -106,16 +106,13 @@ func gatewayDump(c *gin.Context, app *application) {
 
 	switch errDump {
 	case nil:
-		//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
-		//recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
 		zlog.CtxErrorf(ctx, out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
-		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
 		zlog.CtxErrorf(ctx, out.Error)
@@ -286,9 +283,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	switch errID {
 	case nil:
-		//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 	case errRepositoryGatewayNotFound:
-		//recordRepositoryLatency(repoMethod, repoStatusNotFound, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		traceError(span, out.Error)
@@ -296,7 +291,6 @@ func gatewayGet(c *gin.Context, app *application) {
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
-		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		traceError(span, out.Error)
@@ -399,13 +393,10 @@ func gatewayPut(c *gin.Context, app *application) {
 		const repoMethod = "put"
 
 		if errPut == nil {
-			//recordRepositoryLatency(repoMethod, repoStatusOK, elap)
 			out.Error = ""
 			c.JSON(http.StatusOK, out)
 			return
 		}
-
-		//recordRepositoryLatency(repoMethod, repoStatusError, elap)
 
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, max, errPut)
