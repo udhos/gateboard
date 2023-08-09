@@ -117,7 +117,9 @@ export REPO_LIST=repo.yaml
 
 $ cat repo.yaml
 - kind: mem
+  name: mem1
 - kind: mongo
+  name: mongo1
   mongo:
     uri: mongodb://localhost:27017/
     database: gateboard
@@ -127,17 +129,20 @@ $ cat repo.yaml
     tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
     min_pool: 1
 - kind: dynamodb
+  name: dynamo1
   dynamodb:
     table: gateboard
     region: us-east-1
     role_arn: ""
     manual_create: false
 - kind: redis
+  name: redis1
   redis:
     addr: localhost:6379
     password: ""
     key: gateboard
 - kind: s3
+  name: s3one
   s3:
     bucket_name: ""
     bucket_region: us-east-1
@@ -281,7 +286,10 @@ Discovery writes directly to server.
 
 Start server.
 
-    mem
+    export REPO_LIST=repo.yaml
+    cat repo.yaml
+    - kind: mem
+      name: mem1
     gateboard
 
 Run discovery.
@@ -301,7 +309,10 @@ Discovery writes to webhook that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    mem
+    export REPO_LIST=repo.yaml
+    cat repo.yaml
+    - kind: mem
+      name: mem1
     gateboard
 
 Run discovery.
@@ -323,7 +334,10 @@ Discovery writes to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    mem
+    export REPO_LIST=repo.yaml
+    cat repo.yaml
+    - kind: mem
+      name: mem1
     gateboard
 
 Run discovery.
@@ -344,7 +358,10 @@ Discovery writes to SNS topic that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    mem
+    export REPO_LIST=repo.yaml
+    cat repo.yaml
+    - kind: mem
+      name: mem1
     gateboard
 
 Run discovery.
@@ -365,7 +382,10 @@ Discovery writes to lambda function that forwards to SQS queue.
 Start server.
 
     export QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/gateboard
-    mem
+    export REPO_LIST=repo.yaml
+    cat repo.yaml
+    - kind: mem
+      name: mem1
     gateboard
 
 Run discovery.
@@ -420,7 +440,10 @@ Example: repository_requests_seconds_bucket{method="get",status="success",le="0.
 ./run-jaeger-local.sh
 
 # start gateboard
-mem
+export REPO_LIST=repo.yaml
+cat repo.yaml
+- kind: mem
+    name: mem1
 export JAEGER_URL=http://localhost:14268/api/traces
 export OTEL_TRACES_SAMPLER=parentbased_always_on
 export OTEL_SERVICE_NAME=mynamespace.gateboard
