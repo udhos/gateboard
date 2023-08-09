@@ -17,6 +17,7 @@ type repoConfig struct {
 	DynamoDB *dynamoDBConfig `json:"dynamodb,omitempty" yaml:"dynamodb,omitempty"`
 	Redis    *redisConfig    `json:"redis,omitempty"    yaml:"redis,omitempty"`
 	S3       *s3Config       `json:"s3,omitempty"       yaml:"s3,omitempty"`
+	Mem      memConfig       `json:"mem,omitempty"      yaml:"mem,omitempty"`
 }
 
 type mongoConfig struct {
@@ -48,6 +49,11 @@ type s3Config struct {
 	Prefix       string `json:"prefix"        yaml:"prefix"`
 	RoleArn      string `json:"role_arn"      yaml:"role_arn"`
 	ManualCreate bool   `json:"manual_create" yaml:"manual_create"`
+}
+
+type memConfig struct {
+	Broken bool          `json:"broken" yaml:"broken"`
+	Delay  time.Duration `json:"delay"  yaml:"delay"`
 }
 
 func loadRepoConf(input string) ([]repoConfig, error) {
@@ -128,6 +134,8 @@ func createRepo(sessionName string, config repoConfig, debug bool) repository {
 	case "mem":
 		return newRepoMem(repoMemOptions{
 			metricRepoName: metricRepoName,
+			broken:         config.Mem.Broken,
+			delay:          config.Mem.Delay,
 		})
 	case "s3":
 		repo, errS3 := newRepoS3(repoS3Options{

@@ -137,8 +137,6 @@ func newTestApp(writeToken bool) *application {
 		config: newConfig(me),
 	}
 
-	app.repoConf = []repoConfig{{Kind: "mem"}}
-
 	app.config.writeToken = writeToken
 
 	initApplication(app, ":8080")

@@ -29,6 +29,8 @@ type repoMem struct {
 
 type repoMemOptions struct {
 	metricRepoName string // kind:name
+	broken         bool
+	delay          time.Duration
 }
 
 func newRepoMem(opt repoMemOptions) *repoMem {
@@ -43,6 +45,15 @@ func (r *repoMem) repoName() string {
 }
 
 func (r *repoMem) dump(ctx context.Context) (repoDump, error) {
+
+	if r.options.delay > 0 {
+		defer time.Sleep(r.options.delay)
+	}
+
+	if r.options.broken {
+		return nil, fmt.Errorf("repo mem broken")
+	}
+
 	list := make(repoDump, 0, len(r.tab))
 	r.lock.Lock()
 
@@ -64,6 +75,14 @@ func (r *repoMem) dump(ctx context.Context) (repoDump, error) {
 func (r *repoMem) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	var result gateboard.BodyGetReply
 
+	if r.options.delay > 0 {
+		defer time.Sleep(r.options.delay)
+	}
+
+	if r.options.broken {
+		return result, fmt.Errorf("repo mem broken")
+	}
+
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		return result, errVal
 	}
@@ -84,6 +103,14 @@ func (r *repoMem) get(ctx context.Context, gatewayName string) (gateboard.BodyGe
 
 func (r *repoMem) put(ctx context.Context, gatewayName, gatewayID string) error {
 
+	if r.options.delay > 0 {
+		defer time.Sleep(r.options.delay)
+	}
+
+	if r.options.broken {
+		return fmt.Errorf("repo mem broken")
+	}
+
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		return errVal
 	}
@@ -91,6 +118,7 @@ func (r *repoMem) put(ctx context.Context, gatewayName, gatewayID string) error 
 	if strings.TrimSpace(gatewayID) == "" {
 		return fmt.Errorf("repoMem.put: bad gateway id: '%s'", gatewayID)
 	}
+
 	now := time.Now()
 	r.lock.Lock()
 	e, _ := r.tab[gatewayName]
