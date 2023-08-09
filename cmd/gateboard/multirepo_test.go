@@ -54,6 +54,7 @@ func TestControllerMultirepoGood(t *testing.T) {
 	testControllerMultirepo(t, newTestAppMultirepo("testdata/repo_mem_two_good.yaml"), multirepoTestTableGood)
 }
 
+// go test -v -run TestControllerMultirepoGoodAndBad ./cmd/gateboard
 func TestControllerMultirepoGoodAndBad(t *testing.T) {
 	testControllerMultirepo(t, newTestAppMultirepo("testdata/repo_mem_two_goodnbad.yaml"), multirepoTestTableGood)
 }
