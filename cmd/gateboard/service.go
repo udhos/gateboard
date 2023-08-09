@@ -189,6 +189,7 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 		return err
 	}
 
+	var countSuccess int
 	var errLast error
 
 	for count := 1; count <= len(app.repoList); count++ {
@@ -200,6 +201,7 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 		elap := time.Since(begin)
 
 		if err == nil {
+			countSuccess++
 			recordRepositoryLatency("put", repoStatusOK, repo.repoName(), elap)
 		} else {
 			errLast = err
@@ -210,6 +212,10 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
 			"%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
 			me, count, len(app.repoList), r, gatewayName, err)
+	}
+
+	if countSuccess > 0 {
+		return nil
 	}
 
 	return errLast

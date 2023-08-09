@@ -80,7 +80,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [ ] Cache service
 - [X] Multiple repositories - basic tests
 - [X] Multiple repositories - dump
-- [ ] Multiple repositories - multirepo tests
+- [X] Multiple repositories - multirepo tests
 - [X] Multiple repositories - README
 - [ ] Multiple repositories - secrets
 - [X] Multiple repositories - metrics

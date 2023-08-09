@@ -1,0 +1,8 @@
+- kind: mem
+  name: mem1
+  mem:
+    broken: true
+- kind: mem
+  name: mem2
+  mem:
+    broken: true
