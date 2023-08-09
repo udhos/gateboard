@@ -170,7 +170,7 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	return body, err
 }
 
-// repoPutMultiple saves in all respositories.
+// repoPutMultiple saves in all repositories.
 func repoPutMultiple(ctx context.Context, app *application, gatewayName, gatewayID string) error {
 	const me = "repoPutMultiple"
 
@@ -218,7 +218,7 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 	return errLast
 }
 
-// repoPutTokenMultiple saves token in all respositories.
+// repoPutTokenMultiple saves token in all repositories.
 func repoPutTokenMultiple(ctx context.Context, app *application, gatewayName, token string) error {
 	const me = "repoPutTokenMultiple"
 
