@@ -118,6 +118,9 @@ export REPO_LIST=repo.yaml
 $ cat repo.yaml
 - kind: mem
   name: mem1 # name is used for metrics
+- kind: mem
+  name: mem2 # pick distinct names for multiple instances of the same kind
+
 - kind: mongo
   name: mongo1 # name is used for metrics
   mongo:
@@ -128,6 +131,7 @@ $ cat repo.yaml
     #password: "aws-parameterstore:us-east-1:/mongo/cluster1/password" # see https://github.com/udhos/boilerplate
     #tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
     min_pool: 1
+
 - kind: dynamodb
   name: dynamo1 # name is used for metrics
   dynamodb:
@@ -135,12 +139,14 @@ $ cat repo.yaml
     region: us-east-1
     role_arn: ""
     manual_create: false # if false, gateboard will create the table automatically
+
 - kind: redis
   name: redis1 # name is used for metrics
   redis:
     addr: localhost:6379
     #password: "aws-parameterstore:us-east-1:/redis/cluster3/password" # see https://github.com/udhos/boilerplate
     key: gateboard
+
 - kind: s3
   name: s3one # name is used for metrics
   s3:
