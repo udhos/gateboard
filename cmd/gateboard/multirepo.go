@@ -146,14 +146,15 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 		})
 	case "s3":
 		repo, errS3 := newRepoS3(repoS3Options{
-			metricRepoName: metricRepoName,
-			debug:          debug,
-			bucket:         config.S3.BucketName,
-			region:         config.S3.BucketRegion,
-			prefix:         config.S3.Prefix,
-			roleArn:        config.S3.RoleArn,
-			manualCreate:   config.S3.ManualCreate,
-			sessionName:    sessionName,
+			metricRepoName:       metricRepoName,
+			debug:                debug,
+			bucket:               config.S3.BucketName,
+			region:               config.S3.BucketRegion,
+			prefix:               config.S3.Prefix,
+			roleArn:              config.S3.RoleArn,
+			manualCreate:         config.S3.ManualCreate,
+			serverSideEncryption: config.S3.ServerSideEncryption,
+			sessionName:          sessionName,
 		})
 		if errS3 != nil {
 			zlog.Fatalf("%s: repo s3: %v", me, errS3)
