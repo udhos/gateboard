@@ -21,7 +21,6 @@ spec:
         {{- end }}
         {{- if eq .Values.redeploy "reconfig" }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -57,8 +56,6 @@ spec:
               protocol: TCP
           envFrom:
           - configMapRef:
-              name: {{ include "gateboard.fullname" . }}
-          - secretRef:
               name: {{ include "gateboard.fullname" . }}
           volumeMounts:
           - name: config

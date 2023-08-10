@@ -137,14 +137,6 @@ configMapProperties:
   #OTEL_SERVICE_NAME: mynamespace.gateboard
   #OTEL_RESOURCE_ATTRIBUTES: 'service.name=mynamespace.gateboard,key2=value2'
 
-secrets:
-  # set base64encoded to false to specify secrets in plain text
-  base64encoded: true
-  mongo:
-    username: ""
-    password: ""
-    url: bW9uZ29kYjovL2xvY2FsaG9zdDoyNzAxNw==
-
 #
 # In order to use MongoDB TLS:
 # 1. uncomment in configMapProperties above: MONGO_TLS_CA_FILE: /etc/gateboard/mongo-tls-ca-bundle.pem
