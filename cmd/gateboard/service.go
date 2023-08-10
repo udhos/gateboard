@@ -70,7 +70,11 @@ func repoDumpMultiple(ctx context.Context, app *application) (repoDump, error) {
 		dump = append(dump, vv)
 	}
 
-	return dump, errLast
+	if len(dump) < 1 {
+		return dump, errLast
+	}
+
+	return dump, nil
 }
 
 func gatewayDump(c *gin.Context, app *application) {
@@ -211,11 +215,11 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 			me, count, len(app.repoList), r, gatewayName, err)
 	}
 
-	if countSuccess > 0 {
-		return nil
+	if countSuccess < 1 {
+		return errLast
 	}
 
-	return errLast
+	return nil
 }
 
 // repoPutTokenMultiple saves token in all repositories.
