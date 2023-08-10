@@ -45,11 +45,12 @@ type redisConfig struct {
 }
 
 type s3Config struct {
-	BucketName   string `json:"bucket_name"   yaml:"bucket_name"`
-	BucketRegion string `json:"bucket_region" yaml:"bucket_region"`
-	Prefix       string `json:"prefix"        yaml:"prefix"`
-	RoleArn      string `json:"role_arn"      yaml:"role_arn"`
-	ManualCreate bool   `json:"manual_create" yaml:"manual_create"`
+	BucketName           string `json:"bucket_name"            yaml:"bucket_name"`
+	BucketRegion         string `json:"bucket_region"          yaml:"bucket_region"`
+	Prefix               string `json:"prefix"                 yaml:"prefix"`
+	RoleArn              string `json:"role_arn"               yaml:"role_arn"`
+	ManualCreate         bool   `json:"manual_create"          yaml:"manual_create"`
+	ServerSideEncryption string `json:"server_side_encryption" yaml:"server_side_encryption"`
 }
 
 type memConfig struct {

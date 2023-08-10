@@ -155,6 +155,7 @@ $ cat repo.yaml
     prefix: gateboard
     role_arn: ""
     manual_create: false # if false, gateboard will create the bucket automatically
+    #server_side_encryption: AES256
 ```
 
 # Testing repositories

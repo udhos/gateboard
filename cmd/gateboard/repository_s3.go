@@ -23,14 +23,15 @@ import (
 )
 
 type repoS3Options struct {
-	metricRepoName string // kind:name
-	bucket         string
-	region         string
-	prefix         string
-	roleArn        string
-	sessionName    string
-	debug          bool
-	manualCreate   bool
+	metricRepoName       string // kind:name
+	bucket               string
+	region               string
+	prefix               string
+	roleArn              string
+	sessionName          string
+	debug                bool
+	manualCreate         bool
+	serverSideEncryption string
 }
 
 type repoS3 struct {
@@ -274,9 +275,10 @@ func (r *repoS3) s3put(gatewayName string, body gateboard.BodyGetReply) error {
 	key := r.s3key(gatewayName)
 
 	input := &s3.PutObjectInput{
-		Bucket: aws.String(r.options.bucket),
-		Key:    aws.String(key),
-		Body:   bytes.NewBuffer(buf),
+		Bucket:               aws.String(r.options.bucket),
+		Key:                  aws.String(key),
+		Body:                 bytes.NewBuffer(buf),
+		ServerSideEncryption: s3types.ServerSideEncryption(r.options.serverSideEncryption),
 	}
 
 	_, errS3 := r.s3Client.PutObject(context.TODO(), input)
