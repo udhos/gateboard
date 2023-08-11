@@ -22,17 +22,19 @@ import (
 //
 
 type repoMongoOptions struct {
-	metricRepoName       string // kind:name
-	debug                bool
-	URI                  string
-	database             string
-	collection           string
-	username             string
-	password             string
-	tlsCAFile            string
-	minPool              uint64
-	disableIndexCreation bool
-	timeout              time.Duration
+	metricRepoName        string // kind:name
+	debug                 bool
+	URI                   string
+	database              string
+	collection            string
+	username              string
+	password              string
+	tlsCAFile             string
+	minPool               uint64
+	indexCreationDisable  bool
+	indexCreationRetry    int
+	IndexCreationCooldown time.Duration
+	timeout               time.Duration
 }
 
 type repoMongo struct {
@@ -66,7 +68,7 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	// create index
 	//
 
-	if !opt.disableIndexCreation {
+	if !opt.indexCreationDisable {
 		const field = "gateway_name"
 		collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
@@ -77,8 +79,14 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 		}
 
 		// withstand temporary errors (istio sidecar not ready)
-		const cooldown = 5 * time.Second
-		const retry = 10
+		cooldown := opt.IndexCreationCooldown
+		if cooldown == 0 {
+			cooldown = 5 * time.Second
+		}
+		retry := opt.indexCreationRetry
+		if retry == 0 {
+			retry = 5
+		}
 		for i := 1; i <= retry; i++ {
 			ctxTimeout, cancel := context.WithTimeout(context.Background(), r.options.timeout)
 			defer cancel()

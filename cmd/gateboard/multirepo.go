@@ -22,14 +22,16 @@ type repoConfig struct {
 }
 
 type mongoConfig struct {
-	URI                  string `json:"uri"                    yaml:"uri"`
-	Database             string `json:"database"               yaml:"database"`
-	Collection           string `json:"collection"             yaml:"collection"`
-	Username             string `json:"username"               yaml:"username"`
-	Password             string `json:"password"               yaml:"password"`
-	TLSCaFile            string `json:"tls_ca_file"            yaml:"tls_ca_file"`
-	MinPool              uint64 `json:"min_pool"               yaml:"min_pool"`
-	DisableIndexCreation bool   `json:"disable_index_creation" yaml:"disable_index_creation"`
+	URI                   string        `json:"uri"                     yaml:"uri"`
+	Database              string        `json:"database"                yaml:"database"`
+	Collection            string        `json:"collection"              yaml:"collection"`
+	Username              string        `json:"username"                yaml:"username"`
+	Password              string        `json:"password"                yaml:"password"`
+	TLSCaFile             string        `json:"tls_ca_file"             yaml:"tls_ca_file"`
+	MinPool               uint64        `json:"min_pool"                yaml:"min_pool"`
+	IndexCreationDisable  bool          `json:"index_creation_disable"  yaml:"index_creation_disable"`
+	IndexCreationRetry    int           `json:"index_creation_retry"    yaml:"index_creation_retry"`
+	IndexCreationCooldown time.Duration `json:"index_creation_cooldown" yaml:"index_creation_cooldown"`
 }
 
 type dynamoDBConfig struct {
@@ -98,17 +100,19 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 	switch kind {
 	case "mongo":
 		repo, errMongo := newRepoMongo(repoMongoOptions{
-			metricRepoName:       metricRepoName,
-			debug:                debug,
-			URI:                  config.Mongo.URI,
-			database:             config.Mongo.Database,
-			collection:           config.Mongo.Collection,
-			username:             config.Mongo.Username,
-			password:             sec.Retrieve(config.Mongo.Password),
-			tlsCAFile:            config.Mongo.TLSCaFile,
-			minPool:              config.Mongo.MinPool,
-			disableIndexCreation: config.Mongo.DisableIndexCreation,
-			timeout:              time.Second * 10,
+			metricRepoName:        metricRepoName,
+			debug:                 debug,
+			URI:                   config.Mongo.URI,
+			database:              config.Mongo.Database,
+			collection:            config.Mongo.Collection,
+			username:              config.Mongo.Username,
+			password:              sec.Retrieve(config.Mongo.Password),
+			tlsCAFile:             config.Mongo.TLSCaFile,
+			minPool:               config.Mongo.MinPool,
+			indexCreationDisable:  config.Mongo.IndexCreationDisable,
+			indexCreationRetry:    config.Mongo.IndexCreationRetry,
+			IndexCreationCooldown: config.Mongo.IndexCreationCooldown,
+			timeout:               time.Second * 10,
 		})
 		if errMongo != nil {
 			zlog.Fatalf("%s: repo mongo: %v", me, errMongo)

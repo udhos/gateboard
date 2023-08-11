@@ -176,6 +176,9 @@ configDir:
         #password: "aws-parameterstore:us-east-1:/mongo/cluster1/password" # see https://github.com/udhos/boilerplate
         #tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
         min_pool: 1
+        index_creation_disable: false
+        index_creation_retry: 5
+        index_creation_cooldown: 5s
 
     - kind: dynamodb
       name: dynamo1 # name is used for metrics
