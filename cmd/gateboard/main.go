@@ -48,16 +48,6 @@ type application struct {
 	mutex         sync.Mutex
 }
 
-func (app *application) nextRepo() int {
-	var i int
-	app.mutex.Lock()
-	app.repoIndex++
-	app.repoIndex %= len(app.repoList)
-	i = app.repoIndex
-	app.mutex.Unlock()
-	return i
-}
-
 func main() {
 
 	var showVersion bool

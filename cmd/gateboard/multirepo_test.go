@@ -49,17 +49,17 @@ var multirepoTestTableBad = []multirepoTestCase{
 	{"GET existing gateway url-like", "GET", "/gateway/http://a:5555/b/c", "", 500, expectAnyID},
 }
 
-// go test -v -run TestControllerMultirepoGood ./cmd/gateboard
-func TestControllerMultirepoGood(t *testing.T) {
+// go test -count=1 -run TestControllerMultirepoGoodOnly ./cmd/gateboard
+func TestControllerMultirepoGoodOnly(t *testing.T) {
 	testControllerMultirepo(t, newTestAppMultirepo("testdata/repo_mem_two_good.yaml"), multirepoTestTableGood)
 }
 
-// go test -v -run TestControllerMultirepoGoodAndBad ./cmd/gateboard
+// go test -count=1 -run TestControllerMultirepoGoodAndBad ./cmd/gateboard
 func TestControllerMultirepoGoodAndBad(t *testing.T) {
 	testControllerMultirepo(t, newTestAppMultirepo("testdata/repo_mem_two_goodnbad.yaml"), multirepoTestTableGood)
 }
 
-// go test -v -run TestControllerMultirepoBad ./cmd/gateboard
+// go test -count=1 -run TestControllerMultirepoBad ./cmd/gateboard
 func TestControllerMultirepoBad(t *testing.T) {
 	testControllerMultirepo(t, newTestAppMultirepo("testdata/repo_mem_two_bad.yaml"), multirepoTestTableBad)
 }

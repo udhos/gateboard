@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +14,11 @@ import (
 	"github.com/udhos/gateboard/gateboard"
 	yaml "gopkg.in/yaml.v3"
 )
+
+func randomRepo(n int) int {
+	// Top-level functions, such as Float64 and Int, are safe for concurrent use by multiple goroutines.
+	return rand.Intn(n)
+}
 
 // repoDumpMultiple returns merged contents from all repositories.
 func repoDumpMultiple(ctx context.Context, app *application) (repoDump, error) {
@@ -27,8 +33,12 @@ func repoDumpMultiple(ctx context.Context, app *application) (repoDump, error) {
 	merge := map[string]interface{}{}
 	var errLast error
 
-	for count := 1; count <= len(app.repoList); count++ {
-		r := app.nextRepo()
+	size := len(app.repoList)
+
+	r := randomRepo(size)
+
+	for count := 1; count <= size; count++ {
+		r = (r + 1) % size
 		repo := app.repoList[r]
 
 		begin := time.Now()
@@ -146,8 +156,14 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 		return body, err
 	}
 
-	for count := 1; count <= len(app.repoList); count++ {
-		r := app.nextRepo()
+	size := len(app.repoList)
+
+	r := randomRepo(size)
+
+	var notFound bool
+
+	for count := 1; count <= size; count++ {
+		r = (r + 1) % size
 		repo := app.repoList[r]
 
 		begin := time.Now()
@@ -165,10 +181,19 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 		case errRepositoryGatewayNotFound:
 			traceError(span, err.Error())
 			recordRepositoryLatency("get", repoStatusNotFound, repo.repoName(), elap)
+			notFound = true
 		default:
 			traceError(span, err.Error())
 			recordRepositoryLatency("get", repoStatusError, repo.repoName(), elap)
 		}
+	}
+
+	// If all repos return error, and at least one of them
+	// returns not found, then not found is probably the
+	// most accurate response.
+	// This is useful to stabilize results for testing.
+	if notFound {
+		return body, errRepositoryGatewayNotFound
 	}
 
 	return body, err
@@ -193,8 +218,12 @@ func repoPutMultiple(ctx context.Context, app *application, gatewayName, gateway
 	var countSuccess int
 	var errLast error
 
-	for count := 1; count <= len(app.repoList); count++ {
-		r := app.nextRepo()
+	size := len(app.repoList)
+
+	r := randomRepo(size)
+
+	for count := 1; count <= size; count++ {
+		r = (r + 1) % size
 		repo := app.repoList[r]
 
 		begin := time.Now()
@@ -228,8 +257,12 @@ func repoPutTokenMultiple(ctx context.Context, app *application, gatewayName, to
 
 	var errLast error
 
-	for count := 1; count <= len(app.repoList); count++ {
-		r := app.nextRepo()
+	size := len(app.repoList)
+
+	r := randomRepo(size)
+
+	for count := 1; count <= size; count++ {
+		r = (r + 1) % size
 		repo := app.repoList[r]
 
 		err := repo.putToken(ctx, gatewayName, token)

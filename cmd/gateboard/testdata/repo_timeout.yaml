@@ -1,0 +1,15 @@
+#- kind: mem
+#  name: mem1
+- kind: mongo
+  name: mongo1 # name is used for metrics
+  mongo:
+    uri: mongodb://1.1.1.1:27017/
+    database: gateboard
+    collection: gateboard
+    username: ""
+    #password: "aws-parameterstore:us-east-1:/mongo/cluster1/password" # see https://github.com/udhos/boilerplate
+    #tls_ca_file: /etc/gateboard/mongo-tls-ca-bundle.pem
+    min_pool: 1
+    disable_index_creation: true
+- kind: mem
+  name: mem1
