@@ -22,16 +22,17 @@ import (
 //
 
 type repoMongoOptions struct {
-	metricRepoName string // kind:name
-	debug          bool
-	URI            string
-	database       string
-	collection     string
-	username       string
-	password       string
-	tlsCAFile      string
-	minPool        uint64
-	timeout        time.Duration
+	metricRepoName       string // kind:name
+	debug                bool
+	URI                  string
+	database             string
+	collection           string
+	username             string
+	password             string
+	tlsCAFile            string
+	minPool              uint64
+	disableIndexCreation bool
+	timeout              time.Duration
 }
 
 type repoMongo struct {
@@ -65,7 +66,7 @@ func newRepoMongo(opt repoMongoOptions) (*repoMongo, error) {
 	// create index
 	//
 
-	{
+	if !opt.disableIndexCreation {
 		const field = "gateway_name"
 		collection := r.client.Database(r.options.database).Collection(r.options.collection)
 
