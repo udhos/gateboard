@@ -184,13 +184,12 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 		defer span.End()
 	}
 
-	var body gateboard.BodyGetReply
-	var err error
+	var answer repoAnswer
 
 	if len(app.repoList) < 1 {
-		err = fmt.Errorf("%s: empty repo list", me)
-		traceError(span, err.Error())
-		return body, err
+		e := fmt.Errorf("%s: empty repo list", me)
+		traceError(span, e.Error())
+		return answer.body, e
 	}
 
 	size := len(app.repoList)
@@ -200,8 +199,7 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	ch := make(chan repoAnswer, size)
 
 	// spawn one gorouting for each repo
-	for r := 1; r <= size; r++ {
-		r = (r + 1) % size
+	for r := 0; r < size; r++ {
 		repo := app.repoList[r]
 		go queryOneRepo(ctxNew, app.tracer, gatewayName, r, size, repo, app.config.debug, ch)
 	}
@@ -209,32 +207,34 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	// get fastest answer with timeout
 	for r := 1; r <= size; r++ {
 		select {
-		case answer := <-ch:
+		case answer = <-ch:
 			switch answer.err {
 			case nil:
-				return answer.body, nil // done
+				return answer.body, nil // done (found fastest answer)
 			case errRepositoryGatewayNotFound:
 				notFound = true
-				// read next answer
+				// read next answer (not found error)
 			default:
-				// read next answer
+				// read next answer (other error)
 			}
 		case <-time.After(15 * time.Second):
 			e := fmt.Errorf("%s: cross-repository timeout", me)
 			traceError(span, e.Error())
-			return body, e // done
+			return answer.body, e // done (timeout)
 		}
 	}
+
+	// All repositories errored.
 
 	// If all repos return error, and at least one of them
 	// returns not found, then not found is probably the
 	// most accurate response.
 	// This is useful to stabilize results for testing.
 	if notFound {
-		return body, errRepositoryGatewayNotFound
+		return answer.body, errRepositoryGatewayNotFound
 	}
 
-	return body, err
+	return answer.body, answer.err
 }
 
 // repoPutMultiple saves in all repositories.

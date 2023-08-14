@@ -85,6 +85,8 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [X] Multiple repositories - secrets
 - [X] Multiple repositories - metrics
 - [X] Multiple repositories - helm chart
+- [X] Multiple repositories - fastest concurrent response
+- [ ] Multiple repositories - fastest concurrent response tests
 
 # Services
 
