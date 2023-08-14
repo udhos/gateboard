@@ -1,14 +1,80 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
+
+// go test -count=1 -run TestMultirepoFastestGoodOnly ./cmd/gateboard
+func TestMultirepoFastestGoodOnly(t *testing.T) {
+	app := newTestAppMultirepo("testdata/repo_mem_good3.yaml")
+
+	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
+	if errPut != nil {
+		t.Errorf(errPut.Error())
+	}
+
+	body, repoName, errGet := repoGetMultiple(context.TODO(), app, "gw1")
+	if errGet != nil {
+		t.Errorf(errGet.Error())
+	}
+
+	if body.GatewayID != "id1" {
+		t.Errorf("wrong id: %s", body.GatewayID)
+	}
+
+	if repoName != "mem:mem200" {
+		t.Errorf("wrong repo: %s", repoName)
+	}
+}
+
+// go test -count=1 -run TestMultirepoFastestTwoBad ./cmd/gateboard
+func TestMultirepoFastestTwoBad(t *testing.T) {
+	app := newTestAppMultirepo("testdata/repo_mem_bad2.yaml")
+
+	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
+	if errPut != nil {
+		t.Errorf(errPut.Error())
+	}
+
+	body, repoName, errGet := repoGetMultiple(context.TODO(), app, "gw1")
+	if errGet != nil {
+		t.Errorf(errGet.Error())
+	}
+
+	if body.GatewayID != "id1" {
+		t.Errorf("wrong id: %s", body.GatewayID)
+	}
+
+	if repoName != "mem:mem400" {
+		t.Errorf("wrong repo: %s", repoName)
+	}
+}
+
+// go test -count=1 -run TestMultirepoFastestTimeout ./cmd/gateboard
+func TestMultirepoFastestTimeout(t *testing.T) {
+	app := newTestAppMultirepo("testdata/repo_mem_good3.yaml")
+
+	app.config.repoTimeout = 100 * time.Millisecond
+
+	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
+	if errPut != nil {
+		t.Errorf(errPut.Error())
+	}
+
+	_, _, errGet := repoGetMultiple(context.TODO(), app, "gw1")
+
+	if errGet != errRepositoryTimeout {
+		t.Errorf("expected timeout but got: %v", errGet)
+	}
+}
 
 type multirepoTestCase struct {
 	name           string

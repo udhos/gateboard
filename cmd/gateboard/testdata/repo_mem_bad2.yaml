@@ -1,0 +1,22 @@
+- kind: mem
+  name: mem300
+  mem:
+    delay: 300ms
+    broken: true
+- kind: mem
+  name: mem200
+  mem:
+    delay: 200ms
+    broken: true
+- kind: mem
+  name: mem600
+  mem:
+    delay: 600ms
+- kind: mem
+  name: mem400
+  mem:
+    delay: 400ms
+- kind: mem
+  name: mem500
+  mem:
+    delay: 500ms

@@ -139,8 +139,9 @@ func gatewayDump(c *gin.Context, app *application) {
 }
 
 type repoAnswer struct {
-	body gateboard.BodyGetReply
-	err  error
+	body     gateboard.BodyGetReply
+	repoName string
+	err      error
 }
 
 func queryOneRepo(ctx context.Context, tracer trace.Tracer, gatewayName string, r, size int, repo repository, debug bool, ch chan<- repoAnswer) {
@@ -171,11 +172,11 @@ func queryOneRepo(ctx context.Context, tracer trace.Tracer, gatewayName string, 
 		recordRepositoryLatency("get", repoStatusError, repo.repoName(), elap)
 	}
 
-	ch <- repoAnswer{body: body, err: err}
+	ch <- repoAnswer{body: body, repoName: repo.repoName(), err: err}
 }
 
 // repoGetMultiple returns the first non-errored result from repository list.
-func repoGetMultiple(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
+func repoGetMultiple(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, string, error) {
 	const me = "repoGetMultiple"
 
 	// create trace span
@@ -189,7 +190,7 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	if len(app.repoList) < 1 {
 		e := fmt.Errorf("%s: empty repo list", me)
 		traceError(span, e.Error())
-		return answer.body, e
+		return answer.body, "", e
 	}
 
 	size := len(app.repoList)
@@ -205,22 +206,22 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	}
 
 	// get fastest answer with timeout
-	for r := 1; r <= size; r++ {
+	for r := 0; r < size; r++ {
 		select {
 		case answer = <-ch:
 			switch answer.err {
 			case nil:
-				return answer.body, nil // done (found fastest answer)
+				return answer.body, answer.repoName, nil // done (found fastest answer)
 			case errRepositoryGatewayNotFound:
 				notFound = true
-				// read next answer (not found error)
+				// read next answer (got not found error)
 			default:
-				// read next answer (other error)
+				// read next answer (got other error)
 			}
-		case <-time.After(15 * time.Second):
-			e := fmt.Errorf("%s: cross-repository timeout", me)
+		case <-time.After(app.config.repoTimeout):
+			e := errRepositoryTimeout
 			traceError(span, e.Error())
-			return answer.body, e // done (timeout)
+			return answer.body, "", e // done (timeout)
 		}
 	}
 
@@ -231,10 +232,10 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	// most accurate response.
 	// This is useful to stabilize results for testing.
 	if notFound {
-		return answer.body, errRepositoryGatewayNotFound
+		return answer.body, answer.repoName, errRepositoryGatewayNotFound
 	}
 
-	return answer.body, answer.err
+	return answer.body, answer.repoName, answer.err
 }
 
 // repoPutMultiple saves in all repositories.
@@ -345,7 +346,7 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	begin := time.Now()
 
-	out, errID := repoGetMultiple(ctx, app, gatewayName)
+	out, _, errID := repoGetMultiple(ctx, app, gatewayName)
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
@@ -503,7 +504,7 @@ func invalidToken(ctx context.Context, app *application, gatewayName, token stri
 		return true // empty token is always invalid
 	}
 
-	result, errID := repoGetMultiple(ctx, app, gatewayName)
+	result, _, errID := repoGetMultiple(ctx, app, gatewayName)
 	if errID != nil {
 		zlog.CtxErrorf(ctx, "%s: error: %v", me, errID)
 		return true

@@ -116,6 +116,7 @@ configMapProperties:
   #SQS_CONSUME_INVALID_TOKEN: "true"
   #TTL: "300"
   REPO_LIST: /etc/gateboard/repo.yaml
+  #REPO_TIMEOUT: 15s
   #LISTEN_ADDR: ":8080"
   #HEALTH_ADDR: ":8888"
   #HEALTH_PATH: /health

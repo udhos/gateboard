@@ -18,6 +18,7 @@ type appConfig struct {
 	sqsConsumeInvalidToken    bool
 	TTL                       int
 	repoList                  string
+	repoTimeout               time.Duration
 	applicationAddr           string
 	healthAddr                string
 	healthPath                string
@@ -48,6 +49,7 @@ func newConfig(roleSessionName string) appConfig {
 		sqsConsumeInvalidToken:    env.Bool("SQS_CONSUME_INVALID_TOKEN", true),
 		TTL:                       env.Int("TTL", 300), // seconds
 		repoList:                  env.String("REPO_LIST", "repo.yaml"),
+		repoTimeout:               env.Duration("REPO_TIMEOUT", 15*time.Second),
 		applicationAddr:           env.String("LISTEN_ADDR", ":8080"),
 		healthAddr:                env.String("HEALTH_ADDR", ":8888"),
 		healthPath:                env.String("HEALTH_PATH", "/health"),
