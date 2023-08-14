@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
+	"go.opentelemetry.io/otel/trace"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -137,6 +138,42 @@ func gatewayDump(c *gin.Context, app *application) {
 	c.JSON(http.StatusOK, dump)
 }
 
+type repoAnswer struct {
+	body gateboard.BodyGetReply
+	err  error
+}
+
+func queryOneRepo(ctx context.Context, tracer trace.Tracer, gatewayName string, r, size int, repo repository, debug bool, ch chan<- repoAnswer) {
+	const me = "queryOneRepo"
+
+	// create trace span
+	ctxNew, span := newSpan(ctx, me, tracer)
+	if span != nil {
+		defer span.End()
+	}
+
+	begin := time.Now()
+	body, err := repo.get(ctxNew, gatewayName)
+	elap := time.Since(begin)
+
+	zlog.CtxDebugf(ctxNew, debug || err != nil,
+		"%s: attempt=%d/%d repo=%s gateway_name=%s error:%v",
+		me, r, size, repo.repoName(), gatewayName, err)
+
+	switch err {
+	case nil:
+		recordRepositoryLatency("get", repoStatusOK, repo.repoName(), elap)
+	case errRepositoryGatewayNotFound:
+		traceError(span, err.Error())
+		recordRepositoryLatency("get", repoStatusNotFound, repo.repoName(), elap)
+	default:
+		traceError(span, err.Error())
+		recordRepositoryLatency("get", repoStatusError, repo.repoName(), elap)
+	}
+
+	ch <- repoAnswer{body: body, err: err}
+}
+
 // repoGetMultiple returns the first non-errored result from repository list.
 func repoGetMultiple(ctx context.Context, app *application, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoGetMultiple"
@@ -158,33 +195,34 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 
 	size := len(app.repoList)
 
-	r := randomRepo(size)
-
 	var notFound bool
 
-	for count := 1; count <= size; count++ {
+	ch := make(chan repoAnswer, size)
+
+	// spawn one gorouting for each repo
+	for r := 1; r <= size; r++ {
 		r = (r + 1) % size
 		repo := app.repoList[r]
+		go queryOneRepo(ctxNew, app.tracer, gatewayName, r, size, repo, app.config.debug, ch)
+	}
 
-		begin := time.Now()
-		body, err = repo.get(ctxNew, gatewayName)
-		elap := time.Since(begin)
-
-		zlog.CtxDebugf(ctxNew, app.config.debug || err != nil,
-			"%s: attempt=%d/%d repo=%d gateway_name=%s error:%v",
-			me, count, len(app.repoList), r, gatewayName, err)
-
-		switch err {
-		case nil:
-			recordRepositoryLatency("get", repoStatusOK, repo.repoName(), elap)
-			return body, nil
-		case errRepositoryGatewayNotFound:
-			traceError(span, err.Error())
-			recordRepositoryLatency("get", repoStatusNotFound, repo.repoName(), elap)
-			notFound = true
-		default:
-			traceError(span, err.Error())
-			recordRepositoryLatency("get", repoStatusError, repo.repoName(), elap)
+	// get fastest answer with timeout
+	for r := 1; r <= size; r++ {
+		select {
+		case answer := <-ch:
+			switch answer.err {
+			case nil:
+				return answer.body, nil // done
+			case errRepositoryGatewayNotFound:
+				notFound = true
+				// read next answer
+			default:
+				// read next answer
+			}
+		case <-time.After(15 * time.Second):
+			e := fmt.Errorf("%s: cross-repository timeout", me)
+			traceError(span, e.Error())
+			return body, e // done
 		}
 	}
 
