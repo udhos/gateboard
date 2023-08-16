@@ -199,7 +199,7 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 
 	ch := make(chan repoAnswer, size)
 
-	// spawn one gorouting for each repo
+	// spawn one goroutine for each repo
 	for r := 0; r < size; r++ {
 		repo := app.repoList[r]
 		go queryOneRepo(ctxNew, app.tracer, gatewayName, r, size, repo, app.config.debug, ch)
