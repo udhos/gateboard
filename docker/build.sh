@@ -10,4 +10,4 @@ docker build \
     -t udhos/gateboard:$version \
     -f docker/Dockerfile .
 
-echo "push: docker push udhos/apiping:$version; docker push udhos/apiping:latest"
+echo "push: docker push udhos/gateboard:$version; docker push udhos/gateboard:latest"
