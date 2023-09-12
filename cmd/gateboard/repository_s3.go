@@ -183,7 +183,7 @@ func (r *repoS3) listKeys() ([]string, error) {
 	return list, nil
 }
 
-func (r *repoS3) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoS3) get(_ /*ctx*/ context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoS3.get"
 
 	var body gateboard.BodyGetReply

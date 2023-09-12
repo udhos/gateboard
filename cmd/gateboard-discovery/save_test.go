@@ -359,7 +359,7 @@ type mockSqs struct {
 	body string
 }
 
-func (s *mockSqs) SendMessage(ctx context.Context, params *sqs.SendMessageInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageOutput, error) {
+func (s *mockSqs) SendMessage(_ /*ctx*/ context.Context, params *sqs.SendMessageInput, _ /*optFns*/ ...func(*sqs.Options)) (*sqs.SendMessageOutput, error) {
 	s.body = *params.MessageBody
 	messageID := "mockSqs.fake-message-id"
 	out := &sqs.SendMessageOutput{MessageId: aws.String(messageID)}
@@ -409,7 +409,7 @@ type mockSns struct {
 	message string
 }
 
-func (s *mockSns) Publish(ctx context.Context, params *sns.PublishInput, optFns ...func(*sns.Options)) (*sns.PublishOutput, error) {
+func (s *mockSns) Publish(_ /*ctx*/ context.Context, params *sns.PublishInput, _ /*optFns*/ ...func(*sns.Options)) (*sns.PublishOutput, error) {
 	s.message = *params.Message
 	messageID := "mockSns.fake-message-id"
 	out := &sns.PublishOutput{MessageId: aws.String(messageID)}
@@ -459,7 +459,7 @@ type mockLambda struct {
 	message []byte
 }
 
-func (m *mockLambda) Invoke(ctx context.Context, params *lambda.InvokeInput, optFns ...func(*lambda.Options)) (*lambda.InvokeOutput, error) {
+func (m *mockLambda) Invoke(_ /*ctx*/ context.Context, params *lambda.InvokeInput, _ /*optFns*/ ...func(*lambda.Options)) (*lambda.InvokeOutput, error) {
 	m.message = params.Payload
 	out := &lambda.InvokeOutput{StatusCode: 200}
 	return out, nil

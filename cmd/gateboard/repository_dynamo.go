@@ -216,7 +216,7 @@ func (r *repoDynamo) dropDatabase() error {
 	return fmt.Errorf("%s: table '%s' exists, ABORTING", me, r.options.table)
 }
 
-func (r *repoDynamo) dump(ctx context.Context) (repoDump, error) {
+func (r *repoDynamo) dump(_ /*ctx*/ context.Context) (repoDump, error) {
 	const me = "repoDynamo.dump"
 
 	list := repoDump{}
@@ -253,7 +253,7 @@ func (r *repoDynamo) dump(ctx context.Context) (repoDump, error) {
 	return list, nil
 }
 
-func (r *repoDynamo) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoDynamo) get(_ /*ctx*/ context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	const me = "repoDynamo.get"
 
 	var body gateboard.BodyGetReply
@@ -286,7 +286,7 @@ func (r *repoDynamo) get(ctx context.Context, gatewayName string) (gateboard.Bod
 	return body, errUnmarshal
 }
 
-func (r *repoDynamo) put(ctx context.Context, gatewayName, gatewayID string) error {
+func (r *repoDynamo) put(_ /*ctx*/ context.Context, gatewayName, gatewayID string) error {
 	const me = "repoDynamo.put"
 
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
@@ -320,7 +320,7 @@ func (r *repoDynamo) put(ctx context.Context, gatewayName, gatewayID string) err
 	return errUpdate
 }
 
-func (r *repoDynamo) putToken(ctx context.Context, gatewayName, token string) error {
+func (r *repoDynamo) putToken(_ /*ctx*/ context.Context, gatewayName, token string) error {
 	update := expression.Set(expression.Name("token"), expression.Value(token))
 
 	expr, errBuild := expression.NewBuilder().WithUpdate(update).Build()

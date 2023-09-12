@@ -92,7 +92,7 @@ type bogusScanner struct {
 	items []item
 }
 
-func (s *bogusScanner) list(ctx context.Context, tracer trace.Tracer) []item {
+func (s *bogusScanner) list(_ /*ctx*/ context.Context, _ /*tracer*/ trace.Tracer) []item {
 	return s.items
 }
 
@@ -102,7 +102,7 @@ type bogusSaver struct {
 	saves      int
 }
 
-func (s *bogusSaver) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
+func (s *bogusSaver) save(_ /*ctx*/ context.Context, _ /*tracer*/ trace.Tracer, name, id, _ /*writeToken*/ string, _ /*debug*/ bool) error {
 	s.saves++
 	log.Printf("bogusSaver.save: saveErrors=%d saves=%d", s.saveErrors, s.saves)
 	if s.saveErrors > 0 {

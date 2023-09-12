@@ -44,7 +44,7 @@ func (r *repoMem) repoName() string {
 	return r.options.metricRepoName
 }
 
-func (r *repoMem) dump(ctx context.Context) (repoDump, error) {
+func (r *repoMem) dump(_ /*ctx*/ context.Context) (repoDump, error) {
 
 	if r.options.delay > 0 {
 		defer time.Sleep(r.options.delay)
@@ -72,7 +72,7 @@ func (r *repoMem) dump(ctx context.Context) (repoDump, error) {
 	return list, nil
 }
 
-func (r *repoMem) get(ctx context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
+func (r *repoMem) get(_ /*ctx*/ context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
 	var result gateboard.BodyGetReply
 
 	if r.options.delay > 0 {
@@ -101,7 +101,7 @@ func (r *repoMem) get(ctx context.Context, gatewayName string) (gateboard.BodyGe
 	return result, errRepositoryGatewayNotFound
 }
 
-func (r *repoMem) put(ctx context.Context, gatewayName, gatewayID string) error {
+func (r *repoMem) put(_ /*ctx*/ context.Context, gatewayName, gatewayID string) error {
 
 	if r.options.delay > 0 {
 		defer time.Sleep(r.options.delay)
@@ -130,7 +130,7 @@ func (r *repoMem) put(ctx context.Context, gatewayName, gatewayID string) error 
 	return nil
 }
 
-func (r *repoMem) putToken(ctx context.Context, gatewayName, token string) error {
+func (r *repoMem) putToken(_ /*ctx*/ context.Context, gatewayName, token string) error {
 	r.lock.Lock()
 	e, _ := r.tab[gatewayName]
 	e.token = token
