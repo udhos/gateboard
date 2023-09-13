@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const version = "1.6.7"
+const version = "1.6.8"
 
 func main() {
 
