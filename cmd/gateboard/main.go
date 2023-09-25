@@ -31,7 +31,7 @@ import (
 	"github.com/udhos/gateboard/tracing"
 )
 
-const version = "1.3.9"
+const version = "1.3.10"
 
 type application struct {
 	serverMain    *serverGin
