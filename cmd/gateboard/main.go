@@ -21,17 +21,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/boilerplate/boilerplate"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
-	"github.com/udhos/gateboard/tracing"
+	"github.com/udhos/otelconfig/oteltrace"
 )
 
-const version = "1.3.12"
+const version = "1.7.0"
 
 type application struct {
 	serverMain    *serverGin
@@ -110,31 +109,21 @@ func main() {
 	//
 
 	{
-		tp, errTracer := tracing.TracerProvider(app.me, app.config.jaegerURL)
-		if errTracer != nil {
-			zlog.Fatalf("tracer provider: %v", errTracer)
+		options := oteltrace.TraceOptions{
+			DefaultService:     me,
+			NoopTracerProvider: false,
+			Debug:              true,
 		}
 
-		// Register our TracerProvider as the global so any imported
-		// instrumentation in the future will default to using it.
-		otel.SetTracerProvider(tp)
+		tracer, cancel, errTracer := oteltrace.TraceStart(options)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		if errTracer != nil {
+			log.Fatalf("tracer: %v", errTracer)
+		}
+
 		defer cancel()
 
-		// Cleanly shutdown and flush telemetry when the application exits.
-		defer func(ctx context.Context) {
-			// Do not make the application hang when it is shutdown.
-			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
-			defer cancel()
-			if err := tp.Shutdown(ctx); err != nil {
-				zlog.Fatalf("trace shutdown: %v", err)
-			}
-		}(ctx)
-
-		tracing.TracePropagation()
-
-		app.tracer = tp.Tracer(fmt.Sprintf("%s-main", me))
+		app.tracer = tracer
 	}
 
 	//

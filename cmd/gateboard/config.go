@@ -28,7 +28,6 @@ type appConfig struct {
 	metricsNamespace          string
 	metricsBucketsLatencyHTTP []float64
 	metricsBucketsLatencyRepo []float64
-	jaegerURL                 string
 	writeRetry                int
 	writeRetryInterval        time.Duration
 	writeToken                bool
@@ -59,7 +58,6 @@ func newConfig(roleSessionName string) appConfig {
 		metricsNamespace:          env.String("METRICS_NAMESPACE", ""),
 		metricsBucketsLatencyHTTP: env.Float64Slice("METRICS_BUCKETS_LATENCY_HTTP", []float64{0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5, 10}),
 		metricsBucketsLatencyRepo: env.Float64Slice("METRICS_BUCKETS_LATENCY_REPO", []float64{0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5}),
-		jaegerURL:                 env.String("JAEGER_URL", "http://jaeger-collector:14268/api/traces"),
 		writeRetry:                env.Int("WRITE_RETRY", 3),
 		writeRetryInterval:        env.Duration("WRITE_RETRY_INTERVAL", 1*time.Second),
 		writeToken:                env.Bool("WRITE_TOKEN", false), // require write token in PUT payload

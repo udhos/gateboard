@@ -456,9 +456,25 @@ export REPO_LIST=repo.yaml
 cat repo.yaml
 - kind: mem
     name: mem1
-export JAEGER_URL=http://localhost:14268/api/traces
+
 export OTEL_TRACES_SAMPLER=parentbased_always_on
 export OTEL_SERVICE_NAME=mynamespace.gateboard
+# Jaeger
+export OTELCONFIG_EXPORTER=jaeger
+export OTEL_TRACES_EXPORTER=jaeger
+export OTEL_PROPAGATORS=b3multi
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger-collector:14268
+# OTLP gRPC
+#export OTELCONFIG_EXPORTER=grpc
+#export OTEL_TRACES_EXPORTER=otlp
+#export OTEL_PROPAGATORS=b3multi
+#export OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger-collector:4317
+# OTLP HTTP
+#export OTELCONFIG_EXPORTER=http
+#export OTEL_TRACES_EXPORTER=otlp
+#export OTEL_PROPAGATORS=b3multi
+#export OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger-collector:4318
+
 gateboard
 
 # open jaeger UI http://localhost:16686/
