@@ -27,9 +27,8 @@ const tryAgain = http.StatusServiceUnavailable
 const internalError = http.StatusInternalServerError
 
 type application struct {
-	jaegerURL string
-	tracer    trace.Tracer
-	client    *gateboard.Client
+	tracer trace.Tracer
+	client *gateboard.Client
 }
 
 func main() {
@@ -52,9 +51,7 @@ func main() {
 
 	env := gateboard.NewEnv(me)
 
-	app := &application{
-		jaegerURL: env.String("JAEGER_URL", "http://localhost:14268/api/traces"),
-	}
+	app := &application{}
 
 	//
 	// initialize tracing

@@ -10,7 +10,6 @@ type appConfig struct {
 	accountsFile         string
 	interval             time.Duration
 	gateboardServerURL   string
-	jaegerURL            string
 	debug                bool
 	dryRun               bool
 	save                 string
@@ -38,7 +37,6 @@ func newConfig(me string) appConfig {
 		accountsFile:         env.String("ACCOUNTS", "discovery-accounts.yaml"),
 		interval:             env.Duration("INTERVAL", 0),
 		gateboardServerURL:   env.String("GATEBOARD_SERVER_URL", "http://localhost:8080/gateway"),
-		jaegerURL:            env.String("JAEGER_URL", "http://jaeger-collector:14268/api/traces"),
 		debug:                env.Bool("DEBUG", true),
 		dryRun:               env.Bool("DRY_RUN", true),
 		save:                 env.String("SAVE", "server"), // server, webhook, sqs, sns, lambda
