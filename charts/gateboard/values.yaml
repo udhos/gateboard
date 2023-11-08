@@ -130,6 +130,7 @@ configMapProperties:
   #TOKENS: "" # preload write tokens from this file "tokens.yaml"
   #GROUP_CACHE: "false"
   #GROUP_CACHE_PORT: :5000
+  #GROUP_CACHE_EXPIRE: 180s
   #GIN_MODE: release
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"

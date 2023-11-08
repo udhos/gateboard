@@ -34,6 +34,7 @@ type appConfig struct {
 	tokens                    string
 	groupCache                bool
 	groupCachePort            string
+	groupCacheExpire          time.Duration
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -66,6 +67,7 @@ func newConfig(roleSessionName string) appConfig {
 		tokens:                    env.String("TOKENS", ""),       // preload write tokens from this file "tokens.yaml"
 		groupCache:                env.Bool("GROUP_CACHE", false),
 		groupCachePort:            env.String("GROUP_CACHE_PORT", ":5000"),
+		groupCacheExpire:          env.Duration("GROUP_CACHE_EXPIRE", 180*time.Second),
 	}
 }
 

@@ -75,8 +75,8 @@ func startGroupcache(app *application) {
 			}
 
 			var expire time.Time // zero value for expire means no expiration
-			if app.config.TTL != 0 {
-				expire = time.Now().Add(time.Second * time.Duration(app.config.TTL))
+			if app.config.groupCacheExpire != 0 {
+				expire = time.Now().Add(app.config.groupCacheExpire)
 			}
 
 			dest.SetString(out.GatewayID, expire)
