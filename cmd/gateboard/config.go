@@ -35,6 +35,7 @@ type appConfig struct {
 	groupCache                bool
 	groupCachePort            string
 	groupCacheExpire          time.Duration
+	groupCacheSizeBytes       int64
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -68,6 +69,7 @@ func newConfig(roleSessionName string) appConfig {
 		groupCache:                env.Bool("GROUP_CACHE", false),
 		groupCachePort:            env.String("GROUP_CACHE_PORT", ":5000"),
 		groupCacheExpire:          env.Duration("GROUP_CACHE_EXPIRE", 180*time.Second),
+		groupCacheSizeBytes:       env.Int64("GROUP_CACHE_SIZE_BYTES", 10_000),
 	}
 }
 

@@ -59,7 +59,7 @@ func startGroupcache(app *application) {
 	// https://talks.golang.org/2013/oscon-dl.slide#46
 	//
 	// 64 MB max per-node memory usage
-	app.cache = groupcache.NewGroup("gateways", 64<<20, groupcache.GetterFunc(
+	app.cache = groupcache.NewGroup("gateways", app.config.groupCacheSizeBytes, groupcache.GetterFunc(
 		func(c groupcache.Context, gatewayName string, dest groupcache.Sink) error {
 
 			var ctx context.Context

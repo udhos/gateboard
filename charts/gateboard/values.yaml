@@ -131,6 +131,7 @@ configMapProperties:
   #GROUP_CACHE: "false"
   #GROUP_CACHE_PORT: :5000
   #GROUP_CACHE_EXPIRE: 180s
+  #GROUP_CACHE_SIZE_BYTES: "10000"
   #GIN_MODE: release
   OTEL_TRACES_SAMPLER: parentbased_traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.01"
