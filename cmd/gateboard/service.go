@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mailgun/groupcache"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 	"go.opentelemetry.io/otel/trace"
@@ -346,7 +347,16 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	begin := time.Now()
 
-	out, _, errID := repoGetMultiple(ctx, app, gatewayName)
+	var errID error
+
+	if app.config.groupCache {
+		// cache query
+		errID = app.cache.Get(ctx, gatewayName, groupcache.StringSink(&out.GatewayID))
+	} else {
+		// direct query
+		out, _, errID = repoGetMultiple(ctx, app, gatewayName)
+	}
+
 	out.Token = "" // prevent token leaking
 	out.TTL = app.config.TTL
 
@@ -469,6 +479,13 @@ func gatewayPut(c *gin.Context, app *application) {
 		const repoMethod = "put"
 
 		if errPut == nil {
+
+			// PUT success
+
+			if app.config.groupCache {
+				app.cache.Remove(ctx, gatewayName)
+			}
+
 			out.Error = ""
 			c.JSON(http.StatusOK, out)
 			return

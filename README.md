@@ -87,6 +87,7 @@ Find client documentation here: https://pkg.go.dev/github.com/udhos/gateboard@ma
 - [X] Multiple repositories - helm chart
 - [X] Multiple repositories - fastest concurrent response
 - [X] Multiple repositories - fastest concurrent response tests
+- [X] Group cache
 
 # Services
 

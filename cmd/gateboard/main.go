@@ -19,6 +19,7 @@ import (
 
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/mailgun/groupcache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
@@ -30,21 +31,23 @@ import (
 	"github.com/udhos/otelconfig/oteltrace"
 )
 
-const version = "1.7.2"
+const version = "1.8.0rc"
 
 type application struct {
-	serverMain    *serverGin
-	serverHealth  *serverGin
-	serverMetrics *serverGin
-	me            string
-	tracer        trace.Tracer
-	repo          repository
-	sqsClient     queue
-	config        appConfig
-	repoConf      []repoConfig
-	repoList      []repository
-	repoIndex     int
-	mutex         sync.Mutex
+	serverMain       *serverGin
+	serverHealth     *serverGin
+	serverMetrics    *serverGin
+	serverGroupCache *http.Server
+	cache            *groupcache.Group
+	me               string
+	tracer           trace.Tracer
+	repo             repository
+	sqsClient        queue
+	config           appConfig
+	repoConf         []repoConfig
+	repoList         []repository
+	repoIndex        int
+	mutex            sync.Mutex
 }
 
 func main() {
@@ -211,6 +214,14 @@ func initApplication(app *application, addr string) {
 	}
 
 	//
+	// start group cache
+	//
+
+	if app.config.groupCache {
+		startGroupcache(app)
+	}
+
+	//
 	// register application routes
 	//
 
@@ -244,9 +255,10 @@ func shutdown(app *application) {
 	zlog.Infof("received signal '%v', initiating shutdown", sig)
 
 	const timeout = 5 * time.Second
-	app.serverHealth.shutdown(timeout)
-	app.serverMetrics.shutdown(timeout)
-	app.serverMain.shutdown(timeout)
+	app.serverHealth.shutdown("health", timeout)
+	app.serverMetrics.shutdown("metrics", timeout)
+	app.serverMain.shutdown("main", timeout)
+	httpShutdown(app.serverGroupCache, "groupCache", timeout)
 
 	zlog.Infof("exiting")
 }

@@ -32,6 +32,8 @@ type appConfig struct {
 	writeRetryInterval        time.Duration
 	writeToken                bool
 	tokens                    string
+	groupCache                bool
+	groupCachePort            string
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -62,6 +64,8 @@ func newConfig(roleSessionName string) appConfig {
 		writeRetryInterval:        env.Duration("WRITE_RETRY_INTERVAL", 1*time.Second),
 		writeToken:                env.Bool("WRITE_TOKEN", false), // require write token in PUT payload
 		tokens:                    env.String("TOKENS", ""),       // preload write tokens from this file "tokens.yaml"
+		groupCache:                env.Bool("GROUP_CACHE", false),
+		groupCachePort:            env.String("GROUP_CACHE_PORT", ":5000"),
 	}
 }
 
