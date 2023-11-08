@@ -31,7 +31,7 @@ import (
 	"github.com/udhos/otelconfig/oteltrace"
 )
 
-const version = "1.8.0rc"
+const version = "1.8.0"
 
 type application struct {
 	serverMain       *serverGin
