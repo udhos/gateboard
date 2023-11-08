@@ -118,8 +118,6 @@ func gatewayDump(c *gin.Context, app *application) {
 	zlog.CtxDebugf(ctx, app.config.debug, "%s: repo_dump_latency: elapsed=%v (error:%v)",
 		me, elap, errDump)
 
-	const repoMethod = "dump"
-
 	switch errDump {
 	case nil:
 	case errRepositoryGatewayNotFound:
@@ -365,8 +363,6 @@ func gatewayGet(c *gin.Context, app *application) {
 	zlog.CtxDebugf(ctx, app.config.debug, "%s: gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
 		me, gatewayName, elap, errID)
 
-	const repoMethod = "get"
-
 	switch errID {
 	case nil:
 	case errRepositoryGatewayNotFound:
@@ -475,8 +471,6 @@ func gatewayPut(c *gin.Context, app *application) {
 
 		zlog.CtxDebugf(ctx, app.config.debug, "%s: gateway_name=%s repo_put_latency: elapsed=%v (error:%v)",
 			me, gatewayName, elap, errPut)
-
-		const repoMethod = "put"
 
 		if errPut == nil {
 
