@@ -25,8 +25,13 @@ gen_chart_package() {
 rm -rf charts-tmp
 mkdir -p charts-tmp
 
-gen_chart_package charts/gateboard
-gen_chart_package charts/gateboard-discovery
+cat <<EOF
+NO_GATE=[$NO_GATE]
+NO_DISC=[$NO_DISC]
+EOF
+
+[ -z "$NO_GATE" ] && gen_chart_package charts/gateboard
+[ -z "$NO_DISC" ] && gen_chart_package charts/gateboard-discovery
 
 #
 # merge new chart index into docs/index.yaml
