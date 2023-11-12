@@ -1,6 +1,6 @@
 module github.com/udhos/gateboard
 
-go 1.21.3
+go 1.21.4
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.22.1
@@ -29,6 +29,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0
 	go.opentelemetry.io/otel v1.19.0
 	go.opentelemetry.io/otel/trace v1.19.0
+	go.uber.org/automaxprocs v1.5.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/sync v0.3.0
 	gopkg.in/yaml.v3 v3.0.1

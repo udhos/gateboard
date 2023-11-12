@@ -16,9 +16,10 @@ import (
 	"github.com/udhos/otelconfig/oteltrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	_ "go.uber.org/automaxprocs"
 )
 
-const version = "1.7.2"
+const version = "1.7.3"
 
 func main() {
 

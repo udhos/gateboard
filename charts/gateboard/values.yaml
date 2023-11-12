@@ -73,7 +73,7 @@ customLabels:
 resources:
   requests:
     cpu: 300m
-    memory: 200Mi
+    memory: 100Mi
     ephemeral-storage: 200Mi
   limits:
     cpu: 2000m
