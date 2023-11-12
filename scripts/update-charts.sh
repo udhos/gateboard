@@ -4,7 +4,7 @@
 
 chart_url=https://udhos.github.io/gateboard/
 
-gen_chart() {
+gen_chart_package() {
 
     local chart_dir="$1"
 
@@ -25,8 +25,8 @@ gen_chart() {
 rm -rf charts-tmp
 mkdir -p charts-tmp
 
-gen_chart charts/gateboard
-gen_chart charts/gateboard-discovery
+gen_chart_package charts/gateboard
+gen_chart_package charts/gateboard-discovery
 
 #
 # merge new chart index into docs/index.yaml
