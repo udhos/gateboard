@@ -19,8 +19,6 @@ import (
 	_ "go.uber.org/automaxprocs"
 )
 
-const version = "1.7.3"
-
 func main() {
 
 	var showVersion bool
