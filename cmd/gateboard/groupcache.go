@@ -50,7 +50,14 @@ func startGroupcache(app *application) {
 	// start watcher for addresses of peers
 	//
 
-	go kubegroup.UpdatePeers(pool, app.config.groupCachePort)
+	options := kubegroup.Options{
+		Pool:           pool,
+		GroupCachePort: app.config.groupCachePort,
+		//PodLabelKey:    "app",         // default is "app"
+		//PodLabelValue:  "my-app-name", // default is current PODs label value for label key
+	}
+
+	go kubegroup.UpdatePeers(options)
 
 	//
 	// create cache
