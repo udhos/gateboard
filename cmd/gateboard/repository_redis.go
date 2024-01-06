@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"strings"
 	"time"
@@ -13,11 +14,13 @@ import (
 )
 
 type repoRedisOptions struct {
-	metricRepoName string // kind:name
-	debug          bool
-	addr           string
-	password       string
-	key            string
+	metricRepoName        string // kind:name
+	debug                 bool
+	addr                  string
+	password              string
+	key                   string
+	tls                   bool
+	tlsInsecureSkipVerify bool
 }
 
 type repoRedis struct {
@@ -26,15 +29,23 @@ type repoRedis struct {
 }
 
 func newRepoRedis(opt repoRedisOptions) (*repoRedis, error) {
-	const me = "newRepoRedis"
+
+	redisOptions := &redis.Options{
+		Addr:     opt.addr,
+		Password: opt.password,
+		DB:       0,
+	}
+
+	if opt.tls || opt.tlsInsecureSkipVerify {
+		redisOptions.TLSConfig = &tls.Config{
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: opt.tlsInsecureSkipVerify,
+		}
+	}
 
 	r := &repoRedis{
-		options: opt,
-		redisClient: redis.NewClient(&redis.Options{
-			Addr:     opt.addr,
-			Password: opt.password,
-			DB:       0,
-		}),
+		options:     opt,
+		redisClient: redis.NewClient(redisOptions),
 	}
 
 	return r, nil
@@ -198,9 +209,6 @@ func (r *repoRedis) put(ctx context.Context, gatewayName, gatewayID string) erro
 }
 
 func (r *repoRedis) putToken(ctx context.Context, gatewayName, token string) error {
-	const me = "repoRedis.putToken"
-
 	fieldToken := field(gatewayName, "token")
-
 	return r.redisClient.HSet(ctx, r.options.key, fieldToken, token).Err()
 }

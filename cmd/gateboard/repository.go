@@ -18,7 +18,6 @@ type repository interface {
 type repoDump []map[string]interface{}
 
 var (
-	errRepositoryGatewayNotFound    = errors.New("repository: gateway not found error")
-	errRepositoryGatewayIDNotString = errors.New("repository: gateway ID not a string")
-	errRepositoryTimeout            = errors.New("repository: cross-repository timeout")
+	errRepositoryGatewayNotFound = errors.New("repository: gateway not found error")
+	errRepositoryTimeout         = errors.New("repository: cross-repository timeout")
 )

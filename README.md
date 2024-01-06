@@ -152,6 +152,8 @@ $ cat repo.yaml
     addr: localhost:6379
     #password: "aws-parameterstore:us-east-1:/redis/cluster3/password" # see https://github.com/udhos/boilerplate
     key: gateboard
+    #tls: true
+    #tls_insecure_skip_verify: true
 
 - kind: s3
   name: s3one # name is used for metrics

@@ -21,13 +21,6 @@ func newSpan(ctx context.Context, caller string, tracer trace.Tracer) (context.C
 	return newCtx, span
 }
 
-func getTraceID(span trace.Span) string {
-	if span == nil {
-		return "tracing-disabled"
-	}
-	return span.SpanContext().TraceID().String()
-}
-
 func traceError(span trace.Span, description string) {
 	if span != nil {
 		span.SetStatus(codes.Error, description)

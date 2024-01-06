@@ -40,7 +40,6 @@ type repoS3 struct {
 }
 
 func newRepoS3(opt repoS3Options) (*repoS3, error) {
-	const me = "newRepoS3"
 
 	awsConfOptions := awsconfig.Options{
 		Region:          opt.region,
@@ -94,7 +93,6 @@ func (r *repoS3) repoName() string {
 }
 
 func (r *repoS3) dropDatabase() error {
-	const me = "repoS3.dropDatabase"
 
 	keys, errList := r.listKeys()
 	if errList != nil {
@@ -116,7 +114,6 @@ func (r *repoS3) dropDatabase() error {
 }
 
 func (r *repoS3) dump(ctx context.Context) (repoDump, error) {
-	const me = "repoS3.dump"
 
 	list := repoDump{}
 
@@ -184,7 +181,6 @@ func (r *repoS3) listKeys() ([]string, error) {
 }
 
 func (r *repoS3) get(_ /*ctx*/ context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
-	const me = "repoS3.get"
 
 	var body gateboard.BodyGetReply
 
@@ -287,7 +283,6 @@ func (r *repoS3) s3put(gatewayName string, body gateboard.BodyGetReply) error {
 }
 
 func (r *repoS3) putToken(ctx context.Context, gatewayName, token string) error {
-	const me = "repoS3.putToken"
 
 	//
 	// get previous object since we need to update the token field

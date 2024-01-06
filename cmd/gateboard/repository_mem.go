@@ -121,7 +121,7 @@ func (r *repoMem) put(_ /*ctx*/ context.Context, gatewayName, gatewayID string) 
 
 	now := time.Now()
 	r.lock.Lock()
-	e, _ := r.tab[gatewayName]
+	e := r.tab[gatewayName]
 	e.id = gatewayID
 	e.changes++
 	e.lastUpdate = now
@@ -132,7 +132,7 @@ func (r *repoMem) put(_ /*ctx*/ context.Context, gatewayName, gatewayID string) 
 
 func (r *repoMem) putToken(_ /*ctx*/ context.Context, gatewayName, token string) error {
 	r.lock.Lock()
-	e, _ := r.tab[gatewayName]
+	e := r.tab[gatewayName]
 	e.token = token
 	r.tab[gatewayName] = e
 	r.lock.Unlock()

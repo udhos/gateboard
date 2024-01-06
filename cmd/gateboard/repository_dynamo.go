@@ -34,7 +34,6 @@ type repoDynamo struct {
 }
 
 func newRepoDynamo(opt repoDynamoOptions) (*repoDynamo, error) {
-	const me = "newRepoDynamo"
 
 	awsConfOptions := awsconfig.Options{
 		Region:          opt.region,
@@ -217,7 +216,6 @@ func (r *repoDynamo) dropDatabase() error {
 }
 
 func (r *repoDynamo) dump(_ /*ctx*/ context.Context) (repoDump, error) {
-	const me = "repoDynamo.dump"
 
 	list := repoDump{}
 
@@ -254,7 +252,6 @@ func (r *repoDynamo) dump(_ /*ctx*/ context.Context) (repoDump, error) {
 }
 
 func (r *repoDynamo) get(_ /*ctx*/ context.Context, gatewayName string) (gateboard.BodyGetReply, error) {
-	const me = "repoDynamo.get"
 
 	var body gateboard.BodyGetReply
 

@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
@@ -40,13 +39,10 @@ type application struct {
 	cache            *groupcache.Group
 	me               string
 	tracer           trace.Tracer
-	repo             repository
 	sqsClient        queue
 	config           appConfig
 	repoConf         []repoConfig
 	repoList         []repository
-	repoIndex        int
-	mutex            sync.Mutex
 }
 
 func main() {

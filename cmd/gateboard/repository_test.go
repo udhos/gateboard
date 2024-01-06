@@ -31,10 +31,12 @@ func TestRepository(t *testing.T) {
 	t.Logf("testing repo redis: %t", testRedis)
 	if testRedis {
 		r, err := newRepoRedis(repoRedisOptions{
-			debug:    debug,
-			addr:     "localhost:6379",
-			password: "",
-			key:      table,
+			debug:                 debug,
+			addr:                  "localhost:6379",
+			password:              "",
+			key:                   table,
+			tls:                   env.Bool("TEST_REPO_REDIS_TLS", false),
+			tlsInsecureSkipVerify: env.Bool("TEST_REPO_REDIS_TLS_INSECURE_SKIP_VERIFY", false),
 		})
 		if err != nil {
 			t.Errorf("error initializing redis: %v", err)

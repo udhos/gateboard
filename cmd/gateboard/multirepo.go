@@ -42,9 +42,11 @@ type dynamoDBConfig struct {
 }
 
 type redisConfig struct {
-	Addr     string `json:"addr"     yaml:"addr"`
-	Password string `json:"password" yaml:"password"`
-	Key      string `json:"key"      yaml:"key"`
+	Addr                  string `json:"addr"                     yaml:"addr"`
+	Password              string `json:"password"                 yaml:"password"`
+	Key                   string `json:"key"                      yaml:"key"`
+	TLS                   bool   `json:"tls"                      yaml:"tls"`
+	TLSInsecureSkipVerify bool   `json:"tls_insecure_skip_verify" yaml:"tls_insecure_skip_verify"`
 }
 
 type s3Config struct {
@@ -134,11 +136,13 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 		return repo
 	case "redis":
 		repo, errRedis := newRepoRedis(repoRedisOptions{
-			metricRepoName: metricRepoName,
-			debug:          debug,
-			addr:           config.Redis.Addr,
-			password:       sec.Retrieve(config.Redis.Password),
-			key:            config.Redis.Key,
+			metricRepoName:        metricRepoName,
+			debug:                 debug,
+			addr:                  config.Redis.Addr,
+			password:              sec.Retrieve(config.Redis.Password),
+			key:                   config.Redis.Key,
+			tls:                   config.Redis.TLS,
+			tlsInsecureSkipVerify: config.Redis.TLSInsecureSkipVerify,
 		})
 		if errRedis != nil {
 			zlog.Fatalf("%s: repo redis: %v", me, errRedis)
