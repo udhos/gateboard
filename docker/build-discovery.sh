@@ -10,4 +10,8 @@ docker build \
     -t udhos/gateboard-discovery:$version \
     -f docker/Dockerfile.discovery .
 
-echo "push: docker push udhos/gateboard-discovery:$version; docker push udhos/gateboard-discovery:latest"
+echo push:
+echo "docker push udhos/gateboard-discovery:$version; docker push udhos/gateboard-discovery:latest" > docker-push-discovery.sh
+chmod a+rx docker-push-discovery.sh
+echo docker-push-discovery.sh:
+cat docker-push-discovery.sh

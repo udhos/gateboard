@@ -15,3 +15,5 @@
 # vendor/
 
 charts-tmp
+docker-push.sh
+docker-push-discovery.sh

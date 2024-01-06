@@ -10,4 +10,8 @@ docker build \
     -t udhos/gateboard:$version \
     -f docker/Dockerfile .
 
-echo "push: docker push udhos/gateboard:$version; docker push udhos/gateboard:latest"
+echo push:
+echo "docker push udhos/gateboard:$version; docker push udhos/gateboard:latest" > docker-push.sh
+chmod a+rx docker-push.sh
+echo docker-push.sh:
+cat docker-push.sh
