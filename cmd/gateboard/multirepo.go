@@ -47,6 +47,7 @@ type redisConfig struct {
 	Key                   string `json:"key"                      yaml:"key"`
 	TLS                   bool   `json:"tls"                      yaml:"tls"`
 	TLSInsecureSkipVerify bool   `json:"tls_insecure_skip_verify" yaml:"tls_insecure_skip_verify"`
+	ClientName            string `json:"client_name"              yaml:"client_name"`
 }
 
 type s3Config struct {
@@ -135,7 +136,7 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 		}
 		return repo
 	case "redis":
-		repo, errRedis := newRepoRedis(repoRedisOptions{
+		opt := repoRedisOptions{
 			metricRepoName:        metricRepoName,
 			debug:                 debug,
 			addr:                  config.Redis.Addr,
@@ -143,7 +144,16 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 			key:                   config.Redis.Key,
 			tls:                   config.Redis.TLS,
 			tlsInsecureSkipVerify: config.Redis.TLSInsecureSkipVerify,
-		})
+			clientName:            config.Redis.ClientName,
+		}
+		if opt.clientName == "auto" {
+			host, errHost := os.Hostname()
+			if errHost != nil {
+				zlog.Fatalf("%s: repo redis: %v", me, errHost)
+			}
+			opt.clientName = host
+		}
+		repo, errRedis := newRepoRedis(opt)
 		if errRedis != nil {
 			zlog.Fatalf("%s: repo redis: %v", me, errRedis)
 		}

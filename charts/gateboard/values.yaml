@@ -221,6 +221,7 @@ configDir:
         key: gateboard
         #tls: true
         #tls_insecure_skip_verify: true
+        client_name: auto # 'auto' means use hostname
 
     - kind: s3
       name: s3one # name is used for metrics

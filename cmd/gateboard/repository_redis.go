@@ -21,6 +21,7 @@ type repoRedisOptions struct {
 	key                   string
 	tls                   bool
 	tlsInsecureSkipVerify bool
+	clientName            string
 }
 
 type repoRedis struct {
@@ -31,9 +32,10 @@ type repoRedis struct {
 func newRepoRedis(opt repoRedisOptions) (*repoRedis, error) {
 
 	redisOptions := &redis.Options{
-		Addr:     opt.addr,
-		Password: opt.password,
-		DB:       0,
+		Addr:       opt.addr,
+		Password:   opt.password,
+		DB:         0,
+		ClientName: opt.clientName,
 	}
 
 	if opt.tls || opt.tlsInsecureSkipVerify {
