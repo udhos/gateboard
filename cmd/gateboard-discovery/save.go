@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -306,18 +307,6 @@ func getARNRegion(arn string) (string, error) {
 	return region, nil
 }
 
-// arn:aws:lambda:us-east-1:123456789012:function:forward_to_sqs
-func getARNFunctionName(arn string) (string, error) {
-	const me = "getARNFunctionName"
-	fields := strings.SplitN(arn, ":", 7)
-	if len(fields) < 7 {
-		return "", fmt.Errorf("%s: bad ARN=[%s]", me, arn)
-	}
-	funcName := fields[6]
-	log.Printf("%s=[%s]", me, funcName)
-	return funcName, nil
-}
-
 func (s *saverSNS) save(ctx context.Context, tracer trace.Tracer, name, id, writeToken string, debug bool) error {
 
 	const me = "saverSNS.save"
@@ -391,12 +380,6 @@ func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id, w
 		defer span.End()
 	}
 
-	functionName, errFuncName := getARNFunctionName(s.lambdaARN)
-	if errFuncName != nil {
-		traceError(span, errFuncName.Error())
-		return errFuncName
-	}
-
 	clientLambda, errClientLambda := s.createLambdaClient(s.lambdaARN, s.roleARN, s.roleSessionName, s.roleExternalID)
 	if errClientLambda != nil {
 		traceError(span, errClientLambda.Error())
@@ -410,7 +393,7 @@ func (s *saverLambda) save(ctx context.Context, tracer trace.Tracer, name, id, w
 	}
 
 	input := &lambda.InvokeInput{
-		FunctionName: &functionName,
+		FunctionName: aws.String(s.lambdaARN),
 		Payload:      requestBytes,
 	}
 

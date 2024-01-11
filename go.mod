@@ -1,6 +1,6 @@
 module github.com/udhos/gateboard
 
-go 1.21.5
+go 1.21.6
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.22.1
