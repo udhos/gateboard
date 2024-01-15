@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mailgun/groupcache"
+	"github.com/mailgun/groupcache/v2"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/udhos/groupcache_exporter"
+	"github.com/udhos/groupcache_exporter/groupcache/mailgun"
 	"github.com/udhos/kubegroup/kubegroup"
 )
 
@@ -67,14 +70,7 @@ func startGroupcache(app *application) {
 	//
 	// 64 MB max per-node memory usage
 	app.cache = groupcache.NewGroup("gateways", app.config.groupCacheSizeBytes, groupcache.GetterFunc(
-		func(c groupcache.Context, gatewayName string, dest groupcache.Sink) error {
-
-			var ctx context.Context
-			if c == nil {
-				ctx = context.Background()
-			} else {
-				ctx = c.(context.Context)
-			}
+		func(ctx context.Context, gatewayName string, dest groupcache.Sink) error {
 
 			out, _, errID := repoGetMultiple(ctx, app, gatewayName)
 			if errID != nil {
@@ -91,4 +87,15 @@ func startGroupcache(app *application) {
 			return nil
 		}))
 
+	//
+	// expose prometheus metrics for groupcache
+	//
+
+	mailgun := mailgun.New(app.cache)
+	labels := map[string]string{
+		//"app": appName,
+	}
+	namespace := ""
+	collector := groupcache_exporter.NewExporter(namespace, labels, mailgun)
+	prometheus.MustRegister(collector)
 }

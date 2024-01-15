@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mailgun/groupcache"
+	"github.com/mailgun/groupcache/v2"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 	"go.opentelemetry.io/otel/trace"

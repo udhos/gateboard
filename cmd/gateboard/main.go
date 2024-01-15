@@ -18,7 +18,7 @@ import (
 
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/mailgun/groupcache"
+	"github.com/mailgun/groupcache/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
@@ -34,7 +34,7 @@ import (
 type application struct {
 	serverMain       *serverGin
 	serverHealth     *serverGin
-	serverMetrics    *serverGin
+	serverMetrics    *http.Server
 	serverGroupCache *http.Server
 	cache            *groupcache.Group
 	me               string
@@ -160,17 +160,17 @@ func main() {
 	// start metrics server
 	//
 
-	app.serverMetrics = newServerGin(app.config.metricsAddr)
+	{
+		mux := http.NewServeMux()
+		app.serverMetrics = &http.Server{Addr: app.config.metricsAddr, Handler: mux}
+		mux.Handle(app.config.metricsPath, promhttp.Handler())
 
-	go func() {
-		prom := promhttp.Handler()
-		app.serverMetrics.router.GET(app.config.metricsPath, func(c *gin.Context) {
-			prom.ServeHTTP(c.Writer, c.Request)
-		})
-		zlog.Infof("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
-		err := app.serverMetrics.server.ListenAndServe()
-		zlog.Infof("metrics server: exited: %v", err)
-	}()
+		go func() {
+			zlog.Infof("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
+			err := app.serverMetrics.ListenAndServe()
+			zlog.Infof("metrics server: exited: %v", err)
+		}()
+	}
 
 	//
 	// handle graceful shutdown
@@ -251,9 +251,9 @@ func shutdown(app *application) {
 
 	const timeout = 5 * time.Second
 	app.serverHealth.shutdown("health", timeout)
-	app.serverMetrics.shutdown("metrics", timeout)
 	app.serverMain.shutdown("main", timeout)
 	httpShutdown(app.serverGroupCache, "groupCache", timeout)
+	httpShutdown(app.serverMetrics, "metrics", timeout)
 
 	zlog.Infof("exiting")
 }
