@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -131,49 +132,67 @@ func (r *repoRedis) get(ctx context.Context, gatewayName string) (gateboard.Body
 	fieldLastUpdate := field(gatewayName, "last_update")
 	fieldToken := field(gatewayName, "token")
 
-	// id
-
-	cmdID := r.redisClient.HGet(ctx, r.options.key, fieldID)
-	errID := cmdID.Err()
-	if errID == redis.Nil {
+	cmdMGet := r.redisClient.HMGet(ctx, r.options.key, fieldID, fieldChanges, fieldLastUpdate, fieldToken)
+	errMGet := cmdMGet.Err()
+	if errMGet == redis.Nil {
 		return body, errRepositoryGatewayNotFound
 	}
-	if errID != nil {
-		return body, cmdID.Err()
+	if errMGet != nil {
+		return body, cmdMGet.Err()
 	}
-	body.GatewayID = cmdID.Val()
+	fieldValues := cmdMGet.Val()
 
+	var ok bool
+
+	//
+	// gateway id
+	//
+	valueGatewayID := fieldValues[0]
+	body.GatewayID, ok = valueGatewayID.(string)
+	if !ok {
+		return body, fmt.Errorf("field gateway_id not string: %[1]T: %[1]v", valueGatewayID)
+	}
+
+	//
 	// changes
-
-	cmdChanges := r.redisClient.HGet(ctx, r.options.key, fieldChanges)
-	if err := cmdChanges.Err(); err != nil {
-		zlog.CtxErrorf(ctx, "%s: changes retrieve: %v", me, err)
+	//
+	valueChanges := fieldValues[1]
+	var changesStr string
+	changesStr, ok = valueChanges.(string)
+	if !ok {
+		return body, fmt.Errorf("field changes not string: %[1]T: %[1]v", valueChanges)
 	}
-	changes, errInt64 := cmdChanges.Int64()
-	if errInt64 != nil {
-		zlog.CtxErrorf(ctx, "%s: changes int: %v", me, errInt64)
+	changes, errConv := strconv.ParseInt(changesStr, 10, 64)
+	if errConv != nil {
+		zlog.CtxErrorf(ctx, "%s: parse changes: %v", me, errConv)
 	}
 	body.Changes = changes
 
+	//
 	// last update
-
-	cmdLastUpdate := r.redisClient.HGet(ctx, r.options.key, fieldLastUpdate)
-	if err := cmdLastUpdate.Err(); err != nil {
-		zlog.CtxErrorf(ctx, "%s: last update retrieve: %v", me, err)
+	//
+	valueLastUpdate := fieldValues[2]
+	var lastUpdateStr string
+	lastUpdateStr, ok = valueLastUpdate.(string)
+	if !ok {
+		return body, fmt.Errorf("field last_update not string: %[1]T: %[1]v", valueLastUpdate)
 	}
-	lastUpdate, errParse := time.Parse(time.RFC3339, cmdLastUpdate.Val())
+	lastUpdate, errParse := time.Parse(time.RFC3339, lastUpdateStr)
 	if errParse != nil {
 		zlog.CtxErrorf(ctx, "%s: last update parse: %v", me, errParse)
 	}
 	body.LastUpdate = lastUpdate
 
+	//
 	// token
-
-	cmdToken := r.redisClient.HGet(ctx, r.options.key, fieldToken)
-	if err := cmdToken.Err(); err != nil {
-		zlog.CtxErrorf(ctx, "%s: token retrieve: %v", me, err)
+	//
+	valueToken := fieldValues[3]
+	if valueToken != nil {
+		body.Token, ok = valueToken.(string)
+		if !ok {
+			return body, fmt.Errorf("field token not string: %[1]T: %[1]v", valueToken)
+		}
 	}
-	body.Token = cmdToken.Val()
 
 	return body, nil
 }
