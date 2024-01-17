@@ -22,7 +22,7 @@ require (
 	github.com/segmentio/ksuid v1.0.4
 	github.com/udhos/boilerplate v1.2.1
 	github.com/udhos/groupcache_exporter v0.0.4
-	github.com/udhos/kubegroup v0.5.1
+	github.com/udhos/kubegroup v0.7.0
 	github.com/udhos/mongodbclient v1.0.1
 	github.com/udhos/otelconfig v0.1.3
 	go.mongodb.org/mongo-driver v1.11.7
