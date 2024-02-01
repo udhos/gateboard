@@ -105,6 +105,7 @@ func CtxErrorf(ctx context.Context, format string, v ...any) {
 	Logger.Error(fmt.Sprintf(format, v...), zap.String("traceId", traceIDFromContext(ctx)))
 }
 
+/*
 // GinInfof logs at info level with gin trace context and Printf-like formatting.
 func GinInfof(c *gin.Context, format string, v ...any) {
 	CtxInfof(c.Request.Context(), fmt.Sprintf(format, v...))
@@ -114,6 +115,7 @@ func GinInfof(c *gin.Context, format string, v ...any) {
 func GinErrorf(c *gin.Context, format string, v ...any) {
 	CtxErrorf(c.Request.Context(), fmt.Sprintf(format, v...))
 }
+*/
 
 func traceIDFromContext(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
