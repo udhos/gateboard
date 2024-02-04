@@ -174,7 +174,7 @@ $ cat repo.yaml
 Start mongodb:
 
 ```bash
-docker run --rm --name mongo-main -p 27017:27017 -d mongo
+docker run --rm --name mongo-main -p 27017:27017 mongo
 ```
 
 Run repository tests:
