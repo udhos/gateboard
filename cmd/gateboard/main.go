@@ -33,7 +33,7 @@ import (
 
 type application struct {
 	serverMain       *serverGin
-	serverHealth     *serverGin
+	serverHealth     *http.Server
 	serverMetrics    *http.Server
 	serverGroupCache *http.Server
 	cache            *groupcache.Group
@@ -143,24 +143,29 @@ func main() {
 	// start health server
 	//
 
-	app.serverHealth = newServerGin(app.config.healthAddr)
+	{
+		zlog.Infof("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
 
-	zlog.Infof("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
-	app.serverHealth.router.GET(app.config.healthPath, func(c *gin.Context) {
-		c.String(http.StatusOK, "health ok")
-	})
+		mux := http.NewServeMux()
+		app.serverHealth = &http.Server{Addr: app.config.healthAddr, Handler: mux}
+		mux.HandleFunc(app.config.healthPath, func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, "health ok")
+		})
 
-	go func() {
-		zlog.Infof("health server: listening on %s", app.config.healthAddr)
-		err := app.serverHealth.server.ListenAndServe()
-		zlog.Infof("health server: exited: %v", err)
-	}()
+		go func() {
+			zlog.Infof("health server: listening on %s %s", app.config.healthAddr, app.config.healthPath)
+			err := app.serverHealth.ListenAndServe()
+			zlog.Infof("health server: exited: %v", err)
+		}()
+	}
 
 	//
 	// start metrics server
 	//
 
 	{
+		zlog.Infof("registering route: %s %s", app.config.metricsAddr, app.config.metricsPath)
+
 		mux := http.NewServeMux()
 		app.serverMetrics = &http.Server{Addr: app.config.metricsAddr, Handler: mux}
 		mux.Handle(app.config.metricsPath, promhttp.Handler())
@@ -250,7 +255,7 @@ func shutdown(app *application) {
 	zlog.Infof("received signal '%v', initiating shutdown", sig)
 
 	const timeout = 5 * time.Second
-	app.serverHealth.shutdown("health", timeout)
+	httpShutdown(app.serverHealth, "health", timeout)
 	app.serverMain.shutdown("main", timeout)
 	httpShutdown(app.serverGroupCache, "groupCache", timeout)
 	httpShutdown(app.serverMetrics, "metrics", timeout)
