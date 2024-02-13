@@ -81,7 +81,8 @@ func main() {
 	if app.config.tokens != "" {
 		tokens, errTokens := loadTokens(app.config.tokens)
 		if errTokens != nil {
-			zlog.Fatalf("error loading tokens from file %s: %v", app.config.tokens, errTokens)
+			zlog.Fatalf("error loading tokens from file %s: %v",
+				app.config.tokens, errTokens)
 		}
 		for gw, tk := range tokens {
 			errPut := repoPutTokenMultiple(context.TODO(), app, gw, tk)
@@ -144,16 +145,19 @@ func main() {
 	//
 
 	{
-		zlog.Infof("registering route: %s %s", app.config.healthAddr, app.config.healthPath)
+		zlog.Infof("registering route: %s %s",
+			app.config.healthAddr, app.config.healthPath)
 
 		mux := http.NewServeMux()
 		app.serverHealth = &http.Server{Addr: app.config.healthAddr, Handler: mux}
-		mux.HandleFunc(app.config.healthPath, func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(app.config.healthPath, func(w http.ResponseWriter,
+			_ /*r*/ *http.Request) {
 			fmt.Fprintln(w, "health ok")
 		})
 
 		go func() {
-			zlog.Infof("health server: listening on %s %s", app.config.healthAddr, app.config.healthPath)
+			zlog.Infof("health server: listening on %s %s",
+				app.config.healthAddr, app.config.healthPath)
 			err := app.serverHealth.ListenAndServe()
 			zlog.Infof("health server: exited: %v", err)
 		}()
@@ -164,14 +168,16 @@ func main() {
 	//
 
 	{
-		zlog.Infof("registering route: %s %s", app.config.metricsAddr, app.config.metricsPath)
+		zlog.Infof("registering route: %s %s",
+			app.config.metricsAddr, app.config.metricsPath)
 
 		mux := http.NewServeMux()
 		app.serverMetrics = &http.Server{Addr: app.config.metricsAddr, Handler: mux}
 		mux.Handle(app.config.metricsPath, promhttp.Handler())
 
 		go func() {
-			zlog.Infof("metrics server: listening on %s %s", app.config.metricsAddr, app.config.metricsPath)
+			zlog.Infof("metrics server: listening on %s %s",
+				app.config.metricsAddr, app.config.metricsPath)
 			err := app.serverMetrics.ListenAndServe()
 			zlog.Infof("metrics server: exited: %v", err)
 		}()
@@ -188,7 +194,8 @@ func initApplication(app *application, addr string) {
 
 	const me = "initApplication"
 
-	initMetrics(app.config.metricsNamespace, app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
+	initMetrics(app.config.metricsNamespace, app.config.metricsBucketsLatencyHTTP,
+		app.config.metricsBucketsLatencyRepo)
 
 	//
 	// load multirepo config
@@ -205,10 +212,12 @@ func initApplication(app *application, addr string) {
 		app.repoConf = repoList
 	}
 
-	log.Printf("repo list: %s: %s", app.config.repoList, toJSON(context.TODO(), app.repoConf))
+	log.Printf("repo list: %s: %s", app.config.repoList,
+		toJSON(context.TODO(), app.repoConf))
 
 	for i, conf := range app.repoConf {
-		log.Printf("initializing repository: [%d/%d]: %s", i+1, len(app.repoConf), conf.Kind)
+		log.Printf("initializing repository: [%d/%d]: %s",
+			i+1, len(app.repoConf), conf.Kind)
 		r := createRepo(me, app.config.secretRoleArn, conf, app.config.debug)
 		app.repoList = append(app.repoList, r)
 	}

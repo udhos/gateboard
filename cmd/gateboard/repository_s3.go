@@ -99,13 +99,13 @@ func (r *repoS3) dropDatabase() error {
 		return errList
 	}
 
-	var objectIds []s3types.ObjectIdentifier
+	var objectIDs []s3types.ObjectIdentifier
 	for _, key := range keys {
-		objectIds = append(objectIds, s3types.ObjectIdentifier{Key: aws.String(key)})
+		objectIDs = append(objectIDs, s3types.ObjectIdentifier{Key: aws.String(key)})
 	}
 	input := s3.DeleteObjectsInput{
 		Bucket: aws.String(r.options.bucket),
-		Delete: &s3types.Delete{Objects: objectIds},
+		Delete: &s3types.Delete{Objects: objectIDs},
 	}
 
 	_, err := r.s3Client.DeleteObjects(context.TODO(), &input)
