@@ -36,6 +36,7 @@ type appConfig struct {
 	groupCachePort            string
 	groupCacheExpire          time.Duration
 	groupCacheSizeBytes       int64
+	kubegroupDebug            bool
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -70,6 +71,7 @@ func newConfig(roleSessionName string) appConfig {
 		groupCachePort:            env.String("GROUP_CACHE_PORT", ":5000"),
 		groupCacheExpire:          env.Duration("GROUP_CACHE_EXPIRE", 180*time.Second),
 		groupCacheSizeBytes:       env.Int64("GROUP_CACHE_SIZE_BYTES", 10_000),
+		kubegroupDebug:            env.Bool("KUBEGROUP_DEBUG", true),
 	}
 }
 

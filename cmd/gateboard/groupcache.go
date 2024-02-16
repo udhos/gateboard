@@ -60,6 +60,7 @@ func startGroupcache(app *application) {
 		//PodLabelValue:  "my-app-name", // default is current PODs label value for label key
 		MetricsRegisterer: app.registry,
 		MetricsGatherer:   app.registry,
+		Debug:             app.config.kubegroupDebug,
 	}
 
 	go kubegroup.UpdatePeers(options)
