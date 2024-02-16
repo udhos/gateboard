@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -180,9 +179,8 @@ func newTestAppMultirepo(repo string) *application {
 	os.Setenv("REPO_LIST", repo)
 
 	app := &application{
-		me:       me,
-		config:   newConfig(me),
-		registry: prometheus.NewRegistry(),
+		me:     me,
+		config: newConfig(me),
 	}
 
 	initApplication(app, ":8080")

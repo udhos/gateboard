@@ -19,7 +19,6 @@ import (
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/mailgun/groupcache/v2"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
@@ -44,7 +43,6 @@ type application struct {
 	config           appConfig
 	repoConf         []repoConfig
 	repoList         []repository
-	registry         *prometheus.Registry
 }
 
 func main() {
@@ -66,9 +64,8 @@ func main() {
 	}
 
 	app := &application{
-		me:       me,
-		config:   newConfig(me),
-		registry: prometheus.NewRegistry(),
+		me:     me,
+		config: newConfig(me),
 	}
 
 	if app.config.debug {
@@ -176,7 +173,7 @@ func main() {
 
 		mux := http.NewServeMux()
 		app.serverMetrics = &http.Server{Addr: app.config.metricsAddr, Handler: mux}
-		mux.Handle(app.config.metricsPath, app.metricsHandler())
+		mux.Handle(app.config.metricsPath, promhttp.Handler())
 
 		go func() {
 			zlog.Infof("metrics server: listening on %s %s",
@@ -193,25 +190,11 @@ func main() {
 	shutdown(app)
 }
 
-func (app *application) metricsHandler() http.Handler {
-	registerer := app.registry
-	gatherer := app.registry
-	return promhttp.InstrumentMetricHandler(
-		registerer, promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{}),
-	)
-}
-
 func initApplication(app *application, addr string) {
 
 	const me = "initApplication"
 
-	//
-	// add basic/default instrumentation
-	//
-	app.registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	app.registry.MustRegister(prometheus.NewGoCollector())
-
-	initMetrics(app.registry, app.config.metricsNamespace,
+	initMetrics(app.config.metricsNamespace,
 		app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
 
 	//

@@ -19,20 +19,10 @@ func startGroupcache(app *application) {
 	// create groupcache pool
 	//
 
-	var myURL string
-	for myURL == "" {
-		var errURL error
-		myURL, errURL = kubegroup.FindMyURL(app.config.groupCachePort)
-		if errURL != nil {
-			log.Printf("my URL: %v", errURL)
-		}
-		if myURL == "" {
-			const cooldown = 5 * time.Second
-			log.Printf("could not find my URL, sleeping %v", cooldown)
-			time.Sleep(cooldown)
-		}
+	myURL, errURL := kubegroup.FindMyURL(app.config.groupCachePort)
+	if errURL != nil {
+		log.Fatalf("my URL: %v", errURL)
 	}
-
 	log.Printf("groupcache my URL: %s", myURL)
 
 	pool := groupcache.NewHTTPPoolOpts(myURL, &groupcache.HTTPPoolOptions{})
@@ -58,13 +48,15 @@ func startGroupcache(app *application) {
 		GroupCachePort: app.config.groupCachePort,
 		//PodLabelKey:    "app",         // default is "app"
 		//PodLabelValue:  "my-app-name", // default is current PODs label value for label key
-		MetricsRegisterer: app.registry,
-		MetricsGatherer:   app.registry,
+		MetricsRegisterer: prometheus.DefaultRegisterer,
+		MetricsGatherer:   prometheus.DefaultGatherer,
 		Debug:             app.config.kubegroupDebug,
 		ListerInterval:    app.config.kubegroupListerInterval,
 	}
 
-	go kubegroup.UpdatePeers(options)
+	if _, errKg := kubegroup.UpdatePeers(options); errKg != nil {
+		log.Fatalf("kubegroup: %v", errKg)
+	}
 
 	//
 	// create cache

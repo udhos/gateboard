@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -134,9 +133,8 @@ func newTestApp(writeToken bool) *application {
 	os.Setenv("REPO_LIST", "testdata/repo_mem.yaml")
 
 	app := &application{
-		me:       me,
-		config:   newConfig(me),
-		registry: prometheus.NewRegistry(),
+		me:     me,
+		config: newConfig(me),
 	}
 
 	app.config.writeToken = writeToken

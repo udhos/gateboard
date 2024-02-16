@@ -31,18 +31,17 @@ var (
 	metric               *metrics
 )
 
-func initMetrics(registerer prometheus.Registerer, namespace string, latencyBucketsHTTP, latencyBucketsRepo []float64) {
+func initMetrics(namespace string, latencyBucketsHTTP, latencyBucketsRepo []float64) {
 	if metric != nil {
 		return
 	}
-	metric = newMetrics(registerer, namespace, latencyBucketsHTTP, latencyBucketsRepo)
+	metric = newMetrics(namespace, latencyBucketsHTTP, latencyBucketsRepo)
 }
 
-func newMetrics(registerer prometheus.Registerer, namespace string, latencyBucketsHTTP, latencyBucketsRepo []float64) *metrics {
+func newMetrics(namespace string, latencyBucketsHTTP, latencyBucketsRepo []float64) *metrics {
 	return &metrics{
 
-		latencySpring: newHistogramVec(
-			registerer,
+		latencySpring: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: namespace,
 				Name:      "http_server_requests_seconds",
@@ -52,8 +51,7 @@ func newMetrics(registerer prometheus.Registerer, namespace string, latencyBucke
 			dimensionsSpring,
 		),
 
-		latencyRepo: newHistogramVec(
-			registerer,
+		latencyRepo: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: namespace,
 				Name:      "repository_requests_seconds",
@@ -63,12 +61,6 @@ func newMetrics(registerer prometheus.Registerer, namespace string, latencyBucke
 			dimensionsRepository,
 		),
 	}
-}
-
-func newHistogramVec(registerer prometheus.Registerer,
-	opts prometheus.HistogramOpts,
-	labelValues []string) *prometheus.HistogramVec {
-	return promauto.With(registerer).NewHistogramVec(opts, labelValues)
 }
 
 // middleware provides a gin middleware for exposing prometheus metrics.
