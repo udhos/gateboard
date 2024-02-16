@@ -228,8 +228,8 @@ github.com/udhos/boilerplate v1.2.3 h1:ldn9GJ8fhNbhcpY0qson3i8j1pmhDr285aK4goWYh
 github.com/udhos/boilerplate v1.2.3/go.mod h1:tm08k2yWpsSl3KByKzV01JGrycaV0sQ1j+zrj93DBtI=
 github.com/udhos/groupcache_exporter v0.1.0 h1:1pXP7c00VX2YTvCMo4CO3d/nv2rWq/0JOlnDwb6bO8s=
 github.com/udhos/groupcache_exporter v0.1.0/go.mod h1:CD1BGchO6jV4u6aarWVXkbr7UVztizOj8Bi8tJ2gN/A=
-github.com/udhos/kubegroup v0.8.2-0.20240216003439-98079202c098 h1:zuRdfMhnma0+Nu9kDlnPqJPFPjd4vwaBut0AeeAetl0=
-github.com/udhos/kubegroup v0.8.2-0.20240216003439-98079202c098/go.mod h1:/Q7YBVnftXeeNVkLe2AllGn7g7Ahpf0WdwgLx4521/Q=
+github.com/udhos/kubegroup v0.9.0 h1:wjJ4LZelHrVvICJAgYTjCH2rrLJZ6Mg3YwCk+kkEewo=
+github.com/udhos/kubegroup v0.9.0/go.mod h1:/Q7YBVnftXeeNVkLe2AllGn7g7Ahpf0WdwgLx4521/Q=
 github.com/udhos/mongodbclient v1.0.4 h1:xg0symrZ6uZAeN37pM+giVGyxyZzI3BeRWDxMyq5BSU=
 github.com/udhos/mongodbclient v1.0.4/go.mod h1:+nrj84zcTHpxtyWP1ZMQF4RUXrKdc+NS0hCyySQQcUk=
 github.com/udhos/otelconfig v0.1.7 h1:jnmKmMV1F0eGU9Ct0BPcRET8SUXFTZHGr8bYdKOBhIo=

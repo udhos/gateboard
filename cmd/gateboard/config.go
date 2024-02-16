@@ -37,6 +37,7 @@ type appConfig struct {
 	groupCacheExpire          time.Duration
 	groupCacheSizeBytes       int64
 	kubegroupDebug            bool
+	kubegroupListerInterval   time.Duration
 }
 
 func newConfig(roleSessionName string) appConfig {
@@ -72,6 +73,7 @@ func newConfig(roleSessionName string) appConfig {
 		groupCacheExpire:          env.Duration("GROUP_CACHE_EXPIRE", 180*time.Second),
 		groupCacheSizeBytes:       env.Int64("GROUP_CACHE_SIZE_BYTES", 10_000),
 		kubegroupDebug:            env.Bool("KUBEGROUP_DEBUG", true),
+		kubegroupListerInterval:   env.Duration("KUBEGROUP_LISTER_INTERVAL", 20*time.Second),
 	}
 }
 

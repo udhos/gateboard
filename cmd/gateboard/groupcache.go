@@ -61,6 +61,7 @@ func startGroupcache(app *application) {
 		MetricsRegisterer: app.registry,
 		MetricsGatherer:   app.registry,
 		Debug:             app.config.kubegroupDebug,
+		ListerInterval:    app.config.kubegroupListerInterval,
 	}
 
 	go kubegroup.UpdatePeers(options)
