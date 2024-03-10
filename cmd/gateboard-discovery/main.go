@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
+	_ "github.com/KimMachineGun/automemlimit"
 	"github.com/udhos/boilerplate/boilerplate"
 	"github.com/udhos/otelconfig/oteltrace"
 	"go.opentelemetry.io/otel/attribute"

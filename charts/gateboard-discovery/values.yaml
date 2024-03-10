@@ -59,6 +59,7 @@ affinity: {}
 # See: https://stackoverflow.com/questions/72816925/helm-templating-in-configmap-for-values-yaml
 #
 configMapProperties:
+  AUTOMEMLIMIT_DEBUG: "true"
   DRY_RUN: "false"
   ACCOUNTS: "/etc/gateboard/discovery-accounts.yaml"
   #INTERVAL: 0

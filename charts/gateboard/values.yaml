@@ -107,6 +107,7 @@ podHealthCheck:
 # See: https://stackoverflow.com/questions/72816925/helm-templating-in-configmap-for-values-yaml
 #
 configMapProperties:
+  AUTOMEMLIMIT_DEBUG: "true"
   #SECRET_ROLE_ARN: ""
   LOG_DRIVER: zap # anything other than "zap" enables gin default logger
   #DEBUG: true
