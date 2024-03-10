@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/udhos/groupcache_exporter"
 	"github.com/udhos/groupcache_exporter/groupcache/mailgun"
+	"github.com/udhos/kube/kubeclient"
 	"github.com/udhos/kubegroup/kubegroup"
 )
 
@@ -43,15 +44,21 @@ func startGroupcache(app *application) {
 	// start watcher for addresses of peers
 	//
 
+	clientsetOpt := kubeclient.Options{DebugLog: app.config.kubegroupDebug}
+	clientset, errClientset := kubeclient.New(clientsetOpt)
+	if errClientset != nil {
+		log.Fatalf("startGroupcache: kubeclient: %v", errClientset)
+	}
+
 	options := kubegroup.Options{
-		Pool:           pool,
-		GroupCachePort: app.config.groupCachePort,
-		//PodLabelKey:    "app",         // default is "app"
-		//PodLabelValue:  "my-app-name", // default is current PODs label value for label key
+		Client:            clientset,
+		LabelSelector:     app.config.kubegroupLabelSelector,
+		Pool:              pool,
+		GroupCachePort:    app.config.groupCachePort,
 		MetricsRegisterer: prometheus.DefaultRegisterer,
 		MetricsGatherer:   prometheus.DefaultGatherer,
+		MetricsNamespace:  "",
 		Debug:             app.config.kubegroupDebug,
-		ListerInterval:    app.config.kubegroupListerInterval,
 	}
 
 	if _, errKg := kubegroup.UpdatePeers(options); errKg != nil {
