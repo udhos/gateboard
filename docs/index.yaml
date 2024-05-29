@@ -2,6 +2,18 @@ apiVersion: v1
 entries:
   gateboard:
   - apiVersion: v2
+    appVersion: 1.10.13
+    created: "2024-05-28T23:54:07.588823627-03:00"
+    description: A Helm chart for installing gateboard into Kubernetes
+    digest: d4b2c9baa42ca70f5f51653dfbff5fb2efa8e06a83b6d6c9994a0a65a3ee33e8
+    name: gateboard
+    sources:
+    - https://github.com/udhos/gateboard
+    type: application
+    urls:
+    - https://udhos.github.io/gateboard/gateboard-1.10.13.tgz
+    version: 1.10.13
+  - apiVersion: v2
     appVersion: 1.10.12
     created: "2024-05-28T23:44:58.024384187-03:00"
     description: A Helm chart for installing gateboard into Kubernetes
@@ -963,6 +975,18 @@ entries:
     version: 0.0.0
   gateboard-discovery:
   - apiVersion: v2
+    appVersion: 1.7.13
+    created: "2024-05-28T23:54:07.589367557-03:00"
+    description: A Helm chart for installing gateboard-discovery into Kubernetes
+    digest: a25cf1efb0be1cd3c39f20fbac768c4539c7a2ca566cdb16d3f2da4281565771
+    name: gateboard-discovery
+    sources:
+    - https://github.com/udhos/gateboard
+    type: application
+    urls:
+    - https://udhos.github.io/gateboard/gateboard-discovery-1.7.13.tgz
+    version: 1.7.13
+  - apiVersion: v2
     appVersion: 1.7.12
     created: "2024-05-28T23:44:58.024706638-03:00"
     description: A Helm chart for installing gateboard-discovery into Kubernetes
@@ -1478,4 +1502,4 @@ entries:
     urls:
     - https://udhos.github.io/gateboard/gateboard-discovery-0.0.0.tgz
     version: 0.0.0
-generated: "2024-05-28T23:44:58.023714556-03:00"
+generated: "2024-05-28T23:54:07.587713829-03:00"

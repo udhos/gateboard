@@ -25,7 +25,7 @@ require (
 	github.com/udhos/groupcache_exporter v0.1.0
 	github.com/udhos/kube v0.1.0
 	github.com/udhos/kubegroup v1.1.1
-	github.com/udhos/mongodbclient v1.0.5
+	github.com/udhos/mongodbclient v1.0.6
 	github.com/udhos/otelconfig v0.1.9
 	go.mongodb.org/mongo-driver v1.13.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.48.0

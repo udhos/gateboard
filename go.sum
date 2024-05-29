@@ -257,8 +257,8 @@ github.com/udhos/kubegroup v1.1.1 h1:KxYLSaPBFXuv8UH3Wf2VN1enLlkLA0/pVUeQOeDqUKg
 github.com/udhos/kubegroup v1.1.1/go.mod h1:/9DiQXo0iTAO35vdmK1o2rtKq894LMYqxZkJme56PIY=
 github.com/udhos/kubepodinformer v0.1.0 h1:jgloet7tCnXnsMhOp2CI0o6jnQtE+2Wros+/rem2GEc=
 github.com/udhos/kubepodinformer v0.1.0/go.mod h1:rSYevK46dWPXOmhvnG0FFkPDYHvOUxkeV4Nsz+OHpIY=
-github.com/udhos/mongodbclient v1.0.5 h1:Dh1CbTJAU4zRx6Jam8n3SJB1UoAVgGsMhL9aIpSVPPE=
-github.com/udhos/mongodbclient v1.0.5/go.mod h1:YciMAq7Hei86q7UqU7bcdUxFAInYQiycpjMuZEXcHSE=
+github.com/udhos/mongodbclient v1.0.6 h1:6y0kKXEBzIFwiDoVLIYldIsrJ1nX9GMYhXbyUlorPyQ=
+github.com/udhos/mongodbclient v1.0.6/go.mod h1:UC0ikPh2bm/CvB5IgPcd31z086V/5WTxbtbtZ8yNGew=
 github.com/udhos/otelconfig v0.1.9 h1:279EuvBTLWP3KQ+hPrRVnacVwCrSdxEztqoIuyAZtmE=
 github.com/udhos/otelconfig v0.1.9/go.mod h1:5QXB/OSa7DN5gHizJtnq+yRbau9F9IlKDXZqIALbRN4=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
