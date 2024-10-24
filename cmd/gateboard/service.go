@@ -459,9 +459,9 @@ func gatewayPut(c *gin.Context, app *application) {
 	// save gateway_id
 	//
 
-	max := app.config.writeRetry
+	maxRetry := app.config.writeRetry
 
-	for attempt := 1; attempt <= max; attempt++ {
+	for attempt := 1; attempt <= maxRetry; attempt++ {
 
 		begin := time.Now()
 
@@ -486,11 +486,11 @@ func gatewayPut(c *gin.Context, app *application) {
 		}
 
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
-			me, attempt, max, errPut)
+			me, attempt, maxRetry, errPut)
 		traceError(span, out.Error)
 		zlog.CtxErrorf(ctx, out.Error)
 
-		if attempt < max {
+		if attempt < maxRetry {
 			zlog.CtxInfof(ctx, "%s: attempt=%d/%d sleeping %v",
 				me, attempt, app.config.writeRetry, app.config.writeRetryInterval)
 			time.Sleep(app.config.writeRetryInterval)

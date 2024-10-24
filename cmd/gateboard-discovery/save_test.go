@@ -326,7 +326,7 @@ func TestSaverSQS(t *testing.T) {
 
 	mock := &mockSqs{}
 
-	newSqsClientMock := func(queueURL, roleArn, roleSessionName, roleExternalID string) (sqsClient, error) {
+	newSqsClientMock := func(_ /*queueURL*/, _ /*roleArn*/, _ /*roleSessionName*/, _ /*roleExternalID*/ string) (sqsClient, error) {
 		return mock, nil
 	}
 
@@ -376,7 +376,7 @@ func TestSaverSNS(t *testing.T) {
 
 	mock := &mockSns{}
 
-	newSnsClientMock := func(topicArn, roleArn, roleSessionName, roleExternalID string) (snsClient, error) {
+	newSnsClientMock := func(_ /*topicArn*/, _ /*roleArn*/, _ /*roleSessionName*/, _ /*roleExternalID*/ string) (snsClient, error) {
 		return mock, nil
 	}
 
@@ -426,7 +426,7 @@ func TestSaverLambda(t *testing.T) {
 
 	mock := &mockLambda{}
 
-	newLambdaClientMock := func(lambdaArn, roleArn, roleSessionName, roleExternalID string) (lambdaClient, error) {
+	newLambdaClientMock := func(_ /*lambdaArn*/, _ /*roleArn*/, _ /*roleSessionName*/, _ /*roleExternalID*/ string) (lambdaClient, error) {
 		return mock, nil
 	}
 

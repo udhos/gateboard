@@ -121,16 +121,16 @@ func (r *repoDynamo) createTable() {
 	//
 
 	const cooldown = 5 * time.Second
-	const max = 10
-	for i := 1; i <= max; i++ {
-		zlog.Infof("%s: %d/%d table active? '%s'", me, i, max, r.options.table)
+	const maxAttempts = 10
+	for i := 1; i <= maxAttempts; i++ {
+		zlog.Infof("%s: %d/%d table active? '%s'", me, i, maxAttempts, r.options.table)
 		active := r.tableActive()
-		zlog.Infof("%s: %d/%d table active? '%s': %t", me, i, max, r.options.table, active)
+		zlog.Infof("%s: %d/%d table active? '%s': %t", me, i, maxAttempts, r.options.table, active)
 		if active {
-			zlog.Infof("%s: %d/%d table active? '%s': %t: done", me, i, max, r.options.table, active)
+			zlog.Infof("%s: %d/%d table active? '%s': %t: done", me, i, maxAttempts, r.options.table, active)
 			return
 		}
-		zlog.Infof("%s: %d/%d table active? '%s': %t, sleeping for %v", me, i, max, r.options.table, active, cooldown)
+		zlog.Infof("%s: %d/%d table active? '%s': %t, sleeping for %v", me, i, maxAttempts, r.options.table, active, cooldown)
 		time.Sleep(cooldown)
 	}
 	zlog.Fatalf("%s: table '%s' is not active, ABORTING", me, r.options.table)
@@ -198,16 +198,16 @@ func (r *repoDynamo) dropDatabase() error {
 	//
 
 	const cooldown = 5 * time.Second
-	const max = 10
-	for i := 1; i <= max; i++ {
-		zlog.Infof("%s: %d/%d table exists? '%s'", me, i, max, r.options.table)
+	const maxAttempts = 10
+	for i := 1; i <= maxAttempts; i++ {
+		zlog.Infof("%s: %d/%d table exists? '%s'", me, i, maxAttempts, r.options.table)
 		exists := r.tableExists()
-		zlog.Infof("%s: %d/%d table exists? '%s': %t", me, i, max, r.options.table, exists)
+		zlog.Infof("%s: %d/%d table exists? '%s': %t", me, i, maxAttempts, r.options.table, exists)
 		if !exists {
-			zlog.Infof("%s: %d/%d table exists? '%s': %t: done", me, i, max, r.options.table, exists)
+			zlog.Infof("%s: %d/%d table exists? '%s': %t: done", me, i, maxAttempts, r.options.table, exists)
 			return nil
 		}
-		zlog.Infof("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, max, r.options.table, exists, cooldown)
+		zlog.Infof("%s: %d/%d table exists? '%s': %t, sleeping for %v", me, i, maxAttempts, r.options.table, exists, cooldown)
 		time.Sleep(cooldown)
 	}
 	zlog.Fatalf("%s: table '%s' exists, ABORTING", me, r.options.table)
