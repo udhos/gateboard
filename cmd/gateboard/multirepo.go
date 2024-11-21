@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/udhos/boilerplate/awsconfig"
 	"github.com/udhos/boilerplate/secret"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"gopkg.in/yaml.v3"
@@ -92,9 +93,13 @@ func createRepo(sessionName, secretRoleArn string, config repoConfig, debug bool
 
 	const me = "createRepo"
 
-	sec := secret.New(secret.Options{
-		RoleSessionName: sessionName,
+	awsConfOptions := awsconfig.Options{
 		RoleArn:         secretRoleArn,
+		RoleSessionName: sessionName,
+	}
+
+	sec := secret.New(secret.Options{
+		AwsConfigSource: &secret.AwsConfigSource{AwsConfigOptions: awsConfOptions},
 	})
 
 	kind := config.Kind

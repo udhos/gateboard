@@ -12,8 +12,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Logger = initLogger()   // Logger exposes the zap logger
-var LoggerConfig zap.Config // LoggerConfig can be used to SetLevel: LoggerConfig.Level.SetLevel(zap.DebugLevel)
+// Logger exposes the zap logger.
+var Logger = initLogger()
+
+// LoggerConfig can be used to SetLevel: LoggerConfig.Level.SetLevel(zap.DebugLevel).
+var LoggerConfig zap.Config
 
 func initLogger() *zap.Logger {
 	LoggerConfig = zap.NewProductionConfig()
