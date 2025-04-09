@@ -5,10 +5,10 @@ go 1.24.2
 require (
 	github.com/KimMachineGun/automemlimit v0.7.1
 	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.18.9
-	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.76
+	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.18.10
+	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.77
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.30.1
-	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.42.1
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.42.2
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.71.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.79.1
 	github.com/aws/aws-sdk-go-v2/service/sns v1.34.3
@@ -22,7 +22,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.3
 	github.com/segmentio/ksuid v1.0.4
 	github.com/udhos/boilerplate v1.6.8
-	github.com/udhos/groupcache_exporter v1.1.0
+	github.com/udhos/groupcache_exporter v1.1.1
 	github.com/udhos/kube v1.0.4
 	github.com/udhos/kubegroup v1.1.11
 	github.com/udhos/mongodbclient v1.0.10
@@ -162,8 +162,8 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250407143221-ac9807e6c755 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250407143221-ac9807e6c755 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250409194420-de1ac958c67a // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250409194420-de1ac958c67a // indirect
 	google.golang.org/grpc v1.71.1 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
