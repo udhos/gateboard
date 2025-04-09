@@ -123,13 +123,13 @@ func gatewayDump(c *gin.Context, app *application) {
 	case errRepositoryGatewayNotFound:
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
 		out.Error = fmt.Sprintf("%s: error: %v", me, errDump)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -334,7 +334,7 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.TTL = app.config.TTL
 		out.Error = errVal.Error()
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -369,14 +369,14 @@ func gatewayGet(c *gin.Context, app *application) {
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: not found: %v", me, errID)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusNotFound, out)
 		return
 	default:
 		out.GatewayName = gatewayName
 		out.Error = fmt.Sprintf("%s: error: %v", me, errID)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusInternalServerError, out)
 		return
 	}
@@ -402,7 +402,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	if errVal := validateInputGatewayName(gatewayName); errVal != nil {
 		out.Error = errVal.Error()
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -417,7 +417,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	if errYaml != nil {
 		out.Error = fmt.Sprintf("%s: body yaml: %v", me, errYaml)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -434,7 +434,7 @@ func gatewayPut(c *gin.Context, app *application) {
 	if gatewayID == "" {
 		out.Error = "invalid blank gateway_id"
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 		c.JSON(http.StatusBadRequest, out)
 		return
 	}
@@ -449,7 +449,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		if invalidToken(ctx, app, gatewayName, in.Token) {
 			out.Error = "invalid token"
 			traceError(span, out.Error)
-			zlog.CtxErrorf(ctx, out.Error)
+			zlog.CtxErrorf(ctx, "%s", out.Error)
 			c.JSON(http.StatusUnauthorized, out)
 			return
 		}
@@ -488,7 +488,7 @@ func gatewayPut(c *gin.Context, app *application) {
 		out.Error = fmt.Sprintf("%s: attempt=%d/%d error: %v",
 			me, attempt, maxRetry, errPut)
 		traceError(span, out.Error)
-		zlog.CtxErrorf(ctx, out.Error)
+		zlog.CtxErrorf(ctx, "%s", out.Error)
 
 		if attempt < maxRetry {
 			zlog.CtxInfof(ctx, "%s: attempt=%d/%d sleeping %v",

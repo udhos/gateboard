@@ -1,7 +1,7 @@
 # STEP 1 build executable binary
 
 #FROM golang:alpine as builder
-FROM golang:1.23.4-alpine3.20 AS builder
+FROM golang:1.24.2-alpine3.21 AS builder
 
 RUN apk update
 RUN apk add git
@@ -22,7 +22,7 @@ RUN go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gateboard
 #
 # curl: https://security.alpinelinux.org/srcpkg/curl
 #
-FROM alpine:3.20.3
+FROM alpine:3.21.3
 COPY --from=builder /tmp/gateboard /bin/gateboard
 #RUN apk add curl=8.1.2-r0 libcrypto3=3.1.0-r4 libssl3=3.1.0-r4
 RUN apk update && \

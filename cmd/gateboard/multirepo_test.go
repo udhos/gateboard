@@ -18,12 +18,12 @@ func TestMultirepoFastestGoodOnly(t *testing.T) {
 
 	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
 	if errPut != nil {
-		t.Errorf(errPut.Error())
+		t.Error(errPut.Error())
 	}
 
 	body, repoName, errGet := repoGetMultiple(context.TODO(), app, "gw1")
 	if errGet != nil {
-		t.Errorf(errGet.Error())
+		t.Error(errGet.Error())
 	}
 
 	if body.GatewayID != "id1" {
@@ -41,12 +41,12 @@ func TestMultirepoFastestTwoBad(t *testing.T) {
 
 	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
 	if errPut != nil {
-		t.Errorf(errPut.Error())
+		t.Error(errPut.Error())
 	}
 
 	body, repoName, errGet := repoGetMultiple(context.TODO(), app, "gw1")
 	if errGet != nil {
-		t.Errorf(errGet.Error())
+		t.Error(errGet.Error())
 	}
 
 	if body.GatewayID != "id1" {
@@ -66,7 +66,7 @@ func TestMultirepoFastestTimeout(t *testing.T) {
 
 	errPut := repoPutMultiple(context.TODO(), app, "gw1", "id1")
 	if errPut != nil {
-		t.Errorf(errPut.Error())
+		t.Error(errPut.Error())
 	}
 
 	_, _, errGet := repoGetMultiple(context.TODO(), app, "gw1")
