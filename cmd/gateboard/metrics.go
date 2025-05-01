@@ -21,6 +21,9 @@ type metrics struct {
 }
 
 func recordRepositoryLatency(method, status, repo string, elapsed time.Duration) {
+	if metric == nil {
+		return
+	}
 	sec := float64(elapsed) / float64(time.Second)
 	metric.latencyRepo.WithLabelValues(method, status, repo).Observe(sec)
 }

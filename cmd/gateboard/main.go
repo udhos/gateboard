@@ -19,7 +19,7 @@ import (
 	_ "github.com/KimMachineGun/automemlimit"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/mailgun/groupcache/v2"
+	"github.com/modernprogram/groupcache/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
@@ -28,22 +28,24 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/udhos/boilerplate/boilerplate"
+	"github.com/udhos/dogstatsdclient/dogstatsdclient"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/otelconfig/oteltrace"
 )
 
 type application struct {
-	serverMain       *serverGin
-	serverHealth     *http.Server
-	serverMetrics    *http.Server
-	serverGroupCache *http.Server
-	cache            *groupcache.Group
-	me               string
-	tracer           trace.Tracer
-	sqsClient        queue
-	config           appConfig
-	repoConf         []repoConfig
-	repoList         []repository
+	serverMain                *serverGin
+	serverHealth              *http.Server
+	serverMetrics             *http.Server
+	serverGroupCache          *http.Server
+	cache                     *groupcache.Group
+	me                        string
+	tracer                    trace.Tracer
+	sqsClient                 queue
+	config                    appConfig
+	repoConf                  []repoConfig
+	repoList                  []repository
+	dogstatsdClientGroupcache *dogstatsdclient.Client
 }
 
 func main() {
@@ -108,7 +110,7 @@ func main() {
 	// initialize tracing
 	//
 
-	{
+	if app.config.otelTraceEnable {
 		options := oteltrace.TraceOptions{
 			DefaultService:     me,
 			NoopTracerProvider: false,
@@ -124,6 +126,8 @@ func main() {
 		defer cancel()
 
 		app.tracer = tracer
+	} else {
+		app.tracer = oteltrace.NewNoopTracer()
 	}
 
 	//
@@ -168,7 +172,7 @@ func main() {
 	// start metrics server
 	//
 
-	{
+	if app.config.prometheusEnable {
 		zlog.Infof("registering route: %s %s",
 			app.config.metricsAddr, app.config.metricsPath)
 
@@ -195,8 +199,22 @@ func initApplication(app *application, addr string) {
 
 	const me = "initApplication"
 
-	initMetrics(app.config.metricsNamespace,
-		app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
+	if app.config.prometheusEnable {
+		initMetrics(app.config.metricsNamespace,
+			app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
+	}
+
+	if app.config.dogstatsdEnable {
+		client, errClient := dogstatsdclient.New(dogstatsdclient.Options{
+			Namespace: "groupcache",
+			Debug:     app.config.dogstatsdDebug,
+			TTL:       app.config.dogstatsdClientTTL,
+		})
+		if errClient != nil {
+			log.Printf("Dogstatsd client error: %v", errClient)
+		}
+		app.dogstatsdClientGroupcache = client
+	}
 
 	//
 	// load multirepo config
@@ -236,7 +254,9 @@ func initApplication(app *application, addr string) {
 	//
 
 	app.serverMain = newServerGin(addr)
-	app.serverMain.router.Use(middlewareMetrics(app.config.metricsMaskPath))
+	if app.config.prometheusEnable {
+		app.serverMain.router.Use(middlewareMetrics(app.config.metricsMaskPath))
+	}
 	app.serverMain.router.Use(otelgin.Middleware(app.me))
 
 	// anything other than "zap" enables gin default logger

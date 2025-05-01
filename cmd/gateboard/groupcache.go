@@ -6,15 +6,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mailgun/groupcache/v2"
+	"github.com/modernprogram/groupcache/v2"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/udhos/groupcache_datadog/exporter"
 	"github.com/udhos/groupcache_exporter"
-	"github.com/udhos/groupcache_exporter/groupcache/mailgun"
+	"github.com/udhos/groupcache_exporter/groupcache/modernprogram"
 	"github.com/udhos/kube/kubeclient"
 	"github.com/udhos/kubegroup/kubegroup"
 )
 
-func startGroupcache(app *application) {
+func startGroupcache(app *application) func() {
 
 	//
 	// create groupcache pool
@@ -26,7 +27,10 @@ func startGroupcache(app *application) {
 	}
 	log.Printf("groupcache my URL: %s", myURL)
 
-	pool := groupcache.NewHTTPPoolOpts(myURL, &groupcache.HTTPPoolOptions{})
+	workspace := groupcache.NewWorkspace()
+
+	pool := groupcache.NewHTTPPoolOptsWithWorkspace(workspace, myURL,
+		&groupcache.HTTPPoolOptions{})
 
 	//
 	// start groupcache server
@@ -51,18 +55,29 @@ func startGroupcache(app *application) {
 	}
 
 	options := kubegroup.Options{
-		Client:            clientset,
-		LabelSelector:     app.config.kubegroupLabelSelector,
-		Pool:              pool,
-		GroupCachePort:    app.config.groupCachePort,
-		MetricsRegisterer: prometheus.DefaultRegisterer,
-		MetricsGatherer:   prometheus.DefaultGatherer,
-		MetricsNamespace:  "",
-		Debug:             app.config.kubegroupDebug,
+		Client:           clientset,
+		LabelSelector:    app.config.kubegroupLabelSelector,
+		Pool:             pool,
+		GroupCachePort:   app.config.groupCachePort,
+		MetricsNamespace: "",
+		Debug:            app.config.kubegroupDebug,
+		//MetricsRegisterer: prometheus.DefaultRegisterer, // see below
+		//MetricsGatherer:   prometheus.DefaultGatherer, // see below
+	}
+	if app.config.prometheusEnable {
+		options.MetricsRegisterer = prometheus.DefaultRegisterer
+		options.MetricsGatherer = prometheus.DefaultGatherer
+	}
+	if app.config.dogstatsdEnable {
+		options.DogstatsdClient = app.dogstatsdClientGroupcache
 	}
 
-	if _, errKg := kubegroup.UpdatePeers(options); errKg != nil {
+	kg, errKg := kubegroup.UpdatePeers(options)
+	if errKg != nil {
 		log.Fatalf("kubegroup: %v", errKg)
+	}
+	stopDisc := func() {
+		kg.Close()
 	}
 
 	//
@@ -72,8 +87,10 @@ func startGroupcache(app *application) {
 	// https://talks.golang.org/2013/oscon-dl.slide#46
 	//
 	// 64 MB max per-node memory usage
-	app.cache = groupcache.NewGroup("gateways", app.config.groupCacheSizeBytes, groupcache.GetterFunc(
-		func(ctx context.Context, gatewayName string, dest groupcache.Sink) error {
+
+	getter := groupcache.GetterFunc(
+		func(ctx context.Context, gatewayName string, dest groupcache.Sink,
+			_ *groupcache.Info) error {
 
 			out, _, errID := repoGetMultiple(ctx, app, gatewayName)
 			if errID != nil {
@@ -85,20 +102,58 @@ func startGroupcache(app *application) {
 				expire = time.Now().Add(app.config.groupCacheExpire)
 			}
 
-			dest.SetString(out.GatewayID, expire)
+			return dest.SetString(out.GatewayID, expire)
+		})
 
-			return nil
-		}))
+	cacheOptions := groupcache.Options{
+		Workspace:       workspace,
+		Name:            "gateways",
+		CacheBytesLimit: app.config.groupCacheSizeBytes,
+		Getter:          getter,
+	}
+
+	app.cache = groupcache.NewGroupWithWorkspace(cacheOptions)
 
 	//
 	// expose prometheus metrics for groupcache
 	//
 
-	mailgun := mailgun.New(app.cache)
-	labels := map[string]string{
-		//"app": appName,
+	listGroups := func() []groupcache_exporter.GroupStatistics {
+		return modernprogram.ListGroups(workspace)
 	}
-	namespace := ""
-	collector := groupcache_exporter.NewExporter(namespace, labels, mailgun)
-	prometheus.MustRegister(collector)
+
+	unregister := func() {}
+
+	if app.config.prometheusEnable {
+		log.Printf("starting groupcache metrics exporter for Prometheus")
+		labels := map[string]string{
+			//"app": appName,
+		}
+		namespace := ""
+		collector := groupcache_exporter.NewExporter(groupcache_exporter.Options{
+			Namespace:  namespace,
+			Labels:     labels,
+			ListGroups: listGroups,
+		})
+		prometheus.MustRegister(collector)
+		unregister = func() { prometheus.Unregister(collector) }
+	}
+
+	closeExporterDogstatsd := func() {}
+
+	if app.config.dogstatsdEnable {
+		log.Printf("starting groupcache metrics exporter for Dogstatsd")
+		exporter := exporter.New(exporter.Options{
+			Client:         app.dogstatsdClientGroupcache,
+			ListGroups:     listGroups,
+			ExportInterval: app.config.dogstatsdExportInterval,
+		})
+		closeExporterDogstatsd = func() { exporter.Close() }
+	}
+
+	return func() {
+		stopDisc()
+		unregister()
+		closeExporterDogstatsd()
+	}
 }

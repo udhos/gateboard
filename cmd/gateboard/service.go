@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mailgun/groupcache/v2"
+	"github.com/modernprogram/groupcache/v2"
 	"github.com/udhos/gateboard/cmd/gateboard/zlog"
 	"github.com/udhos/gateboard/gateboard"
 	"go.opentelemetry.io/otel/trace"
@@ -349,7 +349,8 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	if app.config.groupCache {
 		// cache query
-		errID = app.cache.Get(ctx, gatewayName, groupcache.StringSink(&out.GatewayID))
+		errID = app.cache.Get(ctx, gatewayName,
+			groupcache.StringSink(&out.GatewayID), nil)
 	} else {
 		// direct query
 		out, _, errID = repoGetMultiple(ctx, app, gatewayName)
