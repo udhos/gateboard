@@ -544,3 +544,15 @@ docker push -a udhos/gateboard-discovery
 You can use the provided helm charts to install gateboard in your Kubernetes cluster.
 
 See: https://udhos.github.io/gateboard/
+
+# Datadog
+
+Image tags suffixed with `-datadog` are instrumented with Datadog [Orchestrion](https://github.com/DataDog/orchestrion).
+
+See https://hub.docker.com/r/udhos/gateboard/tags
+
+## Example
+
+Install latest image instrumented with support for Datadog:
+
+    helm upgrade --install gateboard-dd ./charts/gateboard --set image.tag=latest-datadog

@@ -13,10 +13,11 @@ COPY ./cmd/ /tmp/app/cmd
 COPY ./gateboard/ /tmp/app/gateboard
 COPY go.* /tmp/app/
 WORKDIR /tmp/app
-RUN rm -f ./orchestrion.tool.go
+RUN go install github.com/DataDog/orchestrion@v1.3.1
+RUN orchestrion pin
 RUN go mod tidy
 RUN go env -w CGO_ENABLED=0
-RUN go build -o /tmp/gateboard-discovery github.com/udhos/gateboard/cmd/gateboard-discovery
+RUN orchestrion go build -o /tmp/gateboard github.com/udhos/gateboard/cmd/gateboard
 
 #
 # STEP 2 build a small image from alpine
@@ -24,7 +25,7 @@ RUN go build -o /tmp/gateboard-discovery github.com/udhos/gateboard/cmd/gateboar
 # curl: https://security.alpinelinux.org/srcpkg/curl
 #
 FROM alpine:3.21.3
-COPY --from=builder /tmp/gateboard-discovery /bin/gateboard-discovery
+COPY --from=builder /tmp/gateboard /bin/gateboard
 #RUN apk add curl=8.1.2-r0 libcrypto3=3.1.0-r4 libssl3=3.1.0-r4
 RUN apk update && \
     apk add curl && \
@@ -32,4 +33,4 @@ RUN apk update && \
     adduser -D -g '' user && \
     rm -rf /var/cache/apk/*
 USER user
-ENTRYPOINT ["/bin/gateboard-discovery"]
+ENTRYPOINT ["/bin/gateboard"]

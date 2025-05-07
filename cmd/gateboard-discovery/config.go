@@ -27,6 +27,7 @@ type appConfig struct {
 	lambdaARN            string
 	lambdaRoleARN        string
 	lambdaRoleExternalID string
+	otelTraceEnable      bool
 }
 
 func newConfig(me string) appConfig {
@@ -54,5 +55,6 @@ func newConfig(me string) appConfig {
 		lambdaARN:            env.String("LAMBDA_ARN", ""),
 		lambdaRoleARN:        env.String("LAMBDA_ROLE_ARN", ""),
 		lambdaRoleExternalID: env.String("LAMBDA_ROLE_EXTERNAL_ID", ""),
+		otelTraceEnable:      env.Bool("OTEL_TRACE_ENABLE", true),
 	}
 }

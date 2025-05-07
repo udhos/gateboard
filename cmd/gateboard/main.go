@@ -201,7 +201,10 @@ func initApplication(app *application, addr string) {
 
 	if app.config.prometheusEnable {
 		initMetrics(app.config.metricsNamespace,
-			app.config.metricsBucketsLatencyHTTP, app.config.metricsBucketsLatencyRepo)
+			app.config.metricsBucketsLatencyHTTP,
+			app.config.metricsBucketsLatencyRepo,
+			app.config.prometheusEnable,
+			app.config.dogstatsdEnable)
 	}
 
 	if app.config.dogstatsdEnable {

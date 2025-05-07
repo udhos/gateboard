@@ -46,7 +46,7 @@ func main() {
 
 	var tracer trace.Tracer
 
-	{
+	if config.otelTraceEnable {
 		options := oteltrace.TraceOptions{
 			DefaultService:     me,
 			NoopTracerProvider: false,
@@ -62,6 +62,8 @@ func main() {
 		defer cancel()
 
 		tracer = tr
+	} else {
+		tracer = oteltrace.NewNoopTracer()
 	}
 
 	creds, errCreds := loadCredentials(config.accountsFile)
