@@ -23,7 +23,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/trace"
-	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
