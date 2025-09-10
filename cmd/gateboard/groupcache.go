@@ -66,7 +66,6 @@ func startGroupcache(app *application) func() {
 	}
 	if app.config.prometheusEnable {
 		options.MetricsRegisterer = prometheus.DefaultRegisterer
-		options.MetricsGatherer = prometheus.DefaultGatherer
 	}
 	if app.config.dogstatsdEnable {
 		options.DogstatsdClient = app.dogstatsdClientGroupcache
