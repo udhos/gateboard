@@ -12,6 +12,7 @@ type appConfig struct {
 	secretRoleArn             string
 	logDriver                 string
 	debug                     bool
+	debugContext              bool
 	queueURL                  string
 	sqsRoleARN                string
 	sqsConsumeBadMessage      bool
@@ -54,6 +55,7 @@ func newConfig(roleSessionName string) appConfig {
 		secretRoleArn:             envString("SECRET_ROLE_ARN", ""),
 		logDriver:                 env.String("LOG_DRIVER", ""), // anything other than "zap" enables gin default logger
 		debug:                     env.Bool("DEBUG", true),
+		debugContext:              env.Bool("DEBUG_CONTEXT", true),
 		queueURL:                  env.String("QUEUE_URL", ""),
 		sqsRoleARN:                env.String("SQS_ROLE_ARN", ""),
 		sqsConsumeBadMessage:      env.Bool("SQS_CONSUME_BAD_MESSAGE", false),

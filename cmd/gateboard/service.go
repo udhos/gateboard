@@ -199,13 +199,13 @@ func repoGetMultiple(ctx context.Context, app *application, gatewayName string) 
 	ch := make(chan repoAnswer, size)
 
 	// spawn one goroutine for each repo
-	for r := 0; r < size; r++ {
+	for r := range size {
 		repo := app.repoList[r]
 		go queryOneRepo(ctxNew, app.tracer, gatewayName, r, size, repo, app.config.debug, ch)
 	}
 
 	// get fastest answer with timeout
-	for r := 0; r < size; r++ {
+	for range size {
 		select {
 		case answer = <-ch:
 			switch answer.err {
@@ -315,12 +315,38 @@ func repoPutTokenMultiple(ctx context.Context, app *application, gatewayName, to
 	return errLast
 }
 
+func isContextCanceled(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
+	}
+}
+
 func gatewayGet(c *gin.Context, app *application) {
 	const me = "gatewayGet"
+
+	debugContext := app.config.debugContext
+
+	var (
+		canceledEnter       bool
+		canceledAfterSpan   bool
+		canceledAfterQuery  bool
+		canceledAfterQuery2 bool
+	)
+
+	if debugContext {
+		canceledEnter = isContextCanceled(c.Request.Context())
+	}
 
 	ctx, span := newSpanGin(c, me, app.tracer)
 	if span != nil {
 		defer span.End()
+	}
+
+	if debugContext {
+		canceledAfterSpan = isContextCanceled(ctx)
 	}
 
 	gatewayName := strings.TrimPrefix(c.Param("gateway_name"), "/")
@@ -347,13 +373,23 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	var errID error
 
+	// avoid gin context timeout or cancel to affect repository query
+	const timeout = 5 * time.Second
+	ctx2, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	if app.config.groupCache {
 		// cache query
-		errID = app.cache.Get(ctx, gatewayName,
+		errID = app.cache.Get(ctx2, gatewayName,
 			groupcache.StringSink(&out.GatewayID), nil)
 	} else {
 		// direct query
-		out, _, errID = repoGetMultiple(ctx, app, gatewayName)
+		out, _, errID = repoGetMultiple(ctx2, app, gatewayName)
+	}
+
+	if debugContext {
+		canceledAfterQuery = isContextCanceled(ctx)
+		canceledAfterQuery2 = isContextCanceled(ctx2)
 	}
 
 	out.Token = "" // prevent token leaking
@@ -363,6 +399,11 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	zlog.CtxDebugf(ctx, app.config.debug, "%s: gateway_name=%s repo_get_latency: elapsed=%v (error:%v)",
 		me, gatewayName, elap, errID)
+
+	if debugContext {
+		zlog.CtxInfof(ctx, "%s: debugContext gateway_name=%s elapsed=%v cache=%t canceledEnter=%t canceledAfterSpan=%t canceledAfterQuery=%t canceledAfterQuery2=%t (error:%v)",
+			me, gatewayName, elap, app.config.groupCache, canceledEnter, canceledAfterSpan, canceledAfterQuery, canceledAfterQuery2, errID)
+	}
 
 	switch errID {
 	case nil:
