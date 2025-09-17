@@ -375,8 +375,9 @@ func gatewayGet(c *gin.Context, app *application) {
 
 	// avoid gin context timeout or cancel to affect repository query
 	const timeout = 5 * time.Second
-	ctx2, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+	ctx2 := context.WithoutCancel(ctx)                 // avoid cancel propagation
+	ctx2, cancel := context.WithTimeout(ctx2, timeout) // add timeout
+	defer cancel()                                     // ensure resources are cleaned up
 
 	if app.config.groupCache {
 		// cache query
@@ -401,8 +402,11 @@ func gatewayGet(c *gin.Context, app *application) {
 		me, gatewayName, elap, errID)
 
 	if debugContext {
-		zlog.CtxInfof(ctx, "%s: debugContext gateway_name=%s elapsed=%v cache=%t canceledEnter=%t canceledAfterSpan=%t canceledAfterQuery=%t canceledAfterQuery2=%t (error:%v)",
-			me, gatewayName, elap, app.config.groupCache, canceledEnter, canceledAfterSpan, canceledAfterQuery, canceledAfterQuery2, errID)
+		canceledAny := canceledEnter || canceledAfterSpan || canceledAfterQuery || canceledAfterQuery2
+		zlog.CtxInfof(ctx, "%s: DEBUG_CONTEXT gateway_name=%s elapsed=%v cacheEnabled=%t canceledAny=%t canceledEnter=%t canceledAfterSpan=%t canceledAfterQuery=%t canceledAfterQuery2=%t (error:%v)",
+			me, gatewayName, elap, app.config.groupCache, canceledAny,
+			canceledEnter, canceledAfterSpan, canceledAfterQuery,
+			canceledAfterQuery2, errID)
 	}
 
 	switch errID {

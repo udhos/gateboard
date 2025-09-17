@@ -110,7 +110,8 @@ configMapProperties:
   AUTOMEMLIMIT_DEBUG: "true"
   #SECRET_ROLE_ARN: ""
   LOG_DRIVER: zap # anything other than "zap" enables gin default logger
-  #DEBUG: true
+  #DEBUG: "true"
+  #DEBUG_CONTEXT: "true"
   #QUEUE_URL: ""
   #SQS_ROLE_ARN: ""
   #SQS_CONSUME_BAD_MESSAGE: "false"
