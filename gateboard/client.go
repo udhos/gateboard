@@ -273,20 +273,21 @@ func (c *Client) refresh(ctx context.Context, gatewayName string) (string, error
 		log.Printf("%s: gateway_name=%s", me, gatewayName)
 	}
 
-	{
-		gatewayID, TTL := c.queryServer(ctx, c.options.ServerURL, gatewayName)
-		c.updateTTL(TTL)
-		if gatewayID != "" {
-			c.cachePut(gatewayName, gatewayID)
-			if c.options.Debug {
-				log.Printf("%s: gateway_name=%s gateway_id=%s from main server",
-					me, gatewayName, gatewayID)
-			}
-			return gatewayID, nil
-		}
+	gatewayID, TTL, err := c.queryServer(ctx, c.options.ServerURL, gatewayName)
+
+	c.updateTTL(TTL)
+
+	if gatewayID == "" {
+		return "", fmt.Errorf("%s: gateway_name=%s: error: failed to refresh: %v",
+			me, gatewayName, err)
 	}
 
-	return "", fmt.Errorf("%s: gateway_name=%s: error: failed to refresh", me, gatewayName)
+	c.cachePut(gatewayName, gatewayID)
+	if c.options.Debug {
+		log.Printf("%s: gateway_name=%s gateway_id=%s from main server",
+			me, gatewayName, gatewayID)
+	}
+	return gatewayID, nil
 }
 
 /*
@@ -333,7 +334,7 @@ func (c *Client) refreshJob(ctx context.Context, gatewayName string) {
 	}
 }
 
-func (c *Client) queryServer(ctx context.Context, URL, gatewayName string) (string, int) {
+func (c *Client) queryServer(ctx context.Context, URL, gatewayName string) (string, int, error) {
 	const me = "gateboard.Client.queryServer"
 
 	ctxNew, span := newSpan(ctx, me, c.options.Tracer)
@@ -343,22 +344,25 @@ func (c *Client) queryServer(ctx context.Context, URL, gatewayName string) (stri
 
 	path, errPath := url.JoinPath(URL, gatewayName)
 	if errPath != nil {
-		log.Printf("%s: URL=%s join error: %v", me, path, errPath)
-		return "", 0
+		err := fmt.Errorf("%s: URL=%s join error: %v", me, path, errPath)
+		log.Print(err)
+		return "", 0, err
 	}
 
 	req, errReq := http.NewRequestWithContext(ctxNew, "GET", path, nil)
 	if errReq != nil {
-		log.Printf("%s: URL=%s request error: %v", me, path, errReq)
-		return "", 0
+		err := fmt.Errorf("%s: URL=%s request error: %v", me, path, errReq)
+		log.Print(err)
+		return "", 0, err
 	}
 
 	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
 	resp, errGet := client.Do(req)
 	if errGet != nil {
-		log.Printf("%s: URL=%s server error: %v", me, path, errGet)
-		return "", 0
+		err := fmt.Errorf("%s: URL=%s server error: %v", me, path, errGet)
+		log.Print(err)
+		return "", 0, err
 	}
 
 	defer resp.Body.Close()
@@ -368,15 +372,16 @@ func (c *Client) queryServer(ctx context.Context, URL, gatewayName string) (stri
 	dec := yaml.NewDecoder(resp.Body)
 	errYaml := dec.Decode(&reply)
 	if errYaml != nil {
-		log.Printf("%s: URL=%s yaml error: %v", me, path, errYaml)
-		return "", 0
+		err := fmt.Errorf("%s: URL=%s yaml error: %v", me, path, errYaml)
+		log.Print(err)
+		return "", 0, err
 	}
 
 	if c.options.Debug {
 		log.Printf("%s: URL=%s gateway: %v", me, path, toJSON(reply))
 	}
 
-	return reply.GatewayID, reply.TTL
+	return reply.GatewayID, reply.TTL, nil
 }
 
 func toJSON(v interface{}) string {
